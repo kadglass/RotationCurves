@@ -1,0 +1,9 @@
+images/
+manga_files/
+rot_curve_data_files/
+TEST/
+updated_vflag_data_files/
+.ipynb_checkpoints/
+bad_manga_files/
+astropy_tutorial_jupyter_notebooks/
+__pycache__/

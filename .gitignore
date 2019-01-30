@@ -7,3 +7,5 @@ updated_vflag_data_files/
 bad_manga_files/
 astropy_tutorial_jupyter_notebooks/
 __pycache__/
+*.fits
+*.txt

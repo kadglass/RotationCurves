@@ -213,7 +213,7 @@ def write_matched_data( vflag_list, mstar_NSA_list,
             master_table.remove_column( col)
         except KeyError:
             print("USER GENERATED KeyError: \n" + \
-                  "Column name not found in del_col_names")
+                  "Column name '" + col + "' not found in 'del_col_names'")
     ###########################################################################
 
     master_table.add_column( Column( vflag_list), name='vflag')
@@ -386,7 +386,7 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
 #
 #        plt.ylabel(r'$V_{ROT}$ [$kms^{-1}$]')
 #        plt.xlabel(r'$d_{depro}$ [kpc]')
-#        plt.title( gal_ID + "Decomposed Rotation Curves")
+#        plt.title( gal_ID + " Decomposed Rotation Curves")
 #        plt.show()
         #######################################################################
 
@@ -881,7 +881,7 @@ def write_best_params( best_fit_param_table, gal_stat_files,
             master_table.remove_column( col)
         except KeyError:
             print("USER GENERATED KeyError: \n" + \
-                  "Column name" + col + "not found in del_col_names")
+                  "Column name '" + col + "' not found in 'del_col_names'")
     ###########################################################################
 
     lum_center_master = []
@@ -1126,8 +1126,8 @@ def estimate_dark_matter( best_fit_param_table,
                 transform=ax.transAxes,
                 color='black', fontsize=10, bbox=props)
 
-        plt.savefig( IMAGE_DIR + '\\fitted_rotation_curves\\' + gal_id +\
-                    '_fitted_rotation_curve.png')
+        plt.savefig( IMAGE_DIR + '/fitted_rotation_curves/' + gal_id +\
+                    '_fitted_rotation_curve.png', format='eps')
         plt.show()
         plt.close()
         #######################################################################
@@ -1208,7 +1208,7 @@ def write_mass_estimates( mass_estimate_table, MASTER_FILE_NAME):
             master_table.remove_column( col)
         except KeyError:
             print("USER GENERATED KeyError: \n" + \
-                  "Column name not found in del_col_names")
+                  "Column name '" + col + "' not found in 'del_col_names'")
     ###########################################################################
 
     master_table.add_column( mass_estimate_table['total_mass'])
@@ -1386,7 +1386,8 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
             transform=ax.transAxes,
             color='black', fontsize=8, bbox=props)
 
-    plt.savefig( IMAGE_DIR + '\\histograms\\dm_to_stellar_mass_ratio_hist.png')
+    plt.savefig( IMAGE_DIR + '/histograms/dm_to_stellar_mass_ratio_hist.png',
+                format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -1420,7 +1421,8 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
 
     plt.text( 280, 0.15, "p-val: " + "{:.{}f}".format( p_val, 3))
 
-    plt.savefig( IMAGE_DIR + '\\histograms\\dm_to_stellar_mass_ratio_hist.png')
+    plt.savefig( IMAGE_DIR + '/histograms/dm_to_stellar_mass_ratio_hist.png',
+                format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -1642,7 +1644,7 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
             transform=ax.transAxes,
             color='black', fontsize=8, bbox=props)
 
-    plt.savefig( IMAGE_DIR + '\\v_max_diff_hist.png' )
+    plt.savefig( IMAGE_DIR + '/histograms/v_max_diff_hist.png', format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -1676,7 +1678,7 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
     plt.ylabel(r'$v_{max} Difference$ [km/s]')
     plt.xlabel(r'Inclination Angle [rad]')
 
-    plt.savefig( IMAGE_DIR + '\\v_max_vs_inclination.png' )
+    plt.savefig( IMAGE_DIR + '/v_max_vs_inclination.png', format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -1713,7 +1715,7 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
     plt.ylabel(r'$v_{max} Difference$ [km/s]')
     plt.xlabel('Mass Ratio')
 
-    plt.savefig( IMAGE_DIR + '\\v_max_vs_mass_ratio.png' )
+    plt.savefig( IMAGE_DIR + '/v_max_vs_mass_ratio.png', format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -1952,7 +1954,8 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             color='black', fontsize=8, bbox=props)
 
 
-    plt.savefig( IMAGE_DIR + '\\histograms\\avg_chi_square_hist.png' )
+    plt.savefig( IMAGE_DIR + '/histograms/avg_chi_square_hist.png',
+                format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -2059,7 +2062,8 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             color='black', fontsize=8, bbox=props)
 
 
-    plt.savefig( IMAGE_DIR + '\\histograms\\pos_chi_square_hist.png' )
+    plt.savefig( IMAGE_DIR + '/histograms/pos_chi_square_hist.png',
+                format='eps')
     plt.show()
     plt.close()
     ###########################################################################
@@ -2166,7 +2170,8 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             color='black', fontsize=8, bbox=props)
 
 
-    plt.savefig( IMAGE_DIR + '\\histograms\\neg_chi_square_hist.png' )
+    plt.savefig( IMAGE_DIR + '/histograms/neg_chi_square_hist.png',
+                format='eps')
     plt.show()
     plt.close()
     ###########################################################################

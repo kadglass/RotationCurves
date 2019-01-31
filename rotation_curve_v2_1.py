@@ -324,8 +324,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel(r'$\Delta \alpha$ (arcsec)')
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
-    plt.savefig( IMAGE_DIR + "\\unmasked_v_band\\" + gal_ID + \
-                "v_band_raw.png")
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -356,8 +354,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    plt.xlabel(r'$\Delta \alpha$ (arcsec)')
 #    plt.ylabel(r'$\Delta \delta$ (arcsec)')
 #
-#    plt.savefig( IMAGE_DIR + "\\unmasked_Ha_vel\\" + gal_ID + \
-#                "Ha_vel_raw.png")
 #    plt.show()
 #    plt.close()
     ###########################################################################
@@ -1005,8 +1001,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel(r'$\Delta \alpha$ (arcsec)')
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
-    plt.savefig( IMAGE_DIR + "\\masked_Ha_vel\\" + gal_ID + \
-                "Ha_vel_field.png")
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -1035,8 +1029,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel(r'$\Delta \alpha$ (arcsec)')
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
-    plt.savefig( IMAGE_DIR + '\\collected_velocity_fields\\' + gal_ID + \
-                '_collected_vel_field.png')
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -1057,7 +1049,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel('Deprojected Radius [kpc]')
     plt.ylabel(r'Rotational Velocity [$km s^{-1}$]')
 
-    plt.savefig( IMAGE_DIR + '\\rot_curves\\' + gal_ID + '_rot_curve.png')
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -1076,7 +1067,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel('Deprojected Radius [kpc]')
     plt.ylabel(r'Mass Interior [$M_{\odot}$]')
 
-    plt.savefig( IMAGE_DIR + '\\mass_curves\\' + gal_ID + '_mass_curve.png')
 #    plt.show()
     plt.close()
     ###########################################################################
@@ -1089,29 +1079,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #    in the algorithm, and the averaged max and min rotation curves
     #    alongside the stellar mass rotation curve,
     #--------------------------------------------------------------------------
-#    vmax_bound = -1 * min( global_max, global_min)
-#    vmin_bound = min( global_max, global_min)
-#    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 12)
-#
-#    panel_fig, (( Ha_vel_panel, mHa_vel_panel),
-#                ( contour_panel, rot_curve_panel)) = plt.subplots( 2, 2)
-#    plt.title( gal_ID + "Diagnostic Panel")
-#
-#    Ha_vel_im = Ha_vel_panel.imshow( Ha_vel, origin='lower',
-#                      vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
-#    Ha_cbar = plt.colorbar( Ha_vel_im, ax=Ha_vel_panel, ticks = cbar_ticks)
-#    Ha_cbar.ax.tick_params( direction='in')
-#    Ha_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
-#
-#    Ha_vel_ax = Ha_vel_panel.add_subplot(111)
-#    Ha_vel_panel.xticks( np.arange( 0, array_width, 10))
-#    Ha_vel_panel.yticks( np.arange( 0, array_length, 10))
-#    Ha_vel_panel.tick_params( axis='both', direction='in')
-#    Ha_vel_ax.yaxis.set_ticks_position('both')
-#    Ha_vel_ax.xaxis.set_ticks_position('both')
-#    Ha_vel_panel.xlabel(r'$\Delta \alpha$ (arcsec)')
-#    Ha_vel_panel.ylabel(r'$\Delta \delta$ (arcsec)')
-
 
     ###########################################################################
 

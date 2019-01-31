@@ -25,7 +25,6 @@ from rotation_curve_v2_1 import extract_data, \
                                 write_master_file
 
 LOCAL_PATH = os.path.dirname(__file__)
-IMAGE_DIR = LOCAL_PATH + '\\images'
 MANGA_FOLDER = LOCAL_PATH + '/manga_files'
 FITS_FILES_LOC = LOCAL_PATH + '/manga_files/*manga-*Pipe3D.cube.fits.gz'
 ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
@@ -42,6 +41,7 @@ GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 #            '/manga_files'.
 #------------------------------------------------------------------------------
 files = glob.glob( FITS_FILES_LOC)
+#files = glob.glob( FITS_FILES_LOC)
 ###############################################################################
 
 
@@ -57,6 +57,14 @@ files = glob.glob( FITS_FILES_LOC)
 #    for file_name in FILE_IDS:
 #        files.append( MANGA_FOLDER \
 #        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
+DATA_RELEASES = ['dr14']
+FILE_IDS = ['10001-12703']
+
+files = []
+for data_release in DATA_RELEASES:
+    for file_name in FILE_IDS:
+        files.append( MANGA_FOLDER \
+        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
 ###############################################################################
 
 

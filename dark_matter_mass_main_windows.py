@@ -24,21 +24,8 @@ from dark_matter_mass_v1_1 import extract_matched_data, \
                                 analyze_chi_square
 
 
-LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
-IMAGE_DIR = LOCAL_PATH + '\\images'
-ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '\\rot_curve_data_files'
-MASTER_FILE_NAME = LOCAL_PATH + '\\master_file.txt'
 CROSS_REF_FILE_NAMES = [
-        LOCAL_PATH + '\\kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT' + \
                       '_SFR_NSA_correctVflag.txt',
-        LOCAL_PATH + '\\updated_vflag_data_files' + \
-                     '\\vflag_not_classified_RECLASS.txt',
-        LOCAL_PATH + '\\updated_vflag_data_files' + \
-                     '\\vflag_not_found_RECLASS.txt',
-        LOCAL_PATH + '\\updated_vflag_data_files' + \
-                     '\\void_reclassification_RECLASS.txt',
-        LOCAL_PATH + '\\updated_vflag_data_files' + \
-                     '\\wall_reclassification_RECLASS.txt']
 
 TRY_N = 100000      # number of times to try line of best fit within
                     #    scipy.optimize.curve_fit
@@ -80,10 +67,8 @@ gal_stat_files = []
 for data_release in DATA_RELEASES:
     for file_name in FILE_IDS:
         rot_curve_files.append( ROT_CURVE_MASTER_FOLDER \
-                               + '\\' + data_release + '-' + file_name \
                                + '_rot_curve_data.txt')
         gal_stat_files.append( ROT_CURVE_MASTER_FOLDER \
-                               + '\\' + data_release + '-' + file_name \
                                + '_gal_stat_data.txt')
 #------------------------------------------------------------------------------
 #print("rot_curve_files:", rot_curve_files)

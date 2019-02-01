@@ -24,13 +24,37 @@ from rotation_curve_v2_1 import extract_data, \
                                 write_rot_curve, \
                                 write_master_file
 
+###############################################################################
+# 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
+#    working in bluehive). It is set to 'os.path.dirname(__file__)' when
+#    working on a local system.
+#
+# In addition, 'LOCAL_PATH' is aliased as 'SCRATCH_PATH' if
+#    'WORKING_IN_BLUEHIVE' is set to True. This is done because of how the data
+#    folders are kept separate from the python script files in bluehive.
+#
+# This block can be altered if desired, but the conditional below is tailored
+#    for use with bluehive.
+#------------------------------------------------------------------------------
 LOCAL_PATH = os.path.dirname(__file__)
-MANGA_FOLDER = LOCAL_PATH + '/manga_files'
-FITS_FILES_LOC = LOCAL_PATH + '/manga_files/*manga-*Pipe3D.cube.fits.gz'
-ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
+WORKING_IN_BLUEHIVE = True
+
 ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
 GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 
+if WORKING_IN_BLUEHIVE:
+    LOCAL_PATH = '/home/jsm171/'
+    SCRATCH_PATH = '/scratch/jsm171/'
+
+    IMAGE_DIR = SCRATCH_PATH + '/images'
+    MANGA_FOLDER = SCRATCH_PATH + '/manga_files'
+    ROT_CURVE_MASTER_FOLDER = SCRATCH_PATH + '/rot_curve_data_files'
+
+else:
+    IMAGE_DIR = LOCAL_PATH + '/images'
+    MANGA_FOLDER = LOCAL_PATH + '/manga_files'
+    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
+###############################################################################
 
 
 ###############################################################################
@@ -40,8 +64,7 @@ GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-files = glob.glob( FITS_FILES_LOC)
-#files = glob.glob( FITS_FILES_LOC)
+#files = glob.glob( MANGA_FOLDER + '/manga_files/*manga-*Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -49,14 +72,6 @@ files = glob.glob( FITS_FILES_LOC)
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#DATA_RELEASES = ['dr15']
-#FILE_IDS = ['8147-12702']
-#
-#files = []
-#for data_release in DATA_RELEASES:
-#    for file_name in FILE_IDS:
-#        files.append( MANGA_FOLDER \
-#        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
 DATA_RELEASES = ['dr14']
 FILE_IDS = ['10001-12703']
 

@@ -64,11 +64,10 @@ def extract_matched_data( MASTER_FILE_NAME, CROSS_REF_FILE_NAMES):
     """Extract the vflag parameter {0, 1, 2, -9} that tells
     if the galaxy in question does not lie in a void {0}, does lie in a void
     {1}, is cut off by the MaNGA footprint {2}, or not found in the MaNGA
-    footprint {-9}. Also extract the 'Mstar_NSA' parameter that gives
-    information about a galaxy's stellar mass.
+    footprint {-9}.
 
-    Originally, the files in this project were cross referenced to Prof. Kelly
-    Douglass' file via the link below. However, upon improvements to
+    ATTN: Originally, the files in this project were cross referenced to Prof.
+    Kelly Douglass' file via the link below. However, upon improvements to
     void_finder, new classifications wer given and the code has been updated.
 
     CROSS_REF_FILE_NAMES[0] .txt file obtained from:
@@ -104,7 +103,7 @@ def extract_matched_data( MASTER_FILE_NAME, CROSS_REF_FILE_NAMES):
 
 
     # ONEOINEQOH
-    mstar_NSA = ascii.read( LOCAL_PATH + '\\nsa_v0_1_2.fits')
+    mstar_NSA = ascii.read( LOCAL_PATH + '/nsa_v0_1_2.fits')
 
 
     # NOT FINISHED DO NOT USE
@@ -1522,12 +1521,14 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
             mass_ratio_wall.append( ratio)
             mass_ratio_wall_error.append( ratio_err)
 
+        elif vflag == 1:
             v_max_diff_void.append( v_max_diff)
             v_max_diff_void_error.append( v_max_diff_err)
             inclin_angle_void.append( inc_angle)
             mass_ratio_void.append( ratio)
             mass_ratio_void_error.append( ratio_err)
 
+        elif vflag == 2 or vflag == -9:
             v_max_diff_other.append( v_max_diff)
             v_max_diff_other_error.append( v_max_diff_err)
             inclin_angle_other.append( inc_angle)
@@ -1784,10 +1785,12 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             pos_chi_square_rot_wall.append( pos_chi_square)
             neg_chi_square_rot_wall.append( neg_chi_square)
 
+        elif vflag == 1:
             avg_chi_square_rot_void.append( chi_square)
             pos_chi_square_rot_void.append( pos_chi_square)
             neg_chi_square_rot_void.append( neg_chi_square)
 
+        elif vflag == 2 or vflag == -9:
             avg_chi_square_rot_other.append( chi_square)
             pos_chi_square_rot_other.append( pos_chi_square)
             neg_chi_square_rot_other.append( neg_chi_square)

@@ -36,11 +36,7 @@ from rotation_curve_v2_1 import extract_data, \
 # This block can be altered if desired, but the conditional below is tailored
 #    for use with bluehive.
 #------------------------------------------------------------------------------
-LOCAL_PATH = os.path.dirname(__file__)
 WORKING_IN_BLUEHIVE = True
-
-ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
-GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 
 if WORKING_IN_BLUEHIVE:
     LOCAL_PATH = '/home/jsm171/'
@@ -100,7 +96,6 @@ for data_release in DATA_RELEASES:
 # Note: The NSA RA and DEC are passed to a SkyCoord object to better match
 #       galaxies to the NSA catalog index.
 #------------------------------------------------------------------------------
-nsa_catalog = fits.open(r'nsa_v0_1_2.fits')
 
 nsa_ra_all = nsa_catalog[1].data['RA']
 nsa_dec_all = nsa_catalog[1].data['DEC']
@@ -179,9 +174,6 @@ for file_name in files:
     nsa_gal_idx = match_to_NSA( gal_ra, gal_dec, catalog_coords)
     print(gal_ID, " MATCHED")
 
-#    nsa_plate = nsa_plate_all[ nsa_gal_idx]
-#    nsa_fiberID = nsa_fiberID_all[ nsa_gal_idx]
-#    nsa_mjd = nsa_mjd_all[ nsa_gal_idx]
     axes_ratio = nsa_axes_ratio_all[ nsa_gal_idx]
     phi_EofN_deg = nsa_phi_EofN_deg_all[ nsa_gal_idx] * u.degree
     zdist = nsa_zdist_all[ nsa_gal_idx]

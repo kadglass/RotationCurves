@@ -36,7 +36,7 @@ from rotation_curve_v2_1 import extract_data, \
 # This block can be altered if desired, but the conditional below is tailored
 #    for use with bluehive.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = False
+WORKING_IN_BLUEHIVE = True
 
 if WORKING_IN_BLUEHIVE:
     LOCAL_PATH = '/home/jsm171/'
@@ -65,7 +65,7 @@ GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-files = glob.glob( MANGA_FOLDER + '/manga_files/*manga-*Pipe3D.cube.fits.gz')
+files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -74,7 +74,7 @@ files = glob.glob( MANGA_FOLDER + '/manga_files/*manga-*Pipe3D.cube.fits.gz')
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 #DATA_RELEASES = ['dr14']
-#FILE_IDS = ['10001-12703']
+#FILE_IDS = ['7957-12701']
 #
 #files = []
 #for data_release in DATA_RELEASES:
@@ -213,7 +213,7 @@ for file_name in files:
     nsa_phi_master.append( phi_EofN_deg / u.degree)
     nsa_zdist_master.append( zdist)
     nsa_zdist_err_master.append( zdist_err)
-    nsa_mStar_master.append( mStar)
+    nsa_mStar_master.append( mStar / u.M_sun)
 
     nsa_ra_master.append( nsa_ra)
     nsa_dec_master.append( nsa_dec)

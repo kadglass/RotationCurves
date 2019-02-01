@@ -23,6 +23,7 @@ http://www.sdss.org/dr14/manga/manga-data/data-access/
 http://www.sdss.org/dr15/manga/manga-data/data-access/
 """
 import matplotlib.pyplot as plt
+import gc
 
 import math
 import numpy as np, numpy.ma as ma
@@ -331,39 +332,45 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/unmasked_v_band/" + gal_ID + \
                 "v_band_raw.png", format='eps')
 #    plt.show()
-    plt.close()
+    plt.cla()
+    plt.clf()
+    plt.close( vband_image)
+    gc.collect()
     #--------------------------------------------------------------------------
     # Plot H-alpha velocity field before systemic redshift
     #   subtraction. Galaxy velocities vary from file to file, so vmin and vmax
     #   will have to be manually adjusted for each galaxy before reshift
     #   subtraction.
     #
-#    vmin_bound = 0
-#    vmax_bound = np.max( Ha_vel)
-#    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
-#
-#    ha_vel_field_raw_fig = plt.figure()
-#    plt.title( gal_ID + r' H$\alpha$ Velocity Field (RAW)')
-#    plt.imshow( Ha_vel, cmap='bwr', origin='lower',
-#               vmin = vmin_bound, vmax = vmax_bound)
-#
-#    cbar = plt.colorbar( ticks = cbar_ticks)
-#    cbar.ax.tick_params( direction='in')
-#    cbar.set_label(r'$V_{ROT}$ [$km s^{-1}$]')
-#
-#    ax = ha_vel_field_raw_fig.add_subplot(111)
-#    plt.xticks( np.arange( 0, array_width, 10))
-#    plt.yticks( np.arange( 0, array_length, 10))
-#    plt.tick_params( axis='both', direction='in')
-#    ax.yaxis.set_ticks_position('both')
-#    ax.xaxis.set_ticks_position('both')
-#    plt.xlabel(r'$\Delta \alpha$ (arcsec)')
-#    plt.ylabel(r'$\Delta \delta$ (arcsec)')
-#
-#    plt.savefig( IMAGE_DIR + "/unmasked_Ha_vel/" + gal_ID + \
-#                "Ha_vel_raw.png", format='eps')
+    vmin_bound = 0
+    vmax_bound = np.max( Ha_vel)
+    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
+
+    ha_vel_field_raw_fig = plt.figure()
+    plt.title( gal_ID + r' H$\alpha$ Velocity Field (RAW)')
+    plt.imshow( Ha_vel, cmap='bwr', origin='lower',
+               vmin = vmin_bound, vmax = vmax_bound)
+
+    cbar = plt.colorbar( ticks = cbar_ticks)
+    cbar.ax.tick_params( direction='in')
+    cbar.set_label(r'$V_{ROT}$ [$km s^{-1}$]')
+
+    ax = ha_vel_field_raw_fig.add_subplot(111)
+    plt.xticks( np.arange( 0, array_width, 10))
+    plt.yticks( np.arange( 0, array_length, 10))
+    plt.tick_params( axis='both', direction='in')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    plt.xlabel(r'$\Delta \alpha$ (arcsec)')
+    plt.ylabel(r'$\Delta \delta$ (arcsec)')
+
+    plt.savefig( IMAGE_DIR + "/unmasked_Ha_vel/" + gal_ID + \
+                "Ha_vel_raw.png", format='eps')
 #    plt.show()
-#    plt.close()
+    plt.cla()
+    plt.clf()
+    plt.close( ha_vel_field_raw_fig)
+    gc.collect()
     ###########################################################################
 
 
@@ -391,8 +398,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     masked_Ha_vel -= sys_vel
     masked_Ha_vel /= np.sin( inclination_angle)
 
-    Ha_vel -= sys_vel
-    Ha_vel /= np.sin( inclination_angle)
+    Ha_vel[ ~masked_Ha_vel.mask] -= sys_vel
+    Ha_vel[ ~masked_Ha_vel.mask] /= np.sin( inclination_angle)
     ###########################################################################
 
 
@@ -415,6 +422,33 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         unmasked_data = False
         global_max = 0.1
         global_min = -0.1
+    ###########################################################################
+
+
+    ###########################################################################
+    # Initialization code to draw the elliptical annuli and to normalize the
+    #    2D-arrays for the max and min velocity so as to check for anomalous
+    #    data.
+    #--------------------------------------------------------------------------
+    phi_elip = math.radians( 90 - ( phi_EofN_deg / u.deg)) * u.rad
+
+    x_diff = X_COORD - x_center
+    y_diff = Y_COORD - y_center
+
+    ellipse = ( x_diff*np.cos( phi_elip) - y_diff*np.sin( phi_elip))**2 \
+            + ( x_diff*np.sin( phi_elip) + y_diff*np.cos( phi_elip))**2 \
+                  / ( axes_ratio)**2
+
+    vel_contour_plot = np.zeros(( len(X_RANGE), len(Y_RANGE)))
+    ###########################################################################
+
+
+    ###########################################################################
+    # Print the angle of rotation in the 2-D observational plane as taken from
+    #    matching data from the MaNGA catalog to the NSA catalog.
+    #--------------------------------------------------------------------------
+#    phi_deg = ( 90 - phi_EofN_deg / u.deg) * u.deg
+#    print("phi:", phi_deg)
     ###########################################################################
 
 
@@ -480,33 +514,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #        print("dist_to_galaxy_cm_err:", dist_to_galaxy_cm_err)
 #        print("pix_scale_factor:", pix_scale_factor)
 #        print("pix_scale_factor_err:", pix_scale_factor_err)
-        #######################################################################
-
-
-        #######################################################################
-        # Initialization code to draw the elliptical annuli and to normalize
-        #    the 2D-arrays for the max and min velocity so as to check for
-        #    anomalous data.
-        #----------------------------------------------------------------------
-        phi_elip = math.radians( 90 - ( phi_EofN_deg / u.deg)) * u.rad
-
-        x_diff = X_COORD - x_center
-        y_diff = Y_COORD - y_center
-
-        ellipse = ( x_diff*np.cos( phi_elip) - y_diff*np.sin( phi_elip))**2 \
-                + ( x_diff*np.sin( phi_elip) + y_diff*np.cos( phi_elip))**2 \
-                      / ( axes_ratio)**2
-
-        vel_contour_plot = np.zeros(( len(X_RANGE), len(Y_RANGE)))
-        #######################################################################
-
-
-        #######################################################################
-        # Print the angle of rotation in the 2-D observational plane as taken
-        #    from matching data from the MaNGA catalog to the NSA catalog.
-        #----------------------------------------------------------------------
-#        phi_deg = ( 90 - phi_EofN_deg / u.deg) * u.deg
-#        print("phi:", phi_deg)
         #######################################################################
 
 
@@ -1027,7 +1034,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/masked_Ha_vel/" + gal_ID + \
                 "Ha_vel_field.png", format='eps')
 #    plt.show()
-    plt.close()
+    plt.cla()
+    plt.clf()
+    plt.close( ha_vel_field_fig)
+    gc.collect()
     #--------------------------------------------------------------------------
     # Ha velocity field collected though all iterations of the loop.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
@@ -1057,7 +1067,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/collected_velocity_fields/" + gal_ID + \
                 "_collected_vel_field.png", format='eps')
 #    plt.show()
-    plt.close()
+    plt.cla()
+    plt.clf()
+    plt.close( vel_field_collected_fig)
+    gc.collect()
     #--------------------------------------------------------------------------
     # Rotational velocity as a function of deprojected radius.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
@@ -1079,7 +1092,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/rot_curves/" + gal_ID + "_rot_curve.png",
                 format='eps')
 #    plt.show()
-    plt.close()
+    plt.cla()
+    plt.clf()
+    plt.close( rot_curve_fig)
+    gc.collect()
     #--------------------------------------------------------------------------
     # Mass interior to a radius.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
@@ -1099,7 +1115,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/mass_curves/" + gal_ID + "_mass_curve.png",
                 format='eps')
 #    plt.show()
-    plt.close()
+    plt.cla()
+    plt.clf()
+    plt.close( mass_curve_fig)
+    gc.collect()
     ###########################################################################
 
 
@@ -1112,7 +1131,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     vmax_bound = -1 * min( global_max, global_min)
     vmin_bound = min( global_max, global_min)
-    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 12)
+    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 13)
 
     panel_fig, (( Ha_vel_panel, mHa_vel_panel),
                 ( contour_panel, rot_curve_panel)) = plt.subplots( 2, 2)
@@ -1177,8 +1196,11 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + \
                 "diagnostic_panel.png",
                 format='eps')
-    plt.show()
-    plt.close()
+#    plt.show()
+    plt.cla()
+    plt.clf()
+    plt.close( panel_fig)
+    gc.collect()
     ###########################################################################
 
     return data_table, gal_stats

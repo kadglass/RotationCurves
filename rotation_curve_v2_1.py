@@ -157,7 +157,8 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
 
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
-                   axes_ratio, phi_EofN_deg, zdist, gal_ID, IMAGE_DIR):
+                   axes_ratio, phi_EofN_deg, zdist, zdist_err, gal_ID,
+                   IMAGE_DIR):
     """Calculates the rotation curve (rotational velocity as a funciton of
     deprojected distance) of the galaxy in question. In addition a galaxy
     statistics file is created containing information about the galaxy's
@@ -197,6 +198,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         zdist:
             float representation of a measure of the distance to the galaxy in
             question as calculated by the shift in H-alpha flux
+
+        zdist_err:
+            float representation of the error in zdist measurement
 
         gal_ID:
             a string representation of the galaxy in question in the
@@ -324,6 +328,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel(r'$\Delta \alpha$ (arcsec)')
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
+    plt.savefig( IMAGE_DIR + "/unmasked_v_band/" + gal_ID + \
+                "v_band_raw.png", format='eps')
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -354,6 +360,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    plt.xlabel(r'$\Delta \alpha$ (arcsec)')
 #    plt.ylabel(r'$\Delta \delta$ (arcsec)')
 #
+#    plt.savefig( IMAGE_DIR + "/unmasked_Ha_vel/" + gal_ID + \
+#                "Ha_vel_raw.png", format='eps')
 #    plt.show()
 #    plt.close()
     ###########################################################################
@@ -457,11 +465,21 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         #    kiloparsecs and centimeters.
         #----------------------------------------------------------------------
         dist_to_galaxy_kpc = ( zdist * const.c.to('km/s') / H_0).to('kpc')
+        dist_to_galaxy_kpc_err = np.sqrt( (const.c.to('km/s') / H_0)**2 \
+                                         * zdist_err**2 )
         dist_to_galaxy_cm = dist_to_galaxy_kpc.to( u.cgs.cm)
-        pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_FIBER_DIAMETER)
+        dist_to_galaxy_cm_err = dist_to_galaxy_kpc_err.to( u.cgs.cm)
 
-#        print("dist_to_galaxy_cm:", dist_to_galaxy_cm)
+        pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_FIBER_DIAMETER)
+        pix_scale_factor_err = np.sqrt( ( np.tan( MANGA_FIBER_DIAMETER))**2 \
+                                       * dist_to_galaxy_kpc_err)
+
 #        print("dist_to_galaxy_kpc:", dist_to_galaxy_kpc)
+#        print("dist_to_galaxy_kpc_err:", dist_to_galaxy_kpc_err)
+#        print("dist_to_galaxy_cm:", dist_to_galaxy_cm)
+#        print("dist_to_galaxy_cm_err:", dist_to_galaxy_cm_err)
+#        print("pix_scale_factor:", pix_scale_factor)
+#        print("pix_scale_factor_err:", pix_scale_factor_err)
         #######################################################################
 
 
@@ -579,7 +597,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         valid_data = True
         while valid_data:
             deproj_dist_kpc = R * pix_scale_factor
+            deproj_dist_kpc_err = np.sqrt( R**2 * pix_scale_factor_err**2)
             deproj_dist_m = deproj_dist_kpc.to('m')
+            deproj_dist_m_err = deproj_dist_kpc.to('m')
             ###################################################################
             # Define an eliptical annulus and check if either of the edge
             #    points are within that annulus.
@@ -629,7 +649,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                 max_vel_at_annulus_err = np.nan * ( u.km / u.s)
                 min_vel_at_annulus = np.nan * ( u.km / u.s)
                 min_vel_at_annulus_err = np.nan * ( u.km / u.s)
-                print("ALL DATA POINTS AT THIS ANNULUS ARE MASKED!!!")
+                print("ALL DATA POINTS AT R=" + R + " ANNULUS ARE MASKED!!!")
 
             else:
                 # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
@@ -733,7 +753,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                 * ( const.G.uncertainty * const.G.unit)**2 \
               + ( const.G * ( sMass_interior / u.M_sun)) \
                 / ( deproj_dist_m * const.M_sun) \
-                * ( const.M_sun.uncertainty * const.M_sun.unit)**2)
+                * ( const.M_sun.uncertainty * const.M_sun.unit)**2 \
+              + ( const.G * ( sMass_interior / u.M_sun) * const.M_sun) \
+                / ( deproj_dist_m**3) \
+                * ( deproj_dist_m_err)**2 )
             sVel_rot_err = sVel_rot_err.to('km/s')
             ###################################################################
 
@@ -1001,6 +1024,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel(r'$\Delta \alpha$ (arcsec)')
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
+    plt.savefig( IMAGE_DIR + "/masked_Ha_vel/" + gal_ID + \
+                "Ha_vel_field.png", format='eps')
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -1029,6 +1054,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel(r'$\Delta \alpha$ (arcsec)')
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
+    plt.savefig( IMAGE_DIR + "/collected_velocity_fields/" + gal_ID + \
+                "_collected_vel_field.png", format='eps')
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -1049,6 +1076,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel('Deprojected Radius [kpc]')
     plt.ylabel(r'Rotational Velocity [$km s^{-1}$]')
 
+    plt.savefig( IMAGE_DIR + "/rot_curves/" + gal_ID + "_rot_curve.png",
+                format='eps')
 #    plt.show()
     plt.close()
     #--------------------------------------------------------------------------
@@ -1067,6 +1096,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.xlabel('Deprojected Radius [kpc]')
     plt.ylabel(r'Mass Interior [$M_{\odot}$]')
 
+    plt.savefig( IMAGE_DIR + "/mass_curves/" + gal_ID + "_mass_curve.png",
+                format='eps')
 #    plt.show()
     plt.close()
     ###########################################################################
@@ -1079,7 +1110,75 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #    in the algorithm, and the averaged max and min rotation curves
     #    alongside the stellar mass rotation curve,
     #--------------------------------------------------------------------------
+    vmax_bound = -1 * min( global_max, global_min)
+    vmin_bound = min( global_max, global_min)
+    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 12)
 
+    panel_fig, (( Ha_vel_panel, mHa_vel_panel),
+                ( contour_panel, rot_curve_panel)) = plt.subplots( 2, 2)
+    panel_fig.set_figheight( 10)
+    panel_fig.set_figwidth( 10)
+    plt.suptitle( gal_ID + " Diagnostic Panel", y=1.05, fontsize=16)
+
+    Ha_vel_im = Ha_vel_panel.imshow( Ha_vel, origin='lower',
+                      vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
+    Ha_vel_panel.set_title(r'Unmasked H$\alpha$ Velocity Field')
+    Ha_cbar = plt.colorbar( Ha_vel_im, ax=Ha_vel_panel, ticks = cbar_ticks)
+    Ha_cbar.ax.tick_params( direction='in')
+    Ha_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
+    Ha_vel_panel.set_xlabel(r'$\Delta \alpha$ (arcsec)')
+    Ha_vel_panel.set_ylabel(r'$\Delta \delta$ (arcsec)')
+    Ha_vel_panel.set_xticks( np.arange( 0, array_width, 10))
+    Ha_vel_panel.set_yticks( np.arange( 0, array_length, 10))
+    Ha_vel_panel.xaxis.set_ticks_position('both')
+    Ha_vel_panel.yaxis.set_ticks_position('both')
+    Ha_vel_panel.tick_params( axis='both', direction='in')
+
+    mHa_vel_im = mHa_vel_panel.imshow( masked_Ha_vel, origin='lower',
+                      vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
+    mHa_vel_panel.set_title(r'Masked H$\alpha$ Velocity Field')
+    mHa_cbar = plt.colorbar( mHa_vel_im, ax=mHa_vel_panel, ticks = cbar_ticks)
+    mHa_cbar.ax.tick_params( direction='in')
+    mHa_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
+    mHa_vel_panel.set_xlabel(r'$\Delta \alpha$ (arcsec)')
+    mHa_vel_panel.set_ylabel(r'$\Delta \delta$ (arcsec)')
+    mHa_vel_panel.set_xticks( np.arange( 0, array_width, 10))
+    mHa_vel_panel.set_yticks( np.arange( 0, array_length, 10))
+    mHa_vel_panel.xaxis.set_ticks_position('both')
+    mHa_vel_panel.yaxis.set_ticks_position('both')
+    mHa_vel_panel.tick_params( axis='both', direction='in')
+
+    contour_im = contour_panel.imshow( vel_contour_plot, origin='lower',
+                      vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
+    contour_panel.set_title(r'H$\alpha$ Velocity Field Collected')
+    contour_cbar = plt.colorbar( contour_im, ax=contour_panel, ticks = cbar_ticks)
+    contour_cbar.ax.tick_params( direction='in')
+    contour_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
+    contour_panel.set_xlabel(r'$\Delta \alpha$ (arcsec)')
+    contour_panel.set_ylabel(r'$\Delta \delta$ (arcsec)')
+    contour_panel.set_xticks( np.arange( 0, array_width, 10))
+    contour_panel.set_yticks( np.arange( 0, array_length, 10))
+    contour_panel.xaxis.set_ticks_position('both')
+    contour_panel.yaxis.set_ticks_position('both')
+    contour_panel.tick_params( axis='both', direction='in')
+
+    rot_curve_panel.plot( rot_curve_dist, rot_curve_vel_avg,
+                         'gp', markersize=7)
+    rot_curve_panel.set_title('Rotation Curves')
+    rot_curve_panel.plot( rot_curve_dist, sVel_rot_curve, 'cD', markersize=4)
+    rot_curve_panel.set_xlabel('Deprojected Radius [kpc]')
+    rot_curve_panel.set_ylabel(r'Rotational Velocity [$km s^{-1}$]')
+    rot_curve_panel.xaxis.set_ticks_position('both')
+    rot_curve_panel.yaxis.set_ticks_position('both')
+    rot_curve_panel.tick_params( axis='both', direction='in')
+
+    panel_fig.tight_layout()
+
+    plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + \
+                "diagnostic_panel.png",
+                format='eps')
+    plt.show()
+    plt.close()
     ###########################################################################
 
     return data_table, gal_stats
@@ -1140,9 +1239,9 @@ def write_rot_curve( data_table, gal_stats,
 def write_master_file( manga_plate_master, manga_fiberID_master,
                       manga_data_release_master,
                       nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-                      nsa_gal_idx_master,
+                      nsa_gal_idx_master, nsa_ra_master, nsa_dec_master,
                       nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
-                      nsa_ra_master, nsa_dec_master,
+                      nsa_mStar_master,
                       LOCAL_PATH):
     """Create the master file containing identifying information about each
     galaxy. The output file of this function determines the structure of the
@@ -1174,6 +1273,14 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
             master list containing the matched index for each galaxy as
             calculated through the 'match' function above
 
+        nsa_ra_master:
+            master list containing all of the righthand ascension values for
+            galaxies in the MaNGA survey
+
+        nsa_dec_master:
+            master list containing all of the declination values for galaxies
+            in the MaNGA survey
+
         nsa_axes_ratio_master:
             master list containing all the axes ratios used in extracting the
             rotation curve
@@ -1186,13 +1293,9 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
             master list containing all the redshift distances of the galaxies
             used in extracting the rotation curve
 
-        nsa_ra_master:
-            master list containing all of the righthand ascension values for
-            galaxies in the MaNGA survey
-
-        nsa_dec_master:
-            master list containing all of the declination values for galaxies
-            in the MaNGA survey
+        nsa_mStar_master:
+            master list containing all the stellar mass estimates of the
+            galaxies matched to the NSA catalog
 
         LOCAL_PATH:
             the directory path of the main script file
@@ -1208,11 +1311,12 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     nsa_fiberID_col = Column( nsa_fiberID_master)
     nsa_mjd_col = Column( nsa_mjd_master)
     nsa_gal_idx_col = Column( nsa_gal_idx_master)
+    nsa_ra_col = Column( nsa_ra_master)
+    nsa_dec_col = Column( nsa_dec_master)
     nsa_axes_ratio_col = Column( nsa_axes_ratio_master)
     nsa_phi_col = Column( nsa_phi_master)
     nsa_zdist_col = Column( nsa_zdist_master)
-    nsa_ra_col = Column( nsa_ra_master)
-    nsa_dec_col = Column( nsa_dec_master)
+    nsa_mStar_col = Column( nsa_mStar_master)
     ###########################################################################
 
 
@@ -1226,11 +1330,12 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                             nsa_fiberID_col,
                             nsa_mjd_col,
                             nsa_gal_idx_col,
+                            nsa_ra_col * u.degree,
+                            nsa_dec_col * u.degree,
                             nsa_axes_ratio_col,
                             nsa_phi_col * u.degree,
                             nsa_zdist_col,
-                            nsa_ra_col * u.degree,
-                            nsa_dec_col * u.degree],
+                            nsa_mStar_col],
                    names = ['MaNGA_plate',
                             'MaNGA_fiberID',
                             'MaNGA_data_release',
@@ -1238,11 +1343,12 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                             'NSA_fiberID',
                             'NSA_MJD',
                             'NSA_index',
+                            'NSA_RA',
+                            'NSA_DEC',
                             'NSA_b/a',
                             'NSA_phi',
                             'NSA_zdist',
-                            'NSA_RA',
-                            'NSA_DEC'])
+                            'NSA_mStar'])
     ###########################################################################
 
 

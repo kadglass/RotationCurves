@@ -36,7 +36,7 @@ from rotation_curve_v2_1 import extract_data, \
 # This block can be altered if desired, but the conditional below is tailored
 #    for use with bluehive.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = True
+WORKING_IN_BLUEHIVE = False
 
 if WORKING_IN_BLUEHIVE:
     LOCAL_PATH = '/home/jsm171/'
@@ -47,9 +47,14 @@ if WORKING_IN_BLUEHIVE:
     ROT_CURVE_MASTER_FOLDER = SCRATCH_PATH + '/rot_curve_data_files'
 
 else:
+    LOCAL_PATH = os.path.dirname(__file__)
+
     IMAGE_DIR = LOCAL_PATH + '/images'
     MANGA_FOLDER = LOCAL_PATH + '/manga_files'
     ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
+
+ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
+GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 ###############################################################################
 
 
@@ -60,7 +65,7 @@ else:
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-#files = glob.glob( MANGA_FOLDER + '/manga_files/*manga-*Pipe3D.cube.fits.gz')
+files = glob.glob( MANGA_FOLDER + '/manga_files/*manga-*Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -68,14 +73,14 @@ else:
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-DATA_RELEASES = ['dr14']
-FILE_IDS = ['10001-12703']
-
-files = []
-for data_release in DATA_RELEASES:
-    for file_name in FILE_IDS:
-        files.append( MANGA_FOLDER \
-        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
+#DATA_RELEASES = ['dr14']
+#FILE_IDS = ['10001-12703']
+#
+#files = []
+#for data_release in DATA_RELEASES:
+#    for file_name in FILE_IDS:
+#        files.append( MANGA_FOLDER \
+#        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -96,15 +101,23 @@ for data_release in DATA_RELEASES:
 # Note: The NSA RA and DEC are passed to a SkyCoord object to better match
 #       galaxies to the NSA catalog index.
 #------------------------------------------------------------------------------
+if WORKING_IN_BLUEHIVE:
+    nsa_catalog = fits.open( SCRATCH_PATH + '/nsa_v0_1_2.fits')
+else:
+    nsa_catalog = fits.open( LOCAL_PATH + '/nsa_v0_1_2.fits')
 
-nsa_ra_all = nsa_catalog[1].data['RA']
-nsa_dec_all = nsa_catalog[1].data['DEC']
 nsa_axes_ratio_all = nsa_catalog[1].data['SERSIC_BA']
 nsa_phi_EofN_deg_all = nsa_catalog[1].data['SERSIC_PHI']
 nsa_zdist_all = nsa_catalog[1].data['ZDIST']
-#nsa_plate_all = nsa_catalog[1].data['PLATE']
-#nsa_fiberID_all = nsa_catalog[1].data['FIBERID']
-#nsa_mjd_all = nsa_catalog[1].data['MJD']
+nsa_zdist_all_err = nsa_catalog[1].data['ZDIST_ERR']
+nsa_mStar_all = nsa_catalog[1].data['MASS']
+
+nsa_ra_all = nsa_catalog[1].data['RA']
+nsa_dec_all = nsa_catalog[1].data['DEC']
+nsa_plate_all = nsa_catalog[1].data['PLATE']
+nsa_fiberID_all = nsa_catalog[1].data['FIBERID']
+nsa_mjd_all = nsa_catalog[1].data['MJD']
+nsaID_all = nsa_catalog[1].data['NSAID']
 
 nsa_catalog.close()
 
@@ -116,18 +129,22 @@ catalog_coords = SkyCoord( ra = nsa_ra_all*u.degree,
 ###############################################################################
 # # Initialize the master arrays that create the structure of the master file.
 #------------------------------------------------------------------------------
-#manga_data_release_master = []
-#manga_plate_master = []
-#manga_fiberID_master = []
-#nsa_plate_master = []
-#nsa_fiberID_master = []
-#nsa_mjd_master = []
-#nsa_gal_idx_master = []
-#nsa_axes_ratio_master = []
-#nsa_phi_master = []
-#nsa_zdist_master = []
-#nsa_ra_master = []
-#nsa_dec_master = []
+manga_data_release_master = []
+manga_plate_master = []
+manga_fiberID_master = []
+
+nsa_axes_ratio_master = []
+nsa_phi_master = []
+nsa_zdist_master = []
+nsa_zdist_err_master = []
+nsa_mStar_master = []
+
+nsa_ra_master = []
+nsa_dec_master = []
+nsa_plate_master = []
+nsa_fiberID_master = []
+nsa_mjd_master = []
+nsaID_master = []
 ###############################################################################
 
 
@@ -161,9 +178,9 @@ for file_name in files:
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
-#    manga_data_release_master.append( file_id[ 0: 4])
-#    manga_plate_master.append( manga_plate)
-#    manga_fiberID_master.append( manga_fiberID)
+    manga_data_release_master.append( gal_ID[ 0: 4])
+    manga_plate_master.append( manga_plate)
+    manga_fiberID_master.append( manga_fiberID)
     ###########################################################################
 
 
@@ -177,23 +194,33 @@ for file_name in files:
     axes_ratio = nsa_axes_ratio_all[ nsa_gal_idx]
     phi_EofN_deg = nsa_phi_EofN_deg_all[ nsa_gal_idx] * u.degree
     zdist = nsa_zdist_all[ nsa_gal_idx]
-#    nsa_ra = nsa_ra_all[ nsa_gal_idx]
-#    nsa_dec = nsa_dec_all[ nsa_gal_idx]
+    zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
+    mStar = nsa_mStar_all[ nsa_gal_idx] * u.M_sun
+
+    nsa_ra = nsa_ra_all[ nsa_gal_idx]
+    nsa_dec = nsa_dec_all[ nsa_gal_idx]
+    nsa_plate = nsa_plate_all[ nsa_gal_idx]
+    nsa_fiberID = nsa_fiberID_all[ nsa_gal_idx]
+    nsa_mjd = nsa_mjd_all[ nsa_gal_idx]
+    nsaID = nsaID_all[ nsa_gal_idx]
     ###########################################################################
 
 
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
-#    nsa_gal_idx_master.append( nsa_gal_idx)
-#    nsa_plate_master.append( nsa_plate)
-#    nsa_fiberID_master.append( nsa_fiberID)
-#    nsa_mjd_master.append( nsa_mjd)
-#    nsa_axes_ratio_master.append( axes_ratio)
-#    nsa_phi_master.append( phi_EofN_deg / u.degree)
-#    nsa_zdist_master.append( zdist)
-#    nsa_ra_master.append( nsa_ra)
-#    nsa_dec_master.append( nsa_dec)
+    nsa_axes_ratio_master.append( axes_ratio)
+    nsa_phi_master.append( phi_EofN_deg / u.degree)
+    nsa_zdist_master.append( zdist)
+    nsa_zdist_err_master.append( zdist_err)
+    nsa_mStar_master.append( mStar)
+
+    nsa_ra_master.append( nsa_ra)
+    nsa_dec_master.append( nsa_dec)
+    nsa_plate_master.append( nsa_plate)
+    nsa_fiberID_master.append( nsa_fiberID)
+    nsa_mjd_master.append( nsa_mjd)
+    nsaID_master.append( nsaID)
     ###########################################################################
 
 
@@ -204,7 +231,7 @@ for file_name in files:
     rot_data_table, gal_stat_table = calc_rot_curve( Ha_vel, Ha_vel_error, \
                                        v_band, v_band_err, sMass_density, \
                                        axes_ratio, phi_EofN_deg, zdist, \
-                                       gal_ID, IMAGE_DIR)
+                                       zdist_err, gal_ID, IMAGE_DIR)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
 
@@ -216,11 +243,11 @@ for file_name in files:
     #            folder 'rot_curve_data_files'. It also saves the file with the
     #            default extension '_rot_curve_data'.
     #--------------------------------------------------------------------------
-#    write_rot_curve( rot_data_table, gal_stat_table,
-#                    gal_ID,
-#                    ROT_CURVE_MASTER_FOLDER,
-#                    ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR)
-#    print(gal_ID, " WRITTEN")
+    write_rot_curve( rot_data_table, gal_stat_table,
+                    gal_ID,
+                    ROT_CURVE_MASTER_FOLDER,
+                    ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR)
+    print(gal_ID, " WRITTEN")
     ###########################################################################
 
     print("\n")
@@ -231,14 +258,14 @@ for file_name in files:
 # Build master file that contains identifying information for each galaxy
 #   as well as scientific information as taken from the NSA catalog.
 #------------------------------------------------------------------------------
-#write_master_file( manga_plate_master, manga_fiberID_master,
-#                  manga_data_release_master,
-#                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-#                  nsa_gal_idx_master,
-#                  nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
-#                  nsa_ra_master, nsa_dec_master,
-#                  LOCAL_PATH)
-#print("MASTER FILE WRITTEN")
+write_master_file( manga_plate_master, manga_fiberID_master,
+                  manga_data_release_master,
+                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
+                  nsaID_master, nsa_ra_master, nsa_dec_master,
+                  nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
+                  nsa_mStar_master,
+                  LOCAL_PATH)
+print("MASTER FILE WRITTEN")
 ###############################################################################
 
 

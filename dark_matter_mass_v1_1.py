@@ -1522,14 +1522,12 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
             mass_ratio_wall.append( ratio)
             mass_ratio_wall_error.append( ratio_err)
 
-        if vflag == 1:
             v_max_diff_void.append( v_max_diff)
             v_max_diff_void_error.append( v_max_diff_err)
             inclin_angle_void.append( inc_angle)
             mass_ratio_void.append( ratio)
             mass_ratio_void_error.append( ratio_err)
 
-        if vflag == 2 or vflag == -9:
             v_max_diff_other.append( v_max_diff)
             v_max_diff_other_error.append( v_max_diff_err)
             inclin_angle_other.append( inc_angle)
@@ -1786,12 +1784,10 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             pos_chi_square_rot_wall.append( pos_chi_square)
             neg_chi_square_rot_wall.append( neg_chi_square)
 
-        if vflag == 1:
             avg_chi_square_rot_void.append( chi_square)
             pos_chi_square_rot_void.append( pos_chi_square)
             neg_chi_square_rot_void.append( neg_chi_square)
 
-        if vflag == 2 or vflag == -9:
             avg_chi_square_rot_other.append( chi_square)
             pos_chi_square_rot_other.append( pos_chi_square)
             neg_chi_square_rot_other.append( neg_chi_square)

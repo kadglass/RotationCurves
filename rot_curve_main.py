@@ -6,7 +6,6 @@ Created on Mon Jul 09 2018
 
 Main script file for 'rotation_curve_vX_X.'
 """
-
 import datetime
 START = datetime.datetime.now()
 
@@ -39,6 +38,14 @@ from rotation_curve_v2_1 import extract_data, \
 WORKING_IN_BLUEHIVE = True
 
 if WORKING_IN_BLUEHIVE:
+    ###########################################################################
+    # The import statments below allow the BlueHive version of this script to
+    #    execute.
+    #--------------------------------------------------------------------------
+    import matplotlib
+    matplotlib.use('Agg')
+    ###########################################################################
+
     LOCAL_PATH = '/home/jsm171'
     SCRATCH_PATH = '/scratch/jsm171'
 

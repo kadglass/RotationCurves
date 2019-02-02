@@ -22,9 +22,6 @@ links:
 http://www.sdss.org/dr14/manga/manga-data/data-access/
 http://www.sdss.org/dr15/manga/manga-data/data-access/
 """
-import matplotlib
-matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 import gc
 
@@ -333,7 +330,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
     plt.savefig( IMAGE_DIR + "/unmasked_v_band/" + gal_ID + \
-                "v_band_raw.png", format='eps')
+                "_v_band_raw.png", format='eps')
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -368,7 +365,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
     plt.savefig( IMAGE_DIR + "/unmasked_Ha_vel/" + gal_ID + \
-                "Ha_vel_raw.png", format='eps')
+                "_Ha_vel_raw.png", format='eps')
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1035,7 +1032,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
     plt.savefig( IMAGE_DIR + "/masked_Ha_vel/" + gal_ID + \
-                "Ha_vel_field.png", format='eps')
+                "_Ha_vel_field.png", format='eps')
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1198,7 +1195,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     panel_fig.tight_layout()
 
     plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + \
-                "diagnostic_panel.png",
+                "_diagnostic_panel.png",
                 format='eps')
 #    plt.show()
     plt.cla()

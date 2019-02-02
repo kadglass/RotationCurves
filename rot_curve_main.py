@@ -75,7 +75,7 @@ from rotation_curve_v2_1 import extract_data, \
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-#files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
+files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -83,14 +83,14 @@ from rotation_curve_v2_1 import extract_data, \
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-DATA_RELEASES = ['dr14']
-FILE_IDS = ['10001-12703']
-
-files = []
-for data_release in DATA_RELEASES:
-    for file_name in FILE_IDS:
-        files.append( MANGA_FOLDER \
-        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
+#DATA_RELEASES = ['dr14']
+#FILE_IDS = ['10001-12703']
+#
+#files = []
+#for data_release in DATA_RELEASES:
+#    for file_name in FILE_IDS:
+#        files.append( MANGA_FOLDER \
+#        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
 ###############################################################################
 
 

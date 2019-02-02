@@ -65,7 +65,7 @@ GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
+#files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -73,14 +73,14 @@ files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#DATA_RELEASES = ['dr14']
-#FILE_IDS = ['7957-12701']
-#
-#files = []
-#for data_release in DATA_RELEASES:
-#    for file_name in FILE_IDS:
-#        files.append( MANGA_FOLDER \
-#        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
+DATA_RELEASES = ['dr14']
+FILE_IDS = ['10001-12703']
+
+files = []
+for data_release in DATA_RELEASES:
+    for file_name in FILE_IDS:
+        files.append( MANGA_FOLDER \
+        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -258,14 +258,14 @@ for file_name in files:
 # Build master file that contains identifying information for each galaxy
 #   as well as scientific information as taken from the NSA catalog.
 #------------------------------------------------------------------------------
-write_master_file( manga_plate_master, manga_fiberID_master,
-                  manga_data_release_master,
-                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-                  nsaID_master, nsa_ra_master, nsa_dec_master,
-                  nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
-                  nsa_mStar_master,
-                  LOCAL_PATH)
-print("MASTER FILE WRITTEN")
+#write_master_file( manga_plate_master, manga_fiberID_master,
+#                  manga_data_release_master,
+#                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
+#                  nsaID_master, nsa_ra_master, nsa_dec_master,
+#                  nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
+#                  nsa_mStar_master,
+#                  LOCAL_PATH)
+#print("MASTER FILE WRITTEN")
 ###############################################################################
 
 

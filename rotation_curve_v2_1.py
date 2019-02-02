@@ -253,7 +253,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     # Show the created mask where yellow points represent masked data points.
     #--------------------------------------------------------------------------
-#    plt.figure()
+#    plt.figure('mask')
 #    plt.imshow( mask_data)
 #    plt.show()
 #    plt.close()
@@ -312,7 +312,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     # Plot visual-band image.
     #
-    vband_image = plt.figure()
+    vband_image = plt.figure('vband_image')
     plt.title( gal_ID + ' Visual Band Image (RAW)')
     plt.imshow( v_band, origin='lower')
 
@@ -346,7 +346,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     vmax_bound = np.max( Ha_vel)
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
 
-    ha_vel_field_raw_fig = plt.figure()
+    Ha_vel_field_raw_fig = plt.figure('Ha_vel_field_raw_fig')
     plt.title( gal_ID + r' H$\alpha$ Velocity Field (RAW)')
     plt.imshow( Ha_vel, cmap='bwr', origin='lower',
                vmin = vmin_bound, vmax = vmax_bound)
@@ -355,7 +355,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     cbar.ax.tick_params( direction='in')
     cbar.set_label(r'$V_{ROT}$ [$km s^{-1}$]')
 
-    ax = ha_vel_field_raw_fig.add_subplot(111)
+    ax = Ha_vel_field_raw_fig.add_subplot(111)
     plt.xticks( np.arange( 0, array_width, 10))
     plt.yticks( np.arange( 0, array_length, 10))
     plt.tick_params( axis='both', direction='in')
@@ -369,7 +369,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    plt.show()
     plt.cla()
     plt.clf()
-    plt.close( ha_vel_field_raw_fig)
+    plt.close( Ha_vel_field_raw_fig)
     gc.collect()
     ###########################################################################
 
@@ -881,7 +881,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             #------------------------------------------------------------------
             # Plot the pixels at the current annulus.
             #
-#            current_pix_fig = plt.figure()
+#            current_pix_fig = plt.figure('current_pix_fig')
 #            plt.title('Pixels at ' + str(R - dR) + ' < R < ' + str(R))
 #            plt.imshow( pix_between_annuli, origin='lower')
 #
@@ -1013,7 +1013,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     vmin_bound = min( global_max, global_min)
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
 
-    ha_vel_field_fig = plt.figure()
+    Ha_vel_field_fig = plt.figure('Ha_vel_field_fig')
     plt.title( gal_ID + r' H$\alpha$ Velocity Field')
     plt.imshow( masked_Ha_vel, cmap='bwr', origin='lower',
                vmin = vmin_bound, vmax = vmax_bound)
@@ -1022,7 +1022,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     cbar.ax.tick_params( direction='in')
     cbar.set_label(r'$V_{ROT}$ [$km s^{-1}$]')
 
-    ax = ha_vel_field_fig.add_subplot(111)
+    ax = Ha_vel_field_fig.add_subplot(111)
     plt.xticks( np.arange( 0, array_width, 10))
     plt.yticks( np.arange( 0, array_length, 10))
     plt.tick_params( axis='both', direction='in')
@@ -1036,7 +1036,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    plt.show()
     plt.cla()
     plt.clf()
-    plt.close( ha_vel_field_fig)
+    plt.close( Ha_vel_field_fig)
     gc.collect()
     #--------------------------------------------------------------------------
     # Ha velocity field collected though all iterations of the loop.
@@ -1045,7 +1045,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     vmin_bound = min( global_max, global_min)
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 12)
 
-    vel_field_collected_fig = plt.figure( figsize=(6, 6))
+    vel_field_collected_fig = plt.figure('vel_field_collected_fig',
+                                         figsize=(6, 6))
     plt.title( gal_ID + " " + r'H$\alpha$ Velocity Field Collected',
               fontsize=12)
     plt.imshow( vel_contour_plot, origin='lower',
@@ -1074,7 +1075,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     # Rotational velocity as a function of deprojected radius.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    rot_curve_fig = plt.figure( figsize=(5, 5))
+    rot_curve_fig = plt.figure('rot_curve_fig', figsize=(5, 5))
     plt.title( gal_ID + ' Rotation Curves')
     plt.plot( rot_curve_dist, rot_curve_max_vel, 'rs', markersize=5)
     plt.plot( rot_curve_dist, np.abs( rot_curve_min_vel), 'b^', markersize=5)
@@ -1099,7 +1100,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     # Mass interior to a radius.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    mass_curve_fig = plt.figure( figsize=(5, 5))
+    mass_curve_fig = plt.figure('mass_curve_fig', figsize=(5, 5))
     plt.title( gal_ID + ' Mass Curves')
     plt.plot( rot_curve_dist, totMass_interior_curve, 'gp', markersize=7)
     plt.plot( rot_curve_dist, sMass_interior_curve, 'cD', markersize=4)

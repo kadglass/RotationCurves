@@ -22,6 +22,9 @@ links:
 http://www.sdss.org/dr14/manga/manga-data/data-access/
 http://www.sdss.org/dr15/manga/manga-data/data-access/
 """
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import gc
 

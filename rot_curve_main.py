@@ -17,20 +17,17 @@ import astropy.units as u
 
 warnings.simplefilter('ignore', np.RankWarning)
 
-from rotation_curve_v2_1 import extract_data, \
-                                match_to_NSA, \
-                                calc_rot_curve, \
-                                write_rot_curve, \
-                                write_master_file
-
 ###############################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
 #    working in bluehive). It is set to 'os.path.dirname(__file__)' when
 #    working on a local system.
 #
-# In addition, 'LOCAL_PATH' is aliased as 'SCRATCH_PATH' if
+# In addition, 'LOCAL_PATH' is altered and 'SCRATCH_PATH' is added if
 #    'WORKING_IN_BLUEHIVE' is set to True. This is done because of how the data
-#    folders are kept separate from the python script files in bluehive.
+#    folders are kept separate from the python script files in bluehive. For
+#    BlueHive to run, images cannot be generated with $DISPLAY keys; therefore,
+#    'matplotlib' is imported and 'Agg' is used. This must be done before
+#    'matplotlib.pyplot' is imported.
 #
 # This block can be altered if desired, but the conditional below is tailored
 #    for use with bluehive.
@@ -38,13 +35,8 @@ from rotation_curve_v2_1 import extract_data, \
 WORKING_IN_BLUEHIVE = True
 
 if WORKING_IN_BLUEHIVE:
-    ###########################################################################
-    # The import statments below allow the BlueHive version of this script to
-    #    execute.
-    #--------------------------------------------------------------------------
     import matplotlib
     matplotlib.use('Agg')
-    ###########################################################################
 
     LOCAL_PATH = '/home/jsm171'
     SCRATCH_PATH = '/scratch/jsm171'
@@ -62,6 +54,17 @@ else:
 
 ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
 GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
+###############################################################################
+
+
+###############################################################################
+# Import functions from 'rotation_curve_vX_X.'
+#------------------------------------------------------------------------------
+from rotation_curve_v2_1 import extract_data, \
+                                match_to_NSA, \
+                                calc_rot_curve, \
+                                write_rot_curve, \
+                                write_master_file
 ###############################################################################
 
 

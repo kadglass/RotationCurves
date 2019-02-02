@@ -39,8 +39,8 @@ from rotation_curve_v2_1 import extract_data, \
 WORKING_IN_BLUEHIVE = True
 
 if WORKING_IN_BLUEHIVE:
-    LOCAL_PATH = '/home/jsm171/'
-    SCRATCH_PATH = '/scratch/jsm171/'
+    LOCAL_PATH = '/home/jsm171'
+    SCRATCH_PATH = '/scratch/jsm171'
 
     IMAGE_DIR = SCRATCH_PATH + '/images'
     MANGA_FOLDER = SCRATCH_PATH + '/manga_files'

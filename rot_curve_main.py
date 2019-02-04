@@ -9,22 +9,17 @@ Main script file for 'rotation_curve_vX_X.'
 import datetime
 START = datetime.datetime.now()
 
-import glob, os, warnings
+import glob, os.path, warnings
 import numpy as np
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 
-import matplotlib.pyplot as plt
-import pickle, psutil
-process = psutil.Process(os.getpid())
-memory_list = []
-
 warnings.simplefilter('ignore', np.RankWarning)
 
 ###############################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
-#    working in BlueHive). It is set to 'os.path.dirname(__file__)' when
+#    working in bluehive). It is set to 'os.path.dirname(__file__)' when
 #    working on a local system.
 #
 # In addition, 'LOCAL_PATH' is altered and 'SCRATCH_PATH' is added if
@@ -35,9 +30,9 @@ warnings.simplefilter('ignore', np.RankWarning)
 #    'matplotlib.pyplot' is imported.
 #
 # This block can be altered if desired, but the conditional below is tailored
-#    for use with BlueHive.
+#    for use with bluehive.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = False
+WORKING_IN_BLUEHIVE = True
 
 if WORKING_IN_BLUEHIVE:
     import matplotlib
@@ -52,21 +47,13 @@ if WORKING_IN_BLUEHIVE:
 
 else:
     LOCAL_PATH = os.path.dirname(__file__)
-    if LOCAL_PATH == '':
-        LOCAL_PATH = '.'
 
     IMAGE_DIR = LOCAL_PATH + '/images'
-    MANGA_FOLDER = LOCAL_PATH + '/manga_files/dr15'
+    MANGA_FOLDER = LOCAL_PATH + '/manga_files'
     ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
 
 ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
 GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
-
-# Create output directories if they do not already exist
-if not os.path.isdir( IMAGE_DIR):
-    os.makedirs( IMAGE_DIR)
-if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
-    os.makedirs( ROT_CURVE_MASTER_FOLDER)
 ###############################################################################
 
 
@@ -88,9 +75,7 @@ from rotation_curve_v2_1 import extract_data, \
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-
 files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
-
 ###############################################################################
 
 
@@ -129,8 +114,7 @@ files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
 if WORKING_IN_BLUEHIVE:
     nsa_catalog = fits.open( SCRATCH_PATH + '/nsa_v0_1_2.fits')
 else:
-    #nsa_catalog = fits.open( LOCAL_PATH + '/nsa_v0_1_2.fits')
-    nsa_catalog = fits.open('/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.fits')
+    nsa_catalog = fits.open( LOCAL_PATH + '/nsa_v0_1_2.fits')
 
 nsa_axes_ratio_all = nsa_catalog[1].data['SERSIC_BA']
 nsa_phi_EofN_deg_all = nsa_catalog[1].data['SERSIC_PHI']
@@ -178,8 +162,7 @@ nsaID_master = []
 # This for loop runs through the necessary calculations to calculte and write
 #    the rotation curve for all of the galaxies in the MaNGA survey.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#for file_name in files:
-for loop_num, file_name in enumerate(files):
+for file_name in files:
     ###########################################################################
     # file_id is a simplified string that identifies each file that is run
     #    through the algorithm. The file_id name scheme is [PLATE]-[FIBER ID].
@@ -201,7 +184,7 @@ for loop_num, file_name in enumerate(files):
     print( gal_ID, " EXTRACTED")
     ###########################################################################
 
-    '''
+
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -209,7 +192,7 @@ for loop_num, file_name in enumerate(files):
     manga_plate_master.append( manga_plate)
     manga_fiberID_master.append( manga_fiberID)
     ###########################################################################
-    '''
+
 
     ###########################################################################
     # Match the galaxy's RA and DEC from the to the NSA catalog index, and pull
@@ -232,7 +215,7 @@ for loop_num, file_name in enumerate(files):
     nsaID = nsaID_all[ nsa_gal_idx]
     ###########################################################################
 
-    '''
+
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -249,7 +232,7 @@ for loop_num, file_name in enumerate(files):
     nsa_mjd_master.append( nsa_mjd)
     nsaID_master.append( nsaID)
     ###########################################################################
-    '''
+
 
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an
@@ -277,27 +260,6 @@ for loop_num, file_name in enumerate(files):
     print(gal_ID, " WRITTEN")
     ###########################################################################
 
-    '''
-    print('Loop number:', loop_num)
-    print('manga_data_release_master length:', len(manga_data_release_master), len(pickle.dumps(manga_data_release_master)))
-    print('manga_plate_master length:', len(manga_plate_master), len(pickle.dumps(manga_plate_master)))
-    print('manga_fiberID_master length:', len(manga_fiberID_master), len(pickle.dumps(manga_fiberID_master)))
-    print('nsa_axes_ratio_master length:', len(nsa_axes_ratio_master), len(pickle.dumps(nsa_axes_ratio_master)))
-    print('nsa_phi_master length:', len(nsa_phi_master), len(pickle.dumps(nsa_phi_master)))
-    print('nsa_zdist_master length:', len(nsa_zdist_master), len(pickle.dumps(nsa_zdist_master)))
-    print('nsa_zdist_err_master length:', len(nsa_zdist_err_master), len(pickle.dumps(nsa_zdist_err_master)))
-    print('nsa_mStar_master length:', len(nsa_mStar_master), len(pickle.dumps(nsa_mStar_master)))
-    print('nsa_ra_master length:', len(nsa_ra_master), len(pickle.dumps(nsa_ra_master)))
-    print('nsa_dec_master length:', len(nsa_dec_master), len(pickle.dumps(nsa_dec_master)))
-    print('nsa_plate_master length:', len(nsa_plate_master), len(pickle.dumps(nsa_plate_master)))
-    print('nsa_fiberID_master length:', len(nsa_fiberID_master), len(pickle.dumps(nsa_fiberID_master)))
-    print('nsa_mjd_master length:', len(nsa_mjd_master), len(pickle.dumps(nsa_mjd_master)))
-    print('nsaID_master length:', len(nsaID_master), len(pickle.dumps(nsaID_master)))
-    print('Memory usage (bytes):', process.memory_info().rss)
-    
-    memory_list.append( process.memory_info().rss)
-    '''
-
     print("\n")
 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~
 
@@ -324,16 +286,3 @@ for loop_num, file_name in enumerate(files):
 FINISH = datetime.datetime.now()
 print("Runtime:", FINISH - START)
 ###############################################################################
-
-
-'''
-###############################################################################
-# Plot memory usage for each galaxy
-#------------------------------------------------------------------------------
-plt.figure()
-plt.plot(memory_list, '.')
-plt.xlabel('Iteration number')
-plt.ylabel('Memory usage [bytes]')
-plt.show()
-###############################################################################
-'''

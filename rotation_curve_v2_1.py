@@ -656,7 +656,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                 max_vel_at_annulus_err = np.nan * ( u.km / u.s)
                 min_vel_at_annulus = np.nan * ( u.km / u.s)
                 min_vel_at_annulus_err = np.nan * ( u.km / u.s)
-                print("ALL DATA POINTS AT R=" + R + " ANNULUS ARE MASKED!!!")
+                print("ALL DATA POINTS AT R=" + str( R) + " ANNULUS ARE MASKED!!!")
 
             else:
                 # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !

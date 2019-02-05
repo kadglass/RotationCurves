@@ -339,7 +339,7 @@ for file_name in files:
 iteration_clock_fig = plt.figure()
 plt.title( 'Iteration Time VS File Index')
 plt.plot( iteration_times)
-plt.show()
+plt.savefig( IMAGE_DIR + "iteration_clock")
 plt.close()
 del iteration_clock_fig
 

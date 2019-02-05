@@ -158,7 +158,7 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
 
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
-                   axes_ratio, phi_EofN_deg, zdist, zdist_err, gal_ID,
+                   axes_ratio, phi_EofN_deg, z, gal_ID,
                    IMAGE_DIR, image_format):
     """Calculates the rotation curve (rotational velocity as a funciton of
     deprojected distance) of the galaxy in question. In addition a galaxy
@@ -196,12 +196,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
             NOTE: east is 'left' per astronomy convention
 
-        zdist:
-            float representation of a measure of the distance to the galaxy in
-            question as calculated by the shift in H-alpha flux
-
-        zdist_err:
-            float representation of the error in zdist measurement
+        z:
+            float representation of the redshift of the galaxy question as
+            calculated by the shift in H-alpha flux
 
         gal_ID:
             a string representation of the galaxy in question in the
@@ -281,7 +278,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #    data.
     #--------------------------------------------------------------------------
     rot_curve_dist = []
-    rot_curve_dist_err = []
+#    rot_curve_dist_err = []
 
     rot_curve_max_vel = []
     rot_curve_max_vel_err = []
@@ -482,7 +479,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     if not unmasked_data:
         rot_curve_dist.append( -1)
-        rot_curve_dist_err.append( -1)
+#        rot_curve_dist_err.append( -1)
 
         rot_curve_max_vel.append( -1)
         rot_curve_max_vel_err.append( -1)
@@ -521,13 +518,13 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         # Convert pixel distance to physical distances in units of both
         #    kiloparsecs and centimeters.
         #----------------------------------------------------------------------
-        dist_to_galaxy_kpc = ( zdist * const.c.to('km/s') / H_0).to('kpc')
-        dist_to_galaxy_kpc_err = np.sqrt( (const.c.to('km/s') / H_0)**2 \
-                                         * zdist_err**2 )
+        dist_to_galaxy_kpc = ( z * const.c.to('km/s') / H_0).to('kpc')
+#        dist_to_galaxy_kpc_err = np.sqrt( (const.c.to('km/s') / H_0)**2 \
+#                                         * zdist_err**2 )
 
         pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_FIBER_DIAMETER)
-        pix_scale_factor_err = np.sqrt( ( np.tan( MANGA_FIBER_DIAMETER))**2 \
-                                       * dist_to_galaxy_kpc_err)
+#        pix_scale_factor_err = np.sqrt( ( np.tan( MANGA_FIBER_DIAMETER))**2 \
+#                                       * dist_to_galaxy_kpc_err)
 
 #        print("dist_to_galaxy_kpc:", dist_to_galaxy_kpc)
 #        print("dist_to_galaxy_kpc_err:", dist_to_galaxy_kpc_err)
@@ -615,9 +612,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         valid_data = True
         while valid_data:
             deproj_dist_kpc = R * pix_scale_factor
-            deproj_dist_kpc_err = R * pix_scale_factor_err
+#            deproj_dist_kpc_err = R * pix_scale_factor_err
             deproj_dist_m = deproj_dist_kpc.to('m')
-            deproj_dist_m_err = deproj_dist_kpc.to('m')
+#            deproj_dist_m_err = deproj_dist_kpc_err.to('m')
             ###################################################################
             # Define an eliptical annulus and check if either of the edge
             #    points are within that annulus.
@@ -772,10 +769,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                 * ( const.G.uncertainty * const.G.unit)**2 \
               + ( const.G * ( sMass_interior / u.M_sun)) \
                 / ( deproj_dist_m * const.M_sun) \
-                * ( const.M_sun.uncertainty * const.M_sun.unit)**2 \
-              + ( const.G * ( sMass_interior / u.M_sun) * const.M_sun) \
-                / ( deproj_dist_m**3) \
-                * ( deproj_dist_m_err)**2 )
+                * ( const.M_sun.uncertainty * const.M_sun.unit)**2) #\
+#              + ( const.G * ( sMass_interior / u.M_sun) * const.M_sun) \
+#                / ( deproj_dist_m**3) \
+#                * ( deproj_dist_m_err)**2 )
             sVel_rot_err = sVel_rot_err.to('km/s')
             ###################################################################
 
@@ -826,7 +823,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             #    Column objects are added to the astropy QTable.
             #------------------------------------------------------------------
             rot_curve_dist.append( deproj_dist_kpc.value)
-            rot_curve_dist_err.append( deproj_dist_kpc_err.value)
+#            rot_curve_dist_err.append( deproj_dist_kpc_err.value)
 
             rot_curve_max_vel.append( max_vel_at_annulus.value)
             rot_curve_max_vel_err.append( max_vel_at_annulus_err.value)
@@ -930,7 +927,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #       stellar mass for the entire galaxy
     #--------------------------------------------------------------------------
     dist_col = Column( rot_curve_dist)
-    dist_err_col = Column( rot_curve_dist_err)
+#    dist_err_col = Column( rot_curve_dist_err)
     max_vel_col = Column( rot_curve_max_vel)
     max_vel_err_col = Column( rot_curve_max_vel_err)
     min_vel_col = Column( rot_curve_min_vel)
@@ -959,7 +956,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
     data_table = QTable([ dist_col *  u.kpc,
-                         dist_err_col * u.kpc,
+#                         dist_err_col * u.kpc,
                          max_vel_col * ( u.km / u.s),
                          max_vel_err_col * ( u.km / u.s),
                          min_vel_col * ( u.km / u.s),
@@ -978,7 +975,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                          rot_curve_vel_diff_col * ( u.km / u.s),
                          rot_curve_vel_diff_err_col * ( u.km / u.s)],
                 names = ['deprojected_distance',
-                         'deprojected_distance_error',
+#                         'deprojected_distance_error',
                          'max_velocity',
                          'max_velocity_error',
                          'min_velocity',

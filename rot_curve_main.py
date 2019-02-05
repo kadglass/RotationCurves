@@ -141,8 +141,9 @@ else:
 
 nsa_axes_ratio_all = nsa_catalog[1].data['SERSIC_BA']
 nsa_phi_EofN_deg_all = nsa_catalog[1].data['SERSIC_PHI']
-nsa_zdist_all = nsa_catalog[1].data['ZDIST']
-nsa_zdist_all_err = nsa_catalog[1].data['ZDIST_ERR']
+nsa_z_all = nsa_catalog[1].data['Z']
+#nsa_zdist_all = nsa_catalog[1].data['ZDIST']
+#nsa_zdist_all_err = nsa_catalog[1].data['ZDIST_ERR']
 nsa_mStar_all = nsa_catalog[1].data['MASS']
 
 nsa_ra_all = nsa_catalog[1].data['RA']
@@ -168,8 +169,9 @@ manga_fiberID_master = []
 
 nsa_axes_ratio_master = []
 nsa_phi_master = []
-nsa_zdist_master = []
-nsa_zdist_err_master = []
+nsa_z_master = []
+#nsa_zdist_master = []
+#nsa_zdist_err_master = []
 nsa_mStar_master = []
 
 nsa_ra_master = []
@@ -230,8 +232,9 @@ for file_name in files:
 
     axes_ratio = nsa_axes_ratio_all[ nsa_gal_idx]
     phi_EofN_deg = nsa_phi_EofN_deg_all[ nsa_gal_idx] * u.degree
-    zdist = nsa_zdist_all[ nsa_gal_idx]
-    zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
+    z = nsa_z_all[ nsa_gal_idx]
+#    zdist = nsa_zdist_all[ nsa_gal_idx]
+#    zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
     mStar = nsa_mStar_all[ nsa_gal_idx] * u.M_sun
 
     nsa_ra = nsa_ra_all[ nsa_gal_idx]
@@ -248,8 +251,9 @@ for file_name in files:
     #--------------------------------------------------------------------------
     nsa_axes_ratio_master.append( axes_ratio)
     nsa_phi_master.append( phi_EofN_deg / u.degree)
-    nsa_zdist_master.append( zdist)
-    nsa_zdist_err_master.append( zdist_err)
+    nsa_z_master.append( z)
+#    nsa_zdist_master.append( zdist)
+#    nsa_zdist_err_master.append( zdist_err)
     nsa_mStar_master.append( mStar / u.M_sun)
 
     nsa_ra_master.append( nsa_ra)
@@ -267,8 +271,8 @@ for file_name in files:
     #--------------------------------------------------------------------------
     rot_data_table, gal_stat_table = calc_rot_curve( Ha_vel, Ha_vel_error, \
                                        v_band, v_band_err, sMass_density, \
-                                       axes_ratio, phi_EofN_deg, zdist, \
-                                       zdist_err, gal_ID, IMAGE_DIR, \
+                                       axes_ratio, phi_EofN_deg, z, \
+                                       gal_ID, IMAGE_DIR, \
                                        image_format)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
@@ -329,7 +333,7 @@ for file_name in files:
 #                  manga_data_release_master,
 #                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
 #                  nsaID_master, nsa_ra_master, nsa_dec_master,
-#                  nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
+#                  nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
 #                  nsa_mStar_master,
 #                  LOCAL_PATH)
 #print("MASTER FILE WRITTEN")

@@ -14,8 +14,6 @@ import numpy as np
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-
-import matplotlib.pyplot as plt
 '''
 import matplotlib.pyplot as plt
 import pickle, psutil
@@ -54,6 +52,7 @@ WORKING_IN_BLUEHIVE = True
 if WORKING_IN_BLUEHIVE:
     import matplotlib
     matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
 
     LOCAL_PATH = '/home/jsm171'
     SCRATCH_PATH = '/scratch/jsm171'

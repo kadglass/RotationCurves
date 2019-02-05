@@ -95,14 +95,14 @@ def extract_data( file_name):
     main_file.close()
 
     ###########################################################################
-    # NOTE: The visual band fluxes are multiplied by 10E-16 as stated in the
+    # NOTE: The visual band fluxes are multiplied by 10**-16 as stated in the
     #       units of the MaNGA Data Model.
     #
     #       <https://data.sdss.org/datamodel/files/MANGA_PIPE3D/MANGADRP_VER
     #       /PIPE3D_VER/PLATE/manga.Pipe3D.cube.html#hdu1>
     ###########################################################################
-    v_band = ssp[0] * 10E-16  # in units of erg / s / cm^2
-    v_band_err = ssp[4] * 10E-16  # in units of erg / s / cm^2
+    v_band = ssp[0] * 1E-16  # in units of erg / s / cm^2
+    v_band_err = ssp[4] * 1E-16  # in units of erg / s / cm^2
     sMass_density = ssp[19] * u.dex( u.M_sun) # in units of
                                                 # log10( Msun / spaxel**2)
 
@@ -278,6 +278,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #    data.
     #--------------------------------------------------------------------------
     rot_curve_dist = []
+    rot_curve_dist_err = []
 
     rot_curve_max_vel = []
     rot_curve_max_vel_err = []
@@ -460,6 +461,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     if not unmasked_data:
         rot_curve_dist.append( -1)
+        rot_curve_dist_err.append( -1)
 
         rot_curve_max_vel.append( -1)
         rot_curve_max_vel_err.append( -1)
@@ -482,8 +484,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         dmVel_rot_curve.append( -1)
         dmVel_rot_curve_err.append( -1)
 
-        lum_center = -1
-        lum_center_err = -1
+        flux_center = -1
+        flux_center_err = -1
 
         print("ALL DATA POINTS FOR THE GALAXY ARE MASKED!!!")
     ###########################################################################
@@ -501,8 +503,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         dist_to_galaxy_kpc = ( zdist * const.c.to('km/s') / H_0).to('kpc')
         dist_to_galaxy_kpc_err = np.sqrt( (const.c.to('km/s') / H_0)**2 \
                                          * zdist_err**2 )
-        dist_to_galaxy_cm = dist_to_galaxy_kpc.to( u.cgs.cm)
-        dist_to_galaxy_cm_err = dist_to_galaxy_kpc_err.to( u.cgs.cm)
 
         pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_FIBER_DIAMETER)
         pix_scale_factor_err = np.sqrt( ( np.tan( MANGA_FIBER_DIAMETER))**2 \
@@ -518,23 +518,13 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
         #######################################################################
-        # Extract the flux from the center of the galaxy and convert the
-        #    measurement into luminosity in units of solar luminosity.
+        # Extract the flux from the center of the galaxy.
         #----------------------------------------------------------------------
-        flux_center = v_band[ y_center, x_center] \
-                                        * ( u.erg / ( u.s * u.cgs.cm**2))
-        flux_center_error = v_band_err[ y_center, x_center] \
-                                        * ( u.erg / ( u.s * u.cgs.cm**2))
-
-        lum_center = (flux_center \
-          * 4 * np.pi * dist_to_galaxy_cm**2).to('W') / const.L_sun
-        lum_center_err = (flux_center_error \
-          * 4 * np.pi * dist_to_galaxy_cm**2).to('W') / const.L_sun
+        flux_center = v_band[ y_center, x_center]
+        flux_center_err = v_band_err[ y_center, x_center]
 
 #        print("flux_center:", flux_center)
 #        print("flux_center_error:", flux_center_error)
-#        print("lum_center:", lum_center)
-#        print("lum_center_err:", lum_center_err)
 #        #######################################################################
 
 
@@ -604,7 +594,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         valid_data = True
         while valid_data:
             deproj_dist_kpc = R * pix_scale_factor
-            deproj_dist_kpc_err = np.sqrt( R**2 * pix_scale_factor_err**2)
+            deproj_dist_kpc_err = R * pix_scale_factor_err
             deproj_dist_m = deproj_dist_kpc.to('m')
             deproj_dist_m_err = deproj_dist_kpc.to('m')
             ###################################################################
@@ -656,7 +646,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                 max_vel_at_annulus_err = np.nan * ( u.km / u.s)
                 min_vel_at_annulus = np.nan * ( u.km / u.s)
                 min_vel_at_annulus_err = np.nan * ( u.km / u.s)
-                print("ALL DATA POINTS AT R=" + str( R) + " ANNULUS ARE MASKED!!!")
+                print("ALL DATA POINTS AT R=" + str( R) \
+                      + " ANNULUS ARE MASKED!!!")
 
             else:
                 # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
@@ -814,6 +805,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             #    Column objects are added to the astropy QTable.
             #------------------------------------------------------------------
             rot_curve_dist.append( deproj_dist_kpc.value)
+            rot_curve_dist_err.append( deproj_dist_kpc_err.value)
 
             rot_curve_max_vel.append( max_vel_at_annulus.value)
             rot_curve_max_vel_err.append( max_vel_at_annulus_err.value)
@@ -859,7 +851,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             #------------------------------------------------------------------
 #            print("---------------------------------------------------------")
 #            print("R = ", R)
-#            print("deproj_dist_m:", deproj_dist_m)
+#            print("deproj_dist_kpc:", deproj_dist_kpc)
+#            print("deproj_dist_kpc_err:", deproj_dist_kpc_err)
 #            print("max_vel_at_annulus:", max_vel_at_annulus)
 #            print("max_vel_at_annulus_err:", max_vel_at_annulus_err)
 #            print("min_vel_at_annulus:", min_vel_at_annulus)
@@ -916,6 +909,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #       stellar mass for the entire galaxy
     #--------------------------------------------------------------------------
     dist_col = Column( rot_curve_dist)
+    dist_err_col = Column( rot_curve_dist_err)
     max_vel_col = Column( rot_curve_max_vel)
     max_vel_err_col = Column( rot_curve_max_vel_err)
     min_vel_col = Column( rot_curve_min_vel)
@@ -939,11 +933,12 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
     gal_ID_col = Column( [gal_ID])
-    lum_center_col = Column( [lum_center])
-    lum_center_err_col = Column( [lum_center_err])
+    flux_center_col = Column( [flux_center])
+    flux_center_err_col = Column( [flux_center_err])
 
 
     data_table = QTable([ dist_col *  u.kpc,
+                         dist_err_col * u.kpc,
                          max_vel_col * ( u.km / u.s),
                          max_vel_err_col * ( u.km / u.s),
                          min_vel_col * ( u.km / u.s),
@@ -962,6 +957,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                          rot_curve_vel_diff_col * ( u.km / u.s),
                          rot_curve_vel_diff_err_col * ( u.km / u.s)],
                 names = ['deprojected_distance',
+                         'deprojected_distance_error',
                          'max_velocity',
                          'max_velocity_error',
                          'min_velocity',
@@ -981,11 +977,11 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                          'rot_curve_diff_error'])
 
     gal_stats = QTable([ gal_ID_col,
-                        lum_center_col * u.L_sun,
-                        lum_center_err_col * u.L_sun],
+                        flux_center_col * ( u.erg / ( u.s * u.cgs.cm**2)),
+                        flux_center_err_col * ( u.erg / ( u.s * u.cgs.cm**2))],
                names = ['gal_ID',
-                        'center_luminosity',
-                        'center_luminosity_error'])
+                        'center_flux',
+                        'center_flux_error'])
     ###########################################################################
 
 
@@ -1007,12 +1003,14 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    print("Global min:", global_min)
 #    print("inclination_angle:", np.degrees( inclination_angle))
     #--------------------------------------------------------------------------
+    # Declare constants used in plotting the graphs below.
+    # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+    vmax_bound = max( global_max, abs(global_min))
+    vmin_bound = -1 * vmax_bound
+    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 13, dtype='int')
+    #--------------------------------------------------------------------------
     # Plot H-alpha velocity field with redshift subtracted.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    vmax_bound = -1 * min( global_max, global_min)
-    vmin_bound = min( global_max, global_min)
-    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
-
     Ha_vel_field_fig = plt.figure(5)
     plt.title( gal_ID + r' H$\alpha$ Velocity Field')
     plt.imshow( masked_Ha_vel, cmap='bwr', origin='lower',
@@ -1040,16 +1038,17 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     gc.collect()
     #--------------------------------------------------------------------------
     # Ha velocity field collected though all iterations of the loop.
+    #
+    # NOTE: 'vel_contour_plot' is masked at this stage because in plotting the
+    #       image, masked data points were being plotted even though they did
+    #       not influence the construction of the rotation curves.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    vmax_bound = -1 * min( global_max, global_min)
-    vmin_bound = min( global_max, global_min)
-    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 12)
+    masked_vel_contour_plot = ma.masked_where( mask_data, vel_contour_plot)
 
-    vel_field_collected_fig = plt.figure(6,
-                                         figsize=(6, 6))
+    vel_field_collected_fig = plt.figure(6, figsize=(6, 6))
     plt.title( gal_ID + " " + r'H$\alpha$ Velocity Field Collected',
               fontsize=12)
-    plt.imshow( vel_contour_plot, origin='lower',
+    plt.imshow( masked_vel_contour_plot, origin='lower',
        vmin = vmin_bound, vmax = vmax_bound, cmap='bwr')
 
     cbar = plt.colorbar( ticks = cbar_ticks)
@@ -1125,24 +1124,20 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
     ###########################################################################
     # Plot a two by two paneled image containging the entire 'Ha_vel' array,
-    #    the masked version of this array, 'masked_Ha_vel,' the
+    #    the masked version of this array, 'masked_Ha_vel,' the masked
     #    'vel_contour_plot' array containing ovals of the data points processed
     #    in the algorithm, and the averaged max and min rotation curves
     #    alongside the stellar mass rotation curve,
     #--------------------------------------------------------------------------
-    vmax_bound = -1 * min( global_max, global_min)
-    vmin_bound = min( global_max, global_min)
-    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 13)
-
     panel_fig, (( Ha_vel_panel, mHa_vel_panel),
                 ( contour_panel, rot_curve_panel)) = plt.subplots( 2, 2)
     panel_fig.set_figheight( 10)
     panel_fig.set_figwidth( 10)
     plt.suptitle( gal_ID + " Diagnostic Panel", y=1.05, fontsize=16)
 
+    Ha_vel_panel.set_title(r'Unmasked H$\alpha$ Velocity Field')
     Ha_vel_im = Ha_vel_panel.imshow( Ha_vel, origin='lower',
                       vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
-    Ha_vel_panel.set_title(r'Unmasked H$\alpha$ Velocity Field')
     Ha_cbar = plt.colorbar( Ha_vel_im, ax=Ha_vel_panel, ticks = cbar_ticks)
     Ha_cbar.ax.tick_params( direction='in')
     Ha_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
@@ -1154,9 +1149,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     Ha_vel_panel.yaxis.set_ticks_position('both')
     Ha_vel_panel.tick_params( axis='both', direction='in')
 
+    mHa_vel_panel.set_title(r'Masked H$\alpha$ Velocity Field')
     mHa_vel_im = mHa_vel_panel.imshow( masked_Ha_vel, origin='lower',
                       vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
-    mHa_vel_panel.set_title(r'Masked H$\alpha$ Velocity Field')
     mHa_cbar = plt.colorbar( mHa_vel_im, ax=mHa_vel_panel, ticks = cbar_ticks)
     mHa_cbar.ax.tick_params( direction='in')
     mHa_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
@@ -1168,9 +1163,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     mHa_vel_panel.yaxis.set_ticks_position('both')
     mHa_vel_panel.tick_params( axis='both', direction='in')
 
-    contour_im = contour_panel.imshow( vel_contour_plot, origin='lower',
-                      vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
     contour_panel.set_title(r'H$\alpha$ Velocity Field Collected')
+    contour_im = contour_panel.imshow( masked_vel_contour_plot, origin='lower',
+                      vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
     contour_cbar = plt.colorbar( contour_im, ax=contour_panel, ticks = cbar_ticks)
     contour_cbar.ax.tick_params( direction='in')
     contour_cbar.set_label(r'$V_{ROT}$ [$kms^{-1}$]')
@@ -1182,10 +1177,14 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     contour_panel.yaxis.set_ticks_position('both')
     contour_panel.tick_params( axis='both', direction='in')
 
+    rot_curve_panel.set_title('Rotation Curves')
     rot_curve_panel.plot( rot_curve_dist, rot_curve_vel_avg,
                          'gp', markersize=7)
-    rot_curve_panel.set_title('Rotation Curves')
     rot_curve_panel.plot( rot_curve_dist, sVel_rot_curve, 'cD', markersize=4)
+#    rot_curve_panel.plot( rot_curve_dist, rot_curve_max_vel,
+#                         'rs', markersize=5)
+#    rot_curve_panel.plot( rot_curve_dist, np.abs( rot_curve_min_vel),
+#                         'b^', markersize=5)
     rot_curve_panel.set_xlabel('Deprojected Radius [kpc]')
     rot_curve_panel.set_ylabel(r'Rotational Velocity [$km s^{-1}$]')
     rot_curve_panel.xaxis.set_ticks_position('both')
@@ -1197,7 +1196,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + \
                 "_diagnostic_panel.png",
                 format='eps')
-#    plt.show()
+    plt.show()
     plt.cla()
     plt.clf()
     plt.close( panel_fig)

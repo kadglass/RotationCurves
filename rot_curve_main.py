@@ -23,6 +23,13 @@ memory_list = []
 warnings.simplefilter('ignore', np.RankWarning)
 
 ###############################################################################
+# File format for saved images
+#------------------------------------------------------------------------------
+image_format = 'eps'
+###############################################################################
+
+
+###############################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
 #    working in bluehive). It is set to 'os.path.dirname(__file__)' when
 #    working on a local system.
@@ -52,13 +59,21 @@ if WORKING_IN_BLUEHIVE:
 
 else:
     LOCAL_PATH = os.path.dirname(__file__)
+    if LOCAL_PATH == '':
+        LOCAL_PATH = '.'
 
     IMAGE_DIR = LOCAL_PATH + '/images'
-    MANGA_FOLDER = LOCAL_PATH + '/manga_files'
+    MANGA_FOLDER = LOCAL_PATH + '/manga_files/dr15'
     ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
 
 ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
 GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
+
+# Create output directories if they do not already exist
+if not os.path.isdir( IMAGE_DIR):
+    os.makedirs( IMAGE_DIR)
+if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
+    os.makedirs( ROT_CURVE_MASTER_FOLDER)
 ###############################################################################
 
 
@@ -120,6 +135,7 @@ if WORKING_IN_BLUEHIVE:
     nsa_catalog = fits.open( SCRATCH_PATH + '/nsa_v0_1_2.fits')
 else:
     nsa_catalog = fits.open( LOCAL_PATH + '/nsa_v0_1_2.fits')
+    #nsa_catalog = fits.open('/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.fits')
 
 nsa_axes_ratio_all = nsa_catalog[1].data['SERSIC_BA']
 nsa_phi_EofN_deg_all = nsa_catalog[1].data['SERSIC_PHI']
@@ -189,7 +205,7 @@ for file_name in files:
     print( gal_ID, " EXTRACTED")
     ###########################################################################
 
-
+    '''
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -197,7 +213,7 @@ for file_name in files:
     manga_plate_master.append( manga_plate)
     manga_fiberID_master.append( manga_fiberID)
     ###########################################################################
-
+    '''
 
     ###########################################################################
     # Match the galaxy's RA and DEC from the to the NSA catalog index, and pull
@@ -220,7 +236,7 @@ for file_name in files:
     nsaID = nsaID_all[ nsa_gal_idx]
     ###########################################################################
 
-
+    '''
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -237,7 +253,7 @@ for file_name in files:
     nsa_mjd_master.append( nsa_mjd)
     nsaID_master.append( nsaID)
     ###########################################################################
-
+    '''
 
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an
@@ -246,7 +262,8 @@ for file_name in files:
     rot_data_table, gal_stat_table = calc_rot_curve( Ha_vel, Ha_vel_error, \
                                        v_band, v_band_err, sMass_density, \
                                        axes_ratio, phi_EofN_deg, zdist, \
-                                       zdist_err, gal_ID, IMAGE_DIR)
+                                       zdist_err, gal_ID, IMAGE_DIR, \
+                                       image_format)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
 
@@ -264,6 +281,27 @@ for file_name in files:
                     ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR)
     print(gal_ID, " WRITTEN")
     ###########################################################################
+
+    '''
+    print('Loop number:', loop_num)
+    print('manga_data_release_master length:', len(manga_data_release_master), len(pickle.dumps(manga_data_release_master)))
+    print('manga_plate_master length:', len(manga_plate_master), len(pickle.dumps(manga_plate_master)))
+    print('manga_fiberID_master length:', len(manga_fiberID_master), len(pickle.dumps(manga_fiberID_master)))
+    print('nsa_axes_ratio_master length:', len(nsa_axes_ratio_master), len(pickle.dumps(nsa_axes_ratio_master)))
+    print('nsa_phi_master length:', len(nsa_phi_master), len(pickle.dumps(nsa_phi_master)))
+    print('nsa_zdist_master length:', len(nsa_zdist_master), len(pickle.dumps(nsa_zdist_master)))
+    print('nsa_zdist_err_master length:', len(nsa_zdist_err_master), len(pickle.dumps(nsa_zdist_err_master)))
+    print('nsa_mStar_master length:', len(nsa_mStar_master), len(pickle.dumps(nsa_mStar_master)))
+    print('nsa_ra_master length:', len(nsa_ra_master), len(pickle.dumps(nsa_ra_master)))
+    print('nsa_dec_master length:', len(nsa_dec_master), len(pickle.dumps(nsa_dec_master)))
+    print('nsa_plate_master length:', len(nsa_plate_master), len(pickle.dumps(nsa_plate_master)))
+    print('nsa_fiberID_master length:', len(nsa_fiberID_master), len(pickle.dumps(nsa_fiberID_master)))
+    print('nsa_mjd_master length:', len(nsa_mjd_master), len(pickle.dumps(nsa_mjd_master)))
+    print('nsaID_master length:', len(nsaID_master), len(pickle.dumps(nsaID_master)))
+    print('Memory usage (bytes):', process.memory_info().rss)
+    
+    memory_list.append( process.memory_info().rss)
+    '''
 
     print("\n")
 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~
@@ -291,3 +329,15 @@ for file_name in files:
 FINISH = datetime.datetime.now()
 print("Runtime:", FINISH - START)
 ###############################################################################
+
+'''
+###############################################################################
+# Plot memory usage for each galaxy
+#------------------------------------------------------------------------------
+plt.figure()
+plt.plot(memory_list, '.')
+plt.xlabel('Iteration number')
+plt.ylabel('Memory usage [bytes]')
+plt.show()
+###############################################################################
+'''

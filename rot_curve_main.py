@@ -14,6 +14,8 @@ import numpy as np
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 import astropy.units as u
+
+import matplotlib.pyplot as plt
 '''
 import matplotlib.pyplot as plt
 import pickle, psutil
@@ -47,7 +49,7 @@ image_format = 'eps'
 # ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
 #       being ran.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = False
+WORKING_IN_BLUEHIVE = True
 
 if WORKING_IN_BLUEHIVE:
     import matplotlib
@@ -180,11 +182,17 @@ nsaID_master = []
 ###############################################################################
 
 
+iteration_times = []
+i = 0
+
+
 ###############################################################################
 # This for loop runs through the necessary calculations to calculte and write
 #    the rotation curve for all of the galaxies in the MaNGA survey.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 for file_name in files:
+    iteration_start = datetime.datetime.now()
+
     ###########################################################################
     # file_id is a simplified string that identifies each file that is run
     #    through the algorithm. The file_id name scheme is [PLATE]-[FIBER ID].
@@ -281,6 +289,14 @@ for file_name in files:
     print(gal_ID, " WRITTEN")
     ###########################################################################
 
+    iteration_end = datetime.datetime.now() - iteration_start
+    print("ITERATION TIME:", iteration_end)
+    iteration_times.append( iteration_end)
+
+    i += 1
+    if i == 1000:
+        break
+
     '''
     print('Loop number:', loop_num)
     print('manga_data_release_master length:', len(manga_data_release_master), len(pickle.dumps(manga_data_release_master)))
@@ -320,6 +336,13 @@ for file_name in files:
 #print("MASTER FILE WRITTEN")
 ###############################################################################
 
+
+iteration_clock_fig = plt.figure()
+plt.title( 'Iteration Time VS File Index')
+plt.plot( iteration_times)
+plt.show()
+plt.close()
+del iteration_clock_fig
 
 
 ###############################################################################

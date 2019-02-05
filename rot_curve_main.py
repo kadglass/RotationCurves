@@ -290,7 +290,7 @@ for file_name in files:
 
     iteration_end = datetime.datetime.now() - iteration_start
     print("ITERATION TIME:", iteration_end)
-    iteration_times.append( iteration_end)
+    iteration_times.append( iteration_end.total_seconds())
 
     i += 1
     if i == 1000:

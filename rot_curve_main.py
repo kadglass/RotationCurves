@@ -14,7 +14,12 @@ import numpy as np
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-
+'''
+import matplotlib.pyplot as plt
+import pickle, psutil
+process = psutil.Process(os.getpid())
+memory_list = []
+'''
 warnings.simplefilter('ignore', np.RankWarning)
 
 ###############################################################################

@@ -43,6 +43,9 @@ image_format = 'eps'
 #
 # This block can be altered if desired, but the conditional below is tailored
 #    for use with bluehive.
+#
+# ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
+#       being ran.
 #------------------------------------------------------------------------------
 WORKING_IN_BLUEHIVE = False
 
@@ -54,7 +57,7 @@ if WORKING_IN_BLUEHIVE:
     SCRATCH_PATH = '/scratch/jsm171'
 
     IMAGE_DIR = SCRATCH_PATH + '/images'
-    MANGA_FOLDER = SCRATCH_PATH + '/manga_files'
+    MANGA_FOLDER = SCRATCH_PATH + '/manga_files/dr15'
     ROT_CURVE_MASTER_FOLDER = SCRATCH_PATH + '/rot_curve_data_files'
 
 else:
@@ -95,7 +98,7 @@ from rotation_curve_v2_1 import extract_data, \
 #            houses the plate folders. The default folder is
 #            '/manga_files'.
 #------------------------------------------------------------------------------
-#files = glob.glob( MANGA_FOLDER + '/*manga-*Pipe3D.cube.fits.gz')
+files = glob.glob( MANGA_FOLDER + '/manga-*Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -103,12 +106,12 @@ from rotation_curve_v2_1 import extract_data, \
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-FILE_IDS = ['10001-12703']
-
-files = []
-for file_name in FILE_IDS:
-    files.append( MANGA_FOLDER \
-    + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
+#FILE_IDS = ['10001-12703']
+#
+#files = []
+#for file_name in FILE_IDS:
+#    files.append( MANGA_FOLDER \
+#    + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
 ###############################################################################
 
 

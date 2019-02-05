@@ -465,8 +465,14 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    print("phi:", phi_deg)
     ###########################################################################
 
-    # Preserve original V_band image
+
+    ###########################################################################
+    # Preserve original v_band image for plotting in the 'diagnostic_panel'
+    #    image.
+    #--------------------------------------------------------------------------
     v_band_raw = v_band.copy()
+    ###########################################################################
+
 
     ###########################################################################
     # If 'unmasked_data' was set to False by all of the 'Ha_vel' data being

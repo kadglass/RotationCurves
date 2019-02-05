@@ -103,14 +103,12 @@ from rotation_curve_v2_1 import extract_data, \
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-DATA_RELEASES = ['dr15']
 FILE_IDS = ['10001-12703']
 
 files = []
-for data_release in DATA_RELEASES:
-    for file_name in FILE_IDS:
-        files.append( MANGA_FOLDER \
-        + '/' + data_release + '-manga-' + file_name + '.Pipe3D.cube.fits.gz')
+for file_name in FILE_IDS:
+    files.append( MANGA_FOLDER \
+    + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
 ###############################################################################
 
 
@@ -189,10 +187,8 @@ for file_name in files:
     #    through the algorithm. The file_id name scheme is [PLATE]-[FIBER ID].
     #--------------------------------------------------------------------------
     gal_ID = file_name[ file_name.find(MANGA_FOLDER) \
-                               + len( MANGA_FOLDER) + 1: file_name.find('-')] \
-                       + file_name[file_name.find(MANGA_FOLDER) \
-                               + len(MANGA_FOLDER) + 11: \
-                               file_name.find('.Pipe3D.cube.fits.gz')]
+                           + len( MANGA_FOLDER) + 7: file_name.find('.Pipe3D')]
+
 #    print( gal_ID)
     ###########################################################################
 
@@ -299,7 +295,7 @@ for file_name in files:
     print('nsa_mjd_master length:', len(nsa_mjd_master), len(pickle.dumps(nsa_mjd_master)))
     print('nsaID_master length:', len(nsaID_master), len(pickle.dumps(nsaID_master)))
     print('Memory usage (bytes):', process.memory_info().rss)
-    
+
     memory_list.append( process.memory_info().rss)
     '''
 

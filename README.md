@@ -7,7 +7,7 @@ Measuring the rotation curves of SDSS MaNGA galaxies.
 The required folder and file structure to run on a user's local machine is as follows (note that the parent directory can be named anything):
 
     .
-    ├── images                           # contains image files in a format dictated by 
+    ├── images                           # contains image files in a format dictated by
     |   ├── collected_velocity_fields    #    the 'image_format' variable in 'rot_curve_main_vX_X'
     |   ├── diagnostic_panels
     |   ├── fitted_rotation_curves
@@ -21,9 +21,9 @@ The required folder and file structure to run on a user's local machine is as fo
     |   ├── dr14                         #    read in in the beginning of 'rotation_curve_vX_X'
     |   └── dr15
     ├── rot_curve_data_files             # contains the output data files of 'rotation_curve_vX_X'
-    ├── updated_vflag_files              # contains the text files with the galaxy's environmental classification        
+    ├── updated_vflag_files              # contains the text files with the galaxy's environmental classification
     |                                    #    taken from 'void_finder'
-    ├── rot_curve_main.py                # script files to be executed (note that these files must 
+    ├── rot_curve_main.py                # script files to be executed (note that these files must
     ├── rotation_curve_vX_X.py           #    be in the main folder)
     ├── dark_matter_mass_main.py
     ├── dark_matter_mass_vX_X.py

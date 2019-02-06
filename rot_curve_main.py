@@ -163,7 +163,6 @@ catalog_coords = SkyCoord( ra = nsa_ra_all*u.degree,
 ###############################################################################
 # # Initialize the master arrays that create the structure of the master file.
 #------------------------------------------------------------------------------
-manga_data_release_master = []
 manga_plate_master = []
 manga_fiberID_master = []
 
@@ -183,8 +182,12 @@ nsaID_master = []
 ###############################################################################
 
 
+###############################################################################
+# Create an array to store the time spent on each iteration of the fot-loop.
+#    This is used to clock the algorithm for analysis.
+#------------------------------------------------------------------------------
 iteration_times = []
-i = 0
+###############################################################################
 
 
 ###############################################################################
@@ -213,15 +216,14 @@ for file_name in files:
     print( gal_ID, " EXTRACTED")
     ###########################################################################
 
-    '''
+
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
-    manga_data_release_master.append( gal_ID[ 0: 4])
     manga_plate_master.append( manga_plate)
     manga_fiberID_master.append( manga_fiberID)
     ###########################################################################
-    '''
+
 
     ###########################################################################
     # Match the galaxy's RA and DEC from the to the NSA catalog index, and pull
@@ -245,7 +247,7 @@ for file_name in files:
     nsaID = nsaID_all[ nsa_gal_idx]
     ###########################################################################
 
-    '''
+
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -263,7 +265,7 @@ for file_name in files:
     nsa_mjd_master.append( nsa_mjd)
     nsaID_master.append( nsaID)
     ###########################################################################
-    '''
+
 
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an
@@ -292,13 +294,15 @@ for file_name in files:
     print(gal_ID, " WRITTEN")
     ###########################################################################
 
+
+    ###########################################################################
+    # Clock the current iteration and append the time to 'iteration_times'
+    #    which is plotted below.
+    #--------------------------------------------------------------------------
     iteration_end = datetime.datetime.now() - iteration_start
     print("ITERATION TIME:", iteration_end)
     iteration_times.append( iteration_end.total_seconds())
-
-    i += 1
-    if i == 1000:
-        break
+    ###########################################################################
 
     '''
     print('Loop number:', loop_num)
@@ -329,23 +333,35 @@ for file_name in files:
 # Build master file that contains identifying information for each galaxy
 #   as well as scientific information as taken from the NSA catalog.
 #------------------------------------------------------------------------------
-#write_master_file( manga_plate_master, manga_fiberID_master,
-#                  manga_data_release_master,
-#                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-#                  nsaID_master, nsa_ra_master, nsa_dec_master,
-#                  nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-#                  nsa_mStar_master,
-#                  LOCAL_PATH)
-#print("MASTER FILE WRITTEN")
+write_master_file( manga_plate_master, manga_fiberID_master,
+                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
+                  nsaID_master, nsa_ra_master, nsa_dec_master,
+                  nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
+                  nsa_mStar_master,
+                  LOCAL_PATH)
+print("MASTER FILE WRITTEN")
 ###############################################################################
 
 
+###############################################################################
+# Histogram the iteration time for each loop.
+#------------------------------------------------------------------------------
+#BINS = np.linspace( 0, 18, 37)
+
 iteration_clock_fig = plt.figure()
-plt.title( 'Iteration Time VS File Index')
-plt.plot( iteration_times)
-plt.savefig( IMAGE_DIR + "iteration_clock")
+plt.title('Iteration Time Histogram')
+plt.xlabel('Iteration Time [sec]')
+plt.ylabel('Percentage of Galaxies')
+#plt.xticks( np.arange( 0, 19, 1))
+plt.hist( iteration_times,
+#         BINS,
+         color='indianred', density=True)
+plt.savefig( IMAGE_DIR + "/histograms/iteration_clock_hist",
+            format=image_format)
+plt.show()
 plt.close()
 del iteration_clock_fig
+###############################################################################
 
 
 ###############################################################################

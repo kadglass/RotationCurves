@@ -1112,18 +1112,23 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     rot_curve_fig = plt.figure(7, figsize=(5, 5))
     plt.title( gal_ID + ' Rotation Curves')
-    plt.plot( rot_curve_dist, rot_curve_max_vel, 'rs', markersize=5, label='Total (pos)')
-    plt.plot( rot_curve_dist, np.abs( rot_curve_min_vel), 'b^', markersize=5, label='Total (neg)')
-    plt.plot( rot_curve_dist, rot_curve_vel_avg, 'gp', markersize=7, label='Total (avg)')
-    plt.plot( rot_curve_dist, sVel_rot_curve, 'cD', markersize=4, label='Stellar mass')
-    plt.plot( rot_curve_dist, dmVel_rot_curve, 'kX', markersize=7, label='Dark matter')
+    plt.plot( rot_curve_dist, rot_curve_max_vel, 'rs', markersize=5,
+             label='Total (pos)')
+    plt.plot( rot_curve_dist, np.abs( rot_curve_min_vel), 'b^', markersize=5,
+             label='Total (neg)')
+    plt.plot( rot_curve_dist, rot_curve_vel_avg, 'gp', markersize=7,
+             label='Total (avg)')
+    plt.plot( rot_curve_dist, sVel_rot_curve, 'cD', markersize=4,
+             label='Stellar mass')
+    plt.plot( rot_curve_dist, dmVel_rot_curve, 'kX', markersize=7,
+             label='Dark matter')
 
     ax = rot_curve_fig.add_subplot(111)
     plt.tick_params( axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    plt.xlabel('Deprojected Radius [kpc]')
-    plt.ylabel(r'Rotational Velocity [km/s]')
+    plt.xlabel(r'Deprojected Radius [$\it{h}^{-1}$ kpc]')
+    plt.ylabel('Rotational Velocity [km/s]')
     plt.legend(loc='upper left')
 
     plt.savefig( IMAGE_DIR + "/rot_curves/" + gal_ID + "_rot_curve",
@@ -1143,15 +1148,18 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     mass_curve_fig = plt.figure(8, figsize=(5, 5))
     plt.title( gal_ID + ' Mass Curves')
-    plt.plot( rot_curve_dist, totMass_interior_curve, 'gp', markersize=7, label='Total mass (avg)')
-    plt.plot( rot_curve_dist, sMass_interior_curve, 'cD', markersize=4, label='Stellar mass')
-    plt.plot( rot_curve_dist, dmMass_interior_curve, 'kX', markersize=7, label='Dark matter mass')
+    plt.plot( rot_curve_dist, totMass_interior_curve, 'gp', markersize=7,
+             label='Total mass (avg)')
+    plt.plot( rot_curve_dist, sMass_interior_curve, 'cD', markersize=4,
+             label='Stellar mass')
+    plt.plot( rot_curve_dist, dmMass_interior_curve, 'kX', markersize=7,
+             label='Dark matter mass')
 
     ax = mass_curve_fig.add_subplot(111)
     plt.tick_params( axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    plt.xlabel('Deprojected Radius [kpc]')
+    plt.xlabel(r'Deprojected Radius [$\it{h}^{-1}$ kpc]')
     plt.ylabel(r'Mass Interior [$M_{\odot}$]')
     plt.legend(loc='upper left')
 
@@ -1203,7 +1211,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     '''
     v_band_im = v_band_panel.imshow( v_band_raw, origin='lower')
     v_band_panel.set_title( gal_ID + ' Visual Band Image')
-    v_cbar = plt.colorbar( v_band_im, ax=v_band_panel, ticks=np.linspace(  0, v_band_raw.max(), 6))
+    v_cbar = plt.colorbar( v_band_im, ax=v_band_panel,
+                          ticks=np.linspace(  0, v_band_raw.max(), 6))
     v_cbar.ax.tick_params( direction='in', color='white')
     v_cbar.set_label(r'Visual Band Flux [$10^{-17}$ erg s$^{-1}$ cm$^{-2}$]')
     v_band_panel.set_xlabel(r'$\Delta \alpha$ [arcsec]')
@@ -1231,7 +1240,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     contour_panel.set_title(r'H$\alpha$ Velocity Field Collected')
     contour_im = contour_panel.imshow( masked_vel_contour_plot, origin='lower',
                       vmin=vmin_bound, vmax=vmax_bound, cmap='bwr')
-    contour_cbar = plt.colorbar( contour_im, ax=contour_panel, ticks = cbar_ticks)
+    contour_cbar = plt.colorbar( contour_im, ax=contour_panel,
+                                ticks = cbar_ticks)
     contour_cbar.ax.tick_params( direction='in')
     contour_cbar.set_label(r'$V_{ROT}$ [km/s]')
     contour_panel.set_xlabel(r'$\Delta \alpha$ [arcsec]')
@@ -1250,7 +1260,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #                         'rs', markersize=5)
 #    rot_curve_panel.plot( rot_curve_dist, np.abs( rot_curve_min_vel),
 #                         'b^', markersize=5)
-    rot_curve_panel.set_xlabel('Deprojected Radius [kpc]')
+    rot_curve_panel.set_xlabel('Deprojected Radius [$\it{h}^{-1}$ kpc]')
     rot_curve_panel.set_ylabel(r'Rotational Velocity [km/s]')
     rot_curve_panel.xaxis.set_ticks_position('both')
     rot_curve_panel.yaxis.set_ticks_position('both')
@@ -1265,7 +1275,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.cla()
     plt.clf()
     plt.close( panel_fig)
-    del panel_fig, v_band_panel, mHa_vel_panel, contour_panel, rot_curve_panel, v_band_im, v_cbar, mHa_vel_im, mHa_cbar, contour_im, contour_cbar
+    del panel_fig, v_band_panel, mHa_vel_panel, contour_panel, rot_curve_panel,
+    v_band_im, v_cbar, mHa_vel_im, mHa_cbar, contour_im, contour_cbar
     gc.collect()
     ###########################################################################
 

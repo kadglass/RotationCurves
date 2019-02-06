@@ -107,7 +107,7 @@ files = glob.glob( MANGA_FOLDER + '/manga-*Pipe3D.cube.fits.gz')
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#FILE_IDS = ['10001-12703']
+#FILE_IDS = ['10001-12701']
 #
 #files = []
 #for file_name in FILE_IDS:
@@ -266,7 +266,7 @@ for file_name in files:
     nsaID_master.append( nsaID)
     ###########################################################################
 
-    '''
+
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an
     #    astropy Table containing said data.
@@ -278,8 +278,8 @@ for file_name in files:
                                        image_format)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
-    '''
-    '''
+
+
     ###########################################################################
     # Write the rotation curve data to a text file in ascii format.
     #
@@ -293,7 +293,7 @@ for file_name in files:
                     ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR)
     print(gal_ID, " WRITTEN")
     ###########################################################################
-    '''
+
     '''
     ###########################################################################
     # Clock the current iteration and append the time to 'iteration_times'

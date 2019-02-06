@@ -328,20 +328,6 @@ for file_name in files:
     print("\n")
 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~
 
-
-###############################################################################
-# Build master file that contains identifying information for each galaxy
-#   as well as scientific information as taken from the NSA catalog.
-#------------------------------------------------------------------------------
-write_master_file( manga_plate_master, manga_fiberID_master,
-                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-                  nsaID_master, nsa_ra_master, nsa_dec_master,
-                  nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-                  nsa_mStar_master,
-                  LOCAL_PATH)
-print("MASTER FILE WRITTEN")
-###############################################################################
-
 '''
 ###############################################################################
 # Histogram the iteration time for each loop.
@@ -363,6 +349,20 @@ plt.close()
 del iteration_clock_fig
 ###############################################################################
 '''
+
+###############################################################################
+# Build master file that contains identifying information for each galaxy
+#   as well as scientific information as taken from the NSA catalog.
+#------------------------------------------------------------------------------
+write_master_file( manga_plate_master, manga_fiberID_master,
+                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
+                  nsaID_master, nsa_ra_master, nsa_dec_master,
+                  nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
+                  nsa_mStar_master,
+                  LOCAL_PATH)
+print("MASTER FILE WRITTEN")
+###############################################################################
+
 
 ###############################################################################
 # Clock the program's run time to check performance.

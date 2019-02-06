@@ -181,21 +181,21 @@ nsa_mjd_master = []
 nsaID_master = []
 ###############################################################################
 
-
+'''
 ###############################################################################
 # Create an array to store the time spent on each iteration of the fot-loop.
 #    This is used to clock the algorithm for analysis.
 #------------------------------------------------------------------------------
 iteration_times = []
 ###############################################################################
-
+'''
 
 ###############################################################################
 # This for loop runs through the necessary calculations to calculte and write
 #    the rotation curve for all of the galaxies in the MaNGA survey.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 for file_name in files:
-    iteration_start = datetime.datetime.now()
+#    iteration_start = datetime.datetime.now()
 
     ###########################################################################
     # file_id is a simplified string that identifies each file that is run
@@ -266,7 +266,7 @@ for file_name in files:
     nsaID_master.append( nsaID)
     ###########################################################################
 
-
+    '''
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an
     #    astropy Table containing said data.
@@ -278,8 +278,8 @@ for file_name in files:
                                        image_format)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
-
-
+    '''
+    '''
     ###########################################################################
     # Write the rotation curve data to a text file in ascii format.
     #
@@ -293,8 +293,8 @@ for file_name in files:
                     ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR)
     print(gal_ID, " WRITTEN")
     ###########################################################################
-
-
+    '''
+    '''
     ###########################################################################
     # Clock the current iteration and append the time to 'iteration_times'
     #    which is plotted below.
@@ -303,7 +303,7 @@ for file_name in files:
     print("ITERATION TIME:", iteration_end)
     iteration_times.append( iteration_end.total_seconds())
     ###########################################################################
-
+    '''
     '''
     print('Loop number:', loop_num)
     print('manga_data_release_master length:', len(manga_data_release_master), len(pickle.dumps(manga_data_release_master)))
@@ -342,7 +342,7 @@ write_master_file( manga_plate_master, manga_fiberID_master,
 print("MASTER FILE WRITTEN")
 ###############################################################################
 
-
+'''
 ###############################################################################
 # Histogram the iteration time for each loop.
 #------------------------------------------------------------------------------
@@ -362,7 +362,7 @@ plt.show()
 plt.close()
 del iteration_clock_fig
 ###############################################################################
-
+'''
 
 ###############################################################################
 # Clock the program's run time to check performance.

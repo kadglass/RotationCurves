@@ -31,6 +31,7 @@ The required folder and file structure to run on a user's local machine is as fo
     ├── master_file.txt                  # master data file that contains compiled information about each galaxy
     └── master_file_ref.txt              # reference file describing the content of 'master_file.txt'
 
+## Output Data
 The output of ‘rotation_curve_vX_X’ is two .txt files in ECSV format for each MaNGA data file housed in ‘/rot_curve_data_files’. 
 The first text file is of the format “dr[NUMBER OF DATA RELEASE]-[MANGA PLATE]-[MANGA FIBER ID]_rot_curve_data” and contains the following quantities as a function of deprojected radius:
 * maximum velocity in units of km/s

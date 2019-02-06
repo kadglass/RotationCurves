@@ -1338,7 +1338,7 @@ def write_rot_curve( data_table, gal_stats,
 def write_master_file( manga_plate_master, manga_fiberID_master,
                       nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
                       nsa_gal_idx_master, nsa_ra_master, nsa_dec_master,
-                      nsa_axes_ratio_master, nsa_phi_master, nsa_zdist_master,
+                      nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
                       nsa_mStar_master,
                       LOCAL_PATH):
     """Create the master file containing identifying information about each
@@ -1383,9 +1383,9 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
             master list containing all the rotation angles of the galaxies used
             in extracting the rotation curve
 
-        nsa_zdist_master:
-            master list containing all the redshift distances of the galaxies
-            used in extracting the rotation curve
+        nsa_z_master:
+            master list containing all the redshifts of the galaxies used in
+            extracting the rotation curve
 
         nsa_mStar_master:
             master list containing all the stellar mass estimates of the
@@ -1409,7 +1409,7 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     nsa_dec_col = Column( nsa_dec_master)
     nsa_axes_ratio_col = Column( nsa_axes_ratio_master)
     nsa_phi_col = Column( nsa_phi_master)
-    nsa_zdist_col = Column( nsa_zdist_master)
+    nsa_z_col = Column( nsa_z_master)
     nsa_mStar_col = Column( nsa_mStar_master)
     ###########################################################################
 
@@ -1428,7 +1428,7 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                             nsa_dec_col * u.degree,
                             nsa_axes_ratio_col,
                             nsa_phi_col * u.degree,
-                            nsa_zdist_col,
+                            nsa_z_col,
                             nsa_mStar_col],
                    names = ['MaNGA_plate',
                             'MaNGA_fiberID',
@@ -1441,7 +1441,7 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                             'NSA_DEC',
                             'NSA_b/a',
                             'NSA_phi',
-                            'NSA_zdist',
+                            'NSA_redshift',
                             'NSA_mStar'])
     ###########################################################################
 

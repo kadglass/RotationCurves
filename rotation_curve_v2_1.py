@@ -635,12 +635,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
             ###################################################################
-            # Find the coordinates of the max/min velocity for a given annulus
-            #    and normalize theta such that the location for the max/min
-            #    corresponds with an angle of 0.
+            # Find the coordinates of the max/min velocity for a given annulus.
             #
             # If there is no max/min velocity point (i.e. all eligible data
-            #    points are masked), then set the velocities to 'np.nan.'
+            #    points are masked), then skip to the next annulus.
             #
             # If there is more than one max or more than one min velocity at
             #    the given annulus, then use the first one found. The first
@@ -659,11 +657,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             #       minimum will also return nothing because there are only
             #       masked values.
             # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
+            data_at_annulus = True
+
             if len( max_vel_point) == 0:
-                max_vel_at_annulus = np.nan * ( u.km / u.s)
-                max_vel_at_annulus_err = np.nan * ( u.km / u.s)
-                min_vel_at_annulus = np.nan * ( u.km / u.s)
-                min_vel_at_annulus_err = np.nan * ( u.km / u.s)
+                data_at_annulus = False
                 print("ALL DATA POINTS AT R=" + str( R) \
                       + " ANNULUS ARE MASKED!!!")
 
@@ -695,218 +692,233 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             ###################################################################
 
 
-            ###################################################################
-            # This block calculates the average rotational velocity at an
-            #    annulus, its error, differnce in the rotational velocities,
-            #    its error, and the total mass interior to that annulus along
-            #     with its error.
-            #
-            # NOTE: If the maximum and minimum velocities at an annulus were
-            #       not found, 'max_vel_at_annulus' and 'min_vel_at_annulus'
-            #       were set to 'np.nan.' If this is the case, all calculations
-            #       below will also evaluate to 'np.nan.'
-            #------------------------------------------------------------------
-            avg_vel_at_annulus = ( max_vel_at_annulus +
-                                  abs( min_vel_at_annulus)) / 2
-            avg_vel_at_annulus_err = np.sqrt(
-                    max_vel_at_annulus_err**2 + min_vel_at_annulus_err**2 )
+                ###############################################################
+                # This block calculates the average rotational velocity at an
+                #    annulus, its error, differnce in the rotational
+                #    velocities, its error, and the total mass interior to that
+                #    annulus along with its error.
+                #
+                # NOTE: If the maximum and minimum velocities at an annulus
+                #       were not found, 'max_vel_at_annulus,'
+                #       'min_vel_at_annulus,' the quantities in this block are
+                #       not calculated.
+                #------------------------------------------------------------------
+                avg_vel_at_annulus = ( max_vel_at_annulus +
+                                      abs( min_vel_at_annulus)) / 2
+                avg_vel_at_annulus_err = np.sqrt(
+                        max_vel_at_annulus_err**2 + min_vel_at_annulus_err**2 )
 
-            rot_vel_diff = abs(
-                    max_vel_at_annulus - abs( min_vel_at_annulus))
-            rot_vel_diff_err = np.sqrt(
-                    max_vel_at_annulus_err**2 + min_vel_at_annulus**2)
+                rot_vel_diff = abs(
+                        max_vel_at_annulus - abs( min_vel_at_annulus))
+                rot_vel_diff_err = np.sqrt(
+                        max_vel_at_annulus_err**2 + min_vel_at_annulus**2)
 
-            mass_interior = avg_vel_at_annulus.to('m/s')**2 \
-                          * deproj_dist_m \
-                          / const.G
-            mass_interior = mass_interior.to('M_sun')
-            mass_interior_err = np.sqrt(
-                ((2 * avg_vel_at_annulus.to('m/s') * deproj_dist_m) \
-                 / ( const.G * const.M_sun) )**2 \
-                 * avg_vel_at_annulus_err.to('m/s')**2 \
-              + ((-1 * avg_vel_at_annulus.to('m/s')**2 * deproj_dist_m) \
-                 / ( const.G**2 * const.M_sun) )**2 \
-                 * ( const.G.uncertainty * const.G.unit)**2 \
-              + ((-1 * avg_vel_at_annulus.to('m/s')**2 * deproj_dist_m) \
-                 / ( const.G * const.M_sun**2) )**2 \
-                 * (const.M_sun.uncertainty * const.M_sun.unit)**2) \
-              * ( u.M_sun)
-            ###################################################################
-
-
-            ###################################################################
-            # This block calculates the stellar rotational velocity at a
-            #    radius, its error, and the stellar mass interior to that
-            #    radius.
-            #
-            # NOTE: 'masked_sMass_density,' in units of
-            #       log10( M_sun / spaxe**2), is data pulled from the MaNGA
-            #       datacube. Because it is in units proportional to
-            #       log( spaxel**(-2)) and in the system of spaxels a spaxel
-            #       can be given units of one, 'masked_sMass_density' is
-            #       essentially in units of log10( M_sun). To find the stellar
-            #       mass interior to a radius that satisfies the
-            #       'pix_between_annuli' condition, 10 is raised to the power
-            #       of 'masked_sMass_density' for a given spaxel.
-            #------------------------------------------------------------------
-            for spaxel in masked_sMass_density[ pix_between_annuli]:
-                try:
-                    sMass_interior += spaxel.physical
-
-                except AttributeError:
-                    pass
-
-            sVel_rot = np.sqrt(
-                    const.G \
-                    * ( sMass_interior.to('kg')) \
-                    / deproj_dist_m)
-            sVel_rot = sVel_rot.to('km/s')
-
-            sVel_rot_err = 1 / 2000 * \
-            np.sqrt(
-              ( (sMass_interior / u.M_sun) * const.M_sun) \
-                / ( deproj_dist_m * const.G ) \
-                * ( const.G.uncertainty * const.G.unit)**2 \
-              + ( const.G * ( sMass_interior / u.M_sun)) \
-                / ( deproj_dist_m * const.M_sun) \
-                * ( const.M_sun.uncertainty * const.M_sun.unit)**2) #\
-#              + ( const.G * ( sMass_interior / u.M_sun) * const.M_sun) \
-#                / ( deproj_dist_m**3) \
-#                * ( deproj_dist_m_err)**2 )
-            sVel_rot_err = sVel_rot_err.to('km/s')
-            ###################################################################
+                mass_interior = avg_vel_at_annulus.to('m/s')**2 \
+                              * deproj_dist_m \
+                              / const.G
+                mass_interior = mass_interior.to('M_sun')
+                mass_interior_err = np.sqrt(
+                    ((2 * avg_vel_at_annulus.to('m/s') * deproj_dist_m) \
+                     / ( const.G * const.M_sun) )**2 \
+                     * avg_vel_at_annulus_err.to('m/s')**2 \
+                  + ((-1 * avg_vel_at_annulus.to('m/s')**2 * deproj_dist_m) \
+                     / ( const.G**2 * const.M_sun) )**2 \
+                     * ( const.G.uncertainty * const.G.unit)**2 \
+                  + ((-1 * avg_vel_at_annulus.to('m/s')**2 * deproj_dist_m) \
+                     / ( const.G * const.M_sun**2) )**2 \
+                     * (const.M_sun.uncertainty * const.M_sun.unit)**2) \
+                  * ( u.M_sun)
+                ###############################################################
 
 
-            ###################################################################
-            # This block calculates the rotational velocities at a radius and
-            #    the dark matter mass interior to that radius along with the
-            #    errors associated with them.
-            #
-            # NOTE: If the total mass interior to a radius cannot be determined
-            #       because the max/min velocities are set to 'np.nan,'
-            #       'dmMass-' variables will follow suit and also return as
-            #       'np.nan.'
-            #
-            # NOTE: There is no error in sMass_density_interior therefore the
-            #       error in the dark matter mass is the same as the error in
-            #       the total mass.
-            #------------------------------------------------------------------
-            dmMass_interior = mass_interior - sMass_interior
-            dmMass_interior_err = mass_interior_err
+                ###############################################################
+                # This block calculates the stellar rotational velocity at a
+                #    radius, its error, and the stellar mass interior to that
+                #    radius.
+                #
+                # NOTE: 'masked_sMass_density,' in units of
+                #       log10( M_sun / spaxe**2), is data pulled from the MaNGA
+                #       datacube. Because it is in units proportional to
+                #       log( spaxel**(-2)) and in the system of spaxels a
+                #       spaxel can be given units of one,
+                #       'masked_sMass_density' is essentially in units of
+                #       log10( M_sun). To find the stellar mass interior to a
+                #       radius that satisfies the 'pix_between_annuli'
+                #       condition, 10 is raised to the power of
+                #       'masked_sMass_density' for a given spaxel.
+                #
+                # NOTE: If the maximum and minimum velocities at an annulus
+                #       were not found, 'max_vel_at_annulus,'
+                #       'min_vel_at_annulus,' the quantities in this block are
+                #       not calculated.
+                #--------------------------------------------------------------
+                for spaxel in masked_sMass_density[ pix_between_annuli]:
+                    try:
+                        sMass_interior += spaxel.physical
 
-            dmVel_rot = np.sqrt(
-                    const.G
-                    * ( dmMass_interior.to('kg')) \
-                    / deproj_dist_m)
-            dmVel_rot = dmVel_rot.to('km/s')
+                    except AttributeError:
+                        pass
 
-            dmVel_rot_err = 1 / 2000 * \
+                sVel_rot = np.sqrt(
+                        const.G \
+                        * ( sMass_interior.to('kg')) \
+                        / deproj_dist_m)
+                sVel_rot = sVel_rot.to('km/s')
+
+                sVel_rot_err = 1 / 2000 * \
                 np.sqrt(
-                  ( (dmMass_interior / u.M_sun) * const.M_sun) \
-                / ( deproj_dist_m * const.G ) \
-                * ( const.G.uncertainty * const.G.unit)**2 \
-              + ( const.G * const.M_sun) \
-                / ( deproj_dist_m * ( dmMass_interior / u.M_sun)) \
-                * ( dmMass_interior_err / u.M_sun)**2 \
-              + ( const.G * ( dmMass_interior / u.M_sun)) \
-                / ( deproj_dist_m * const.M_sun) \
-                * ( const.M_sun.uncertainty * const.M_sun.unit)**2)
-            ###################################################################
+                  ( (sMass_interior / u.M_sun) * const.M_sun) \
+                    / ( deproj_dist_m * const.G ) \
+                    * ( const.G.uncertainty * const.G.unit)**2 \
+                  + ( const.G * ( sMass_interior / u.M_sun)) \
+                    / ( deproj_dist_m * const.M_sun) \
+                    * ( const.M_sun.uncertainty * const.M_sun.unit)**2) #\
+#                  + ( const.G * ( sMass_interior / u.M_sun) * const.M_sun) \
+#                    / ( deproj_dist_m**3) \
+#                    * ( deproj_dist_m_err)**2 )
+                sVel_rot_err = sVel_rot_err.to('km/s')
+                ###############################################################
 
 
+                ###############################################################
+                # This block calculates the rotational velocities at a radius
+                #    and the dark matter mass interior to that radius along
+                #    with the errors associated with them.
+                #
+                # NOTE: If the maximum and minimum velocities at an annulus
+                #       were not found, 'max_vel_at_annulus,'
+                #       'min_vel_at_annulus,' the quantities in this block are
+                #       not calculated.
+                #
+                # NOTE: There is no error in sMass_density_interior therefore
+                #       the error in the dark matter mass is the same as the
+                #       error in the total mass.
+                #--------------------------------------------------------------
+                dmMass_interior = mass_interior - sMass_interior
+                dmMass_interior_err = mass_interior_err
+
+                dmVel_rot = np.sqrt(
+                        const.G
+                        * ( dmMass_interior.to('kg')) \
+                        / deproj_dist_m)
+                dmVel_rot = dmVel_rot.to('km/s')
+
+                dmVel_rot_err = 1 / 2000 * \
+                    np.sqrt(
+                      ( (dmMass_interior / u.M_sun) * const.M_sun) \
+                    / ( deproj_dist_m * const.G ) \
+                    * ( const.G.uncertainty * const.G.unit)**2 \
+                  + ( const.G * const.M_sun) \
+                    / ( deproj_dist_m * ( dmMass_interior / u.M_sun)) \
+                    * ( dmMass_interior_err / u.M_sun)**2 \
+                  + ( const.G * ( dmMass_interior / u.M_sun)) \
+                    / ( deproj_dist_m * const.M_sun) \
+                    * ( const.M_sun.uncertainty * const.M_sun.unit)**2)
+                ###############################################################
+
             ###################################################################
-            # Append the corresponding values to their respective arrays to
-            #    write to the roatation curve file. The quantities are stirpped
-            #     of their units at this stage in the algorithm because astropy
-            #    Column objects cannot be created with quantities that have
-            #    dimensions. The respective dimensions are added back when the
-            #    Column objects are added to the astropy QTable.
+            # If there is valid data at a given annulus (i.e.
+            #    'max_vel_at_annulus' and 'min_vel_at_annulus' could be found),
+            #    append the calculated quantities to their respective arrays.
             #------------------------------------------------------------------
-            rot_curve_dist.append( deproj_dist_kpc.value)
-#            rot_curve_dist_err.append( deproj_dist_kpc_err.value)
+            if data_at_annulus:
+                ###############################################################
+                # Append the corresponding values to their respective arrays to
+                #    write to the roatation curve file. The quantities are
+                #    stirpped of their units at this stage in the algorithm
+                #    because astropy Column objects cannot be created with
+                #    quantities that have dimensions. The respective dimensions
+                #    are added back when the Column objects are added to the
+                #    astropy QTable.
+                #--------------------------------------------------------------
+                rot_curve_dist.append( deproj_dist_kpc.value)
+#                rot_curve_dist_err.append( deproj_dist_kpc_err.value)
 
-            rot_curve_max_vel.append( max_vel_at_annulus.value)
-            rot_curve_max_vel_err.append( max_vel_at_annulus_err.value)
-            rot_curve_min_vel.append( min_vel_at_annulus.value)
-            rot_curve_min_vel_err.append( min_vel_at_annulus_err.value)
-            rot_curve_vel_avg.append( avg_vel_at_annulus.value)
-            rot_curve_vel_avg_err.append( avg_vel_at_annulus_err.value)
-            rot_curve_vel_diff.append( rot_vel_diff.value)
-            rot_curve_vel_diff_err.append( rot_vel_diff_err.value)
+                rot_curve_max_vel.append( max_vel_at_annulus.value)
+                rot_curve_max_vel_err.append( max_vel_at_annulus_err.value)
+                rot_curve_min_vel.append( min_vel_at_annulus.value)
+                rot_curve_min_vel_err.append( min_vel_at_annulus_err.value)
+                rot_curve_vel_avg.append( avg_vel_at_annulus.value)
+                rot_curve_vel_avg_err.append( avg_vel_at_annulus_err.value)
+                rot_curve_vel_diff.append( rot_vel_diff.value)
+                rot_curve_vel_diff_err.append( rot_vel_diff_err.value)
 
-            totMass_interior_curve.append( mass_interior.value)
-            totMass_interior_curve_err.append( mass_interior_err.value)
+                totMass_interior_curve.append( mass_interior.value)
+                totMass_interior_curve_err.append( mass_interior_err.value)
 
-            sMass_interior_curve.append( sMass_interior.value)
-            sVel_rot_curve.append( sVel_rot.value)
-            sVel_rot_curve_err.append( sVel_rot_err.value)
+                sMass_interior_curve.append( sMass_interior.value)
+                sVel_rot_curve.append( sVel_rot.value)
+                sVel_rot_curve_err.append( sVel_rot_err.value)
 
-            dmMass_interior_curve.append( dmMass_interior.value)
-            dmMass_interior_curve_err.append( dmMass_interior_err.value)
-            dmVel_rot_curve.append( dmVel_rot.value)
-            dmVel_rot_curve_err.append( dmVel_rot_err.value)
-            ###################################################################
+                dmMass_interior_curve.append( dmMass_interior.value)
+                dmMass_interior_curve_err.append( dmMass_interior_err.value)
+                dmVel_rot_curve.append( dmVel_rot.value)
+                dmVel_rot_curve_err.append( dmVel_rot_err.value)
+                ###############################################################
 
 
-            ###################################################################
-            # The line below adds the pixels of the H-alpha velocity field
-            #    analyzed in the current iteration of the algorithm to an image
-            #    that plots all the pixels analyzed for a given galaxy.
-            #------------------------------------------------------------------
-            vel_contour_plot[ pix_between_annuli] = masked_Ha_vel[
+                ###############################################################
+                # The line below adds the pixels of the H-alpha velocity field
+                #    analyzed in the current iteration of the algorithm to an
+                #    image that plots all the pixels analyzed for a given
+                #    galaxy.
+                #--------------------------------------------------------------
+                vel_contour_plot[ pix_between_annuli] = masked_Ha_vel[
                                                            pix_between_annuli]
-            ###################################################################
+                ###############################################################
 
 
-            ###################################################################
-            # DIAGNOSTICS:
-            #------------------------------------------------------------------
-            # Below are print statements that give information about the
-            #    max/min and average velocities at an annulus, stellar mass,
-            #    dark matter mass, and total mass along with the rotational
-            #    velocities due to them. Errors are given for all quantites
-            #    except 'sMass_interior' for which there exists no error.
-            #------------------------------------------------------------------
-#            print("---------------------------------------------------------")
-#            print("R = ", R)
-#            print("deproj_dist_kpc:", deproj_dist_kpc)
-#            print("deproj_dist_kpc_err:", deproj_dist_kpc_err)
-#            print("max_vel_at_annulus:", max_vel_at_annulus)
-#            print("max_vel_at_annulus_err:", max_vel_at_annulus_err)
-#            print("min_vel_at_annulus:", min_vel_at_annulus)
-#            print("min_vel_at_annulus_err:", min_vel_at_annulus_err)
-#            print("avg_vel_at_annulus:", avg_vel_at_annulus)
-#            print("avg_vel_at_annulus_err:", avg_vel_at_annulus_err)
-#            print("rot_vel_diff:", rot_vel_diff)
-#            print("rot_vel_diff_err:", rot_vel_diff_err)
-#            print("mass_interior:", mass_interior)
-#            print("mass_interior_err:", mass_interior_err)
-#            print("sMass_interior:", sMass_interior)
-#            print("sVel_rot:", sVel_rot)
-#            print("sVel_rot_err:", sVel_rot_err)
-#            print("dmMass_interior:", dmMass_interior)
-#            print("dmMass_interior_err:", dmMass_interior_err)
-#            print("dmVel_rot:", dmVel_rot)
-#            print("dmVel_rot_err:", dmVel_rot_err)
-#            print("---------------------------------------------------------")
-            #------------------------------------------------------------------
-            # Plot the pixels at the current annulus.
-            #
-#            current_pix_fig = plt.figure(4)
-#            plt.title('Pixels at ' + str(R - dR) + ' < R < ' + str(R))
-#            plt.imshow( pix_between_annuli, origin='lower')
+                ###############################################################
+                # DIAGNOSTICS:
+                #--------------------------------------------------------------
+                # Below are print statements that give information about the
+                #    max/min and average velocities at an annulus, stellar
+                #    mass, dark matter mass, and total mass along with the
+                #    rotational velocities due to them. Errors are given for
+                #    all quantites except 'sMass_interior' for which there
+                #    exists no error.
+                #--------------------------------------------------------------
+#                print("-----------------------------------------------------")
+#                print("R = ", R)
+#                print("deproj_dist_kpc:", deproj_dist_kpc)
+#                print("deproj_dist_kpc_err:", deproj_dist_kpc_err)
+#                print("max_vel_at_annulus:", max_vel_at_annulus)
+#                print("max_vel_at_annulus_err:", max_vel_at_annulus_err)
+#                print("min_vel_at_annulus:", min_vel_at_annulus)
+#                print("min_vel_at_annulus_err:", min_vel_at_annulus_err)
+#                print("avg_vel_at_annulus:", avg_vel_at_annulus)
+#                print("avg_vel_at_annulus_err:", avg_vel_at_annulus_err)
+#                print("rot_vel_diff:", rot_vel_diff)
+#                print("rot_vel_diff_err:", rot_vel_diff_err)
+#                print("mass_interior:", mass_interior)
+#                print("mass_interior_err:", mass_interior_err)
+#                print("sMass_interior:", sMass_interior)
+#                print("sVel_rot:", sVel_rot)
+#                print("sVel_rot_err:", sVel_rot_err)
+#                print("dmMass_interior:", dmMass_interior)
+#                print("dmMass_interior_err:", dmMass_interior_err)
+#                print("dmVel_rot:", dmVel_rot)
+#                print("dmVel_rot_err:", dmVel_rot_err)
+#                print("-----------------------------------------------------")
+                #--------------------------------------------------------------
+                # Plot the pixels at the current annulus.
+                #
+#                current_pix_fig = plt.figure(4)
+#                plt.title('Pixels at ' + str(R - dR) + ' < R < ' + str(R))
+#                plt.imshow( pix_between_annuli, origin='lower')
 #
-#            ax = current_pix_fig.add_subplot(111)
-#            plt.xticks( np.arange( 0, array_width, 10))
-#            plt.yticks( np.arange( 0, array_length, 10))
-#            plt.tick_params( axis='both', direction='in')
-#            ax.yaxis.set_ticks_position('both')
-#            ax.xaxis.set_ticks_position('both')
-#            plt.xlabel(r'$\Delta \alpha$ (arcsec)')
-#            plt.ylabel(r'$\Delta \delta$ (arcsec)')
+#                ax = current_pix_fig.add_subplot(111)
+#                plt.xticks( np.arange( 0, array_width, 10))
+#                plt.yticks( np.arange( 0, array_length, 10))
+#                plt.tick_params( axis='both', direction='in')
+#                ax.yaxis.set_ticks_position('both')
+#                ax.xaxis.set_ticks_position('both')
+#                plt.xlabel(r'$\Delta \alpha$ (arcsec)')
+#                plt.ylabel(r'$\Delta \delta$ (arcsec)')
 #
-#            plt.show()
-#            plt.close()
+#                plt.show()
+#                plt.close()
+                ###############################################################
             ###################################################################
 
 

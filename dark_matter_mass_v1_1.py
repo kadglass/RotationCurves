@@ -29,6 +29,10 @@ import astropy.units as u
 import astropy.constants as const
 
 
+GAL_STAT_INDICATOR = "_gal_stat_data.txt"
+ROT_CURVE_INDICATOR = "_rot_curve_data.txt"
+
+
 def rot_fit_func( depro_radius, v_max, r_turn, alpha):
     """Function in which to fit the rotation curve data to.
 
@@ -41,7 +45,7 @@ def rot_fit_func( depro_radius, v_max, r_turn, alpha):
         v_max:
             the maximum velocity (or in the case of fitting the minimum, the
             absolute value of the minimum velocity) parameter of the rotation
-            curve equation (given in m/s)
+            curve equation (given in km/s)
 
         r_turn:
             the radius at which the rotation curve trasitions from increasing
@@ -52,19 +56,183 @@ def rot_fit_func( depro_radius, v_max, r_turn, alpha):
             the exponential parameter for the rotation curve equation
             (unitless)
 
-    @return: the rotation curve equation with the given '@param' parameters and
-             'depro_radius' data
+    @return:
+        the rotation curve equation with the given '@param' parameters and
+        'depro_radius' data
 
     """
     return v_max * \
            (depro_radius / (r_turn**alpha + depro_radius**alpha)**(1/alpha))
 
 
-def extract_matched_data( MASTER_FILE_NAME, CROSS_REF_FILE_NAMES):
-    """Extract the vflag parameter {0, 1, 2, -9} that tells
-    if the galaxy in question does not lie in a void {0}, does lie in a void
-    {1}, is cut off by the MaNGA footprint {2}, or not found in the MaNGA
-    footprint {-9}.
+def initialize_master_table( master_table, col_names):
+    """Initialize the master_table to contain all of the columns listed in
+    col_names but with fill values of -1.
+
+    @param:
+        master_table:
+            astropy QTable containing identifying information about each galaxy
+
+        col_names:
+            an array of strings containing the names of all of the column data
+            to be calculated in this script
+
+    @return:
+        master_table:
+            astropy QTable containing the best fit parameters, the mass
+            estimates, environmental classification, and the associated errors
+            as well as the identifying information about each galaxy
+    """
+    for name in col_names:
+        master_table.add_column( Column( np.full( len( master_table), -1)),
+                                name=name)
+
+    return master_table
+
+
+def pull_matched_data( master_table, ref_table, col_match_names):
+    """Match the master_table to a reference table via the
+
+    @param:
+        master_table:
+            astropy QTable containing the best fit parameters, the mass
+            estimates, environmental classification, and the associated errors
+            as well as the identifying information about each galaxy
+
+        ref_table:
+            astropy QTable containing identifying information on the galaxy
+            in question and the vflag parameter associated with the galaxy
+
+        col_match_names:
+            array of strings containing the column names of the data to be
+            pulled from the ref_table
+
+    @return:
+        master_table:
+            astropy QTable containing each galaxy's matched parameter in
+            addition to the information originally contained in the table
+    """
+    ###########################################################################
+    # Match each entry in 'master_table' to 'ref_table' according to the
+    #    'MaNGA_plate' and 'MaNGA_fiberID.' The matched parameter is then
+    #    pulled from 'ref_table' and added to the 'master_table.'
+    #
+    # NOTE: In cases where the 'ref_table' does not contain all of the
+    #       'MaNGA_plate' and 'MaNGA_fiberID' match combinations found in the
+    #       'master_table,' the return of 'match_catalogs()' will have some
+    #       empty return statements because of the lack of matches. The
+    #       try-except statement below catches this exception and prints a
+    #       message detailing what happened.
+    #--------------------------------------------------------------------------
+    for i in range( len( master_table)):
+        galaxy_matches = match_catalogs( master_table, ref_table, i)
+
+        try:
+            for col_name in col_match_names:
+                master_table[i][ col_name] = galaxy_matches[0][ col_name]
+        except IndexError:
+            print("USER-CAUGHT INDEX ERROR: \n",
+                  "'galaxy_matches' has zero length (i.e. no matches were " \
+                  + "found in the 'ref_table' for " \
+                  + master_table[i]['MaNGA_plate'] + "-" \
+                  + master_table[i]['MaNGA_fiberID'] + ")")
+    ###########################################################################
+
+    return master_table
+
+
+def match_catalogs( catalog_a, catalog_b, entry):
+    """Finds the matches in 'catalog_b' according to the 'entry' data found in
+    the data fields of 'catalog_a' specified in the 'match_catagories' array.
+
+    @param:
+        catalog_a:
+            astropy QTable in which the target data is to be taken from
+
+        catalog_b:
+            astropy QTable containing potential matches according to the
+            'MaNGA_plate' and 'MaNGA_fiberID' in the selected row's data fields
+
+        entry:
+            the row in which the specific 'MaNGA_plate' and 'MaNGA_fiberID'
+            are to be used in matching to catalog_b
+
+    @return:
+        cat_b_matches:
+            astropy QTable containg the matches found in catalog_b
+    """
+    def match_catalogs_sub( catalog_a, catalog_b, match_criteria, entry):
+        """Recursive sub-function of match_catalogs() to match catalog_b
+        according to the data in one of catalog_a's entries.
+        """
+        n = len( match_criteria) - 1
+
+        target_data = catalog_a[ match_criteria[n]][ entry]
+
+        for row in catalog_b:
+            if row[ match_criteria[n]] != target_data:
+                row['match_flag'] = False
+
+        #######################################################################
+        # If there are no more catagories to be matched, return an astropy
+        #    QTable containg all the matches found in 'catalog_b.' Otherwise,
+        #    recall the function with the matches already found and match
+        #    according to the next set of criteria.
+        #----------------------------------------------------------------------
+        if n == 0:
+            return catalog_b
+        else:
+            return match_catalogs_sub( catalog_a, catalog_b,
+                                  match_criteria[0: n], entry)
+        #######################################################################
+
+
+    # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
+    # 'match_catalogs()' is a general function to match two astropy Tables
+    #    given a set of 'match_criteria.' At the time this function was
+    #    written, the 'MaNGA_plate' and 'MaNGA_fiberID' were sufficent to match
+    #    the galaxies one-to-one. However, if the user desires to match two
+    #    astropy Tables via some other criteria, the user only need to set
+    #    'match_criteria' to an n-length array of column name strings.
+    #--------------------------------------------------------------------------
+    match_criteria = ['MaNGA_plate', 'MaNGA_fiberID']
+    # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
+
+
+    ###########################################################################
+    # Initialize a flag variable column to track the matches found and add it
+    #    to 'catalog_b.'
+    #--------------------------------------------------------------------------
+    match_flag_array = np.full( len( catalog_b), True)
+    catalog_b.add_column( Column( match_flag_array), name='match_flag')
+    ###########################################################################
+
+
+    ###########################################################################
+    # Initial call to the recursive 'match_catalogs_sub()' sub-function. The
+    #    output of this function, 'cat_b_matches' contains all of the entries
+    #    found in 'catalog_b' but with the added 'match_flag' column to
+    #    reference the matches found.
+    #
+    # 'matches' extracts the rows of 'cat_b_matches' where 'match_flag' equals
+    #    True.
+    #
+    # Finally, the 'match_flag' column is then removed from the 'matches'
+    #    table before returning.
+    #--------------------------------------------------------------------------
+    cat_b_matches = match_catalogs_sub( catalog_a, catalog_b, match_criteria,
+                                       entry)
+
+    matches = cat_b_matches[ cat_b_matches['match_flag']]
+    matches.remove_column('match_flag')
+    ###########################################################################
+
+    return matches
+
+
+def build_vflag_ref_table( CROSS_REF_FILE_NAMES):
+    """Compile the environmental classifications and identifying data from the
+    various 'void_finder' output files.
 
     ATTN: Originally, the files in this project were cross referenced to Prof.
     Kelly Douglass' file via the link below. However, upon improvements to
@@ -75,154 +243,60 @@ def extract_matched_data( MASTER_FILE_NAME, CROSS_REF_FILE_NAMES):
     kias1033_5_P-MJD-F_MPAJHU_Zdust_stellarMass_BPT_SFR_NSA_correctVflag.txt>
 
     @param:
-        MASTER_FILE_NAME:
-            string representation of the master file containing the best fit
-            parameters along with their errors, the mass estimates obtained in
-            estimate_dark_matter, and identifying information about each
-            galaxy
-
         CROSS_REF_FILE_NAMES:
-            string representations of the .txt files uses to extract the vflag
-            parameter as obtained from void_finder.
-            Prof. Kelly Douglass' file {index 0} was initially used to cross
-            reference for vflag. However, with the updates to void_finder,
-            indicies 1, 2, 3, and 4 are used.
+            string representations of the text files uses to extract the vflag
+            parameter as obtained from void_finder
 
     @return:
-        vflag_master:
-            master list containing each galaxy's 'vflag' parameter
+        vflag_ref_table:
+            astropy QTable containing the compiled
 
-        mstar_NSA_master:
-            master list containing each galaxy's 'Mstar_NSA' parameter
     """
-    master_table = ascii.read( MASTER_FILE_NAME,
-                                   format='ecsv',
-                                   include_names = ('NSA_plate',
-                                                    'NSA_fiberID',
-                                                    'NSA_MJD'))
-
-
-    # ONEOINEQOH
-    mstar_NSA = ascii.read( LOCAL_PATH + '/nsa_v0_1_2.fits')
-
-
-    # NOT FINISHED DO NOT USE
-    doug_nc = ascii.read( CROSS_REF_FILE_NAMES[1],
-                           include_names = ('MaNGA_plate',
-                                            'MaNGA_fiberID',
-                                            'MaNGA_data_release',
-                                            'vflag'))
-    doug_nf = ascii.read( CROSS_REF_FILE_NAMES[2],
-                           include_names = ('MaNGA_plate',
-                                            'MaNGA_fiberID',
-                                            'MaNGA_data_release',
-                                            'vflag'))
-    doug_void_reclass = ascii.read( CROSS_REF_FILE_NAMES[3],
-                           include_names = ('MaNGA_plate',
-                                            'MaNGA_fiberID',
-                                            'MaNGA_data_release',
-                                            'vflag'))
-    doug_wall_reclass = ascii.read( CROSS_REF_FILE_NAMES[4],
-                           include_names = ('MaNGA_plate',
-                                            'MaNGA_fiberID',
-                                            'MaNGA_data_release',
-                                            'vflag'))
-
-    vflag_master = np.full( len( master_table), -1)
-    mstar_NSA_master = np.full( len( master_table), -1, dtype=np.int64)
-
-    for i in range( len( master_table)):
-        target_plate = master_table['NSA_plate'][i]
-        target_mjd = master_table['NSA_MJD'][i]
-        target_fiberID = master_table['NSA_fiberID'][i]
-
-        #######################################################################
-        # The code below first matches via the 'target_plate' value. Of those
-        #    matches, the next line matches via 'target_MJD.' Finally, of those
-        #    galaxies in 'vflag_ref_table' that match both the galaxy in
-        #    question's plate and MJD, the remaining line matches via
-        #    'target_fiberID.'
-        #
-        # NOTE: At the conclusion of these three matching statements, only
-        #       one galaxy match should be found within 'ref_table.'
-        #######################################################################
-        # MATCH PLATE
-        plate_matches = ref_table['plate'] == target_plate
-        # MATCH MJD
-        mjd_matches = ref_table['MJD'] == target_mjd
-        # MATCH FIBERID
-        fiberID_matches = ref_table['fiberID'] == target_fiberID
-
-        galaxy_matches = np.logical_and.reduce(( plate_matches, mjd_matches,
-                                                fiberID_matches))
-
-        #######################################################################
-        # This statement pulls out the 'vflag' parameter from Prof. Kelly
-        #    Douglass' file.
-        #
-        # NOTE: There are four "[0]" trailing the matched galaxy in
-        #       'vflag_ref_table.' It is unclear why this must be done, but
-        #       this code should return the 'vflag' parameter. It is
-        #       theorized that when matching, additional tables are hashed
-        #       together; thus to counteract this, four trailing "[0]" must
-        #       be added to access 'vflag.'
-        #######################################################################
-        if len( ref_table[ galaxy_matches]) == 1:
-            vflag_master[i] = ref_table[galaxy_matches]['vflag'][0]
-
-        if np.isfinite( ref_table['Mstar_NSA'][galaxy_matches]):
-            mstar_NSA_master[i] = ref_table[galaxy_matches]['Mstar_NSA'][0]
-
-#        print( ref_table[galaxy_matches]['Mstar_NSA'][0])
-#        print( ref_table[galaxy_matches]['vflag'][0])
-
-    return vflag_master, mstar_NSA_master
-
-
-def write_matched_data( vflag_list, mstar_NSA_list,
-                       MASTER_FILE_NAME):
-    """Writes the vflag parameter to the master file for each corresponding
-    galaxy.
-
-    @param:
-        vflag_list:
-            list containing all of the 'vflag' parameters for each galaxy
-
-        mstar_NSA_list:
-            list containing all the 'mstar_NSA' parameters for each galaxy
-
-        LOCAL_PATH:
-            string representation of the directory of the main script file
-
-        MASTER_FILE_NAME:
-            string representation of the name of the file which 'vflag_list'
-            will be written to
-    """
-    master_table = ascii.read( MASTER_FILE_NAME, format='ecsv')
-
     ###########################################################################
-    # NOTE: Because the add_column method will not overwrite existing columns
-    #       with the same name, the columns are first removed from master_table
-    #       if they exist and then added back with the updated values.
+    # Initialize the 'vflag_ref_table' to contain the 'MaNGA_plate,'
+    #    'MaNGA_fiberID,' and 'vflag' columns.
     #--------------------------------------------------------------------------
-    del_col_names = ['vflag', 'Mstar_NSA']
-
-    for col in del_col_names:
-        try:
-            master_table.remove_column( col)
-        except KeyError:
-            print("USER GENERATED KeyError: \n" + \
-                  "Column name '" + col + "' not found in 'del_col_names'")
+    vflag_ref_table = QTable( names=('MaNGA_plate', 'MaNGA_fiberID', 'vflag'),
+                             dtype = ( int, int, int))
     ###########################################################################
 
-    master_table.add_column( Column( vflag_list), name='vflag')
-    master_table.add_column( Column( mstar_NSA_list) * u.M_sun,
-                            name='Mstar_NSA')
 
-    ascii.write(master_table,
-                MASTER_FILE_NAME,
-                format = 'ecsv',
-                overwrite = True)
+    ###########################################################################
+    # Read in each of the 'void_finder' output files.
+    #--------------------------------------------------------------------------
+    doug_not_classified = ascii.read( CROSS_REF_FILE_NAMES[1],
+                           include_names = ('MaNGA_plate', 'MaNGA_fiberID',
+                                            'vflag'), format='ecsv')
+    doug_not_found = ascii.read( CROSS_REF_FILE_NAMES[2],
+                           include_names = ('MaNGA_plate', 'MaNGA_fiberID',
+                                            'vflag'), format='ecsv')
+    doug_void_reclass = ascii.read( CROSS_REF_FILE_NAMES[3],
+                           include_names = ('MaNGA_plate', 'MaNGA_fiberID',
+                                            'vflag'), format='ecsv')
+    doug_wall_reclass = ascii.read( CROSS_REF_FILE_NAMES[4],
+                           include_names = ('MaNGA_plate', 'MaNGA_fiberID',
+                                            'vflag'), format='ecsv')
+    ###########################################################################
+
+
+    ###########################################################################
+    # For each row in each of the 'void_finder' output files, append that row
+    #    onto the end of the 'vflag_ref_table.'
+    #--------------------------------------------------------------------------
+    for row in doug_not_classified:
+        vflag_ref_table.add_row( row)
+
+    for row in doug_not_found:
+        vflag_ref_table.add_row( row)
+
+    for row in doug_void_reclass:
+        vflag_ref_table.add_row( row)
+
+    for row in doug_wall_reclass:
+        vflag_ref_table.add_row( row)
+    ###########################################################################
+
+    return vflag_ref_table
 
 
 def fit_rot_curve_files( rot_curve_files, gal_stat_files,
@@ -261,6 +335,13 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     ###########################################################################
     # Master arrays initialized to be empty.
     #--------------------------------------------------------------------------
+    MaNGA_plate_master = []
+    MaNGA_fiberID_master = []
+
+    center_flux_master = []
+    center_flux_err_master = []
+    sMass_processed_master = []
+
     v_max_best_master = []
     r_turn_best_master = []
     alpha_best_master = []
@@ -298,11 +379,21 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     # ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~
     for rot_file, gal_stat_file in zip( rot_curve_files, gal_stat_files):
         #######################################################################
-        # Extract the gal_ID from the gal_stat_file,
+        # Extract the data from the gal_stat_file, and append the
+        #    'MaNGA_plate,' 'MaNGA_fiberID,' 'center_flux,' and
+        #    'center_flux_error,' data to their respective master arrays
         #----------------------------------------------------------------------
         gal_stat_table = ascii.read( gal_stat_file, format='ecsv')
         gal_ID = gal_stat_table['gal_ID'][0]
         print("gal_ID:", gal_ID)
+
+        center_flux = gal_stat_table['center_flux'][0]
+        center_flux_err = gal_stat_table['center_flux_error'][0]
+
+        MaNGA_plate_master.append( gal_ID[ 0: gal_ID.find('-')] )
+        MaNGA_fiberID_master.append( gal_ID[ gal_ID.find('-') + 1:])
+        center_flux_master.append( center_flux)
+        center_flux_err_master.append( center_flux_err)
         #######################################################################
 
 
@@ -351,13 +442,27 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
         rot_vel_min = np.abs( rot_data_table['min_velocity'].value)
         rot_vel_min_err = rot_data_table['min_velocity_error'].value
 
-        print("depro_radii:", depro_radii)
-        print("rot_vel_avg:", rot_vel_avg)
-        print("rot_vel_avg_err:", rot_vel_avg_err)
-        print("rot_vel_max:", rot_vel_max)
-        print("rot_vel_max_err:", rot_vel_max_err)
-        print("rot_vel_min:", rot_vel_min)
-        print("rot_vel_min_err:", rot_vel_min_err)
+#        print("depro_radii:", depro_radii)
+#        print("rot_vel_avg:", rot_vel_avg)
+#        print("rot_vel_avg_err:", rot_vel_avg_err)
+#        print("rot_vel_max:", rot_vel_max)
+#        print("rot_vel_max_err:", rot_vel_max_err)
+#        print("rot_vel_min:", rot_vel_min)
+#        print("rot_vel_min_err:", rot_vel_min_err)
+        #######################################################################
+
+
+        #######################################################################
+        # Extract the total stellar mass processed for the galaxy from the last
+        #    data point in the 'sMass_interior' column for the galaxy and
+        #    append that value to the
+        #----------------------------------------------------------------------
+        sMass_interior = rot_data_table['sMass_interior'].value
+        sMass_processed = sMass_interior[ -1]
+
+        sMass_processed_master.append( sMass_processed)
+
+#        print("sMass_processed:", sMass_processed)
         #######################################################################
 
 
@@ -653,13 +758,13 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
                 #    file in question as well as the chi square (goodness of
                 #    fit) statistic.
                 #--------------------------------------------------------------
-                print("Rot Curve Best Param:", rot_popt)
-                print("Rot Curve Best Param (Positive):", pos_rot_popt)
-                print("Rot Curve Best Param (Negative):", neg_rot_popt)
-                print(r"$\chi^{2}$:", chi_square_rot)
-                print(r"$\chi^{2}$ (Positive):", pos_chi_square_rot)
-                print(r"$\chi^{2}$ (Negative):", neg_chi_square_rot)
-                print("-----------------------------------------------------")
+#                print("Rot Curve Best Param:", rot_popt)
+#                print("Rot Curve Best Param (Positive):", pos_rot_popt)
+#                print("Rot Curve Best Param (Negative):", neg_rot_popt)
+#                print("Chi^{2}:", chi_square_rot)
+#                print("Chi^{2} (Pos):", pos_chi_square_rot)
+#                print("Chi^{2} (Neg):", neg_chi_square_rot)
+#                print("-----------------------------------------------------")
                 ###############################################################
 
 
@@ -737,6 +842,13 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     # Convert the data arrays into Column objects to add to the master_file
     #    data table.
     #--------------------------------------------------------------------------
+    MaNGA_plate_col = Column( MaNGA_plate_master)
+    MaNGA_fiberID_col = Column( MaNGA_fiberID_master)
+
+    center_flux_col = Column( center_flux_master)
+    center_flux_err_col = Column( center_flux_err_master)
+    sMass_processed_col = Column( sMass_processed_master)
+
     v_max_best_col = Column( v_max_best_master)
     r_turn_best_col = Column( r_turn_best_master)
     alpha_best_col = Column( alpha_best_master)
@@ -765,28 +877,38 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     ###########################################################################
     # Add the column objects to astropy QTables.
     #--------------------------------------------------------------------------
-    best_fit_param_table = QTable( [v_max_best_col * ( u.km / u.s),
-                                    v_max_sigma_col * ( u.km / u.s),
-                                    r_turn_best_col * ( u.kpc),
-                                    r_turn_sigma_col * ( u.kpc),
+    best_fit_param_table = QTable( [MaNGA_plate_col,
+                                    MaNGA_fiberID_col,
+                                    center_flux_col,
+                                    center_flux_err_col,
+                                    sMass_processed_col,
+                                    v_max_best_col,
+                                    v_max_sigma_col,
+                                    r_turn_best_col,
+                                    r_turn_sigma_col,
                                     alpha_best_col,
                                     alpha_sigma_col,
                                     chi_square_rot_col,
-                                    pos_v_max_best_col * ( u.km / u.s),
-                                    pos_v_max_sigma_col * ( u.km / u.s),
-                                    pos_r_turn_best_col * ( u.kpc),
-                                    pos_r_turn_sigma_col * ( u.kpc),
+                                    pos_v_max_best_col,
+                                    pos_v_max_sigma_col,
+                                    pos_r_turn_best_col,
+                                    pos_r_turn_sigma_col,
                                     pos_alpha_best_col,
                                     pos_alpha_sigma_col,
                                     pos_chi_square_rot_col,
-                                    neg_v_max_best_col * ( u.km / u.s),
-                                    neg_v_max_sigma_col * ( u.km / u.s),
-                                    neg_r_turn_best_col * ( u.kpc),
-                                    neg_r_turn_sigma_col * ( u.kpc),
+                                    neg_v_max_best_col,
+                                    neg_v_max_sigma_col,
+                                    neg_r_turn_best_col,
+                                    neg_r_turn_sigma_col,
                                     neg_alpha_best_col,
                                     neg_alpha_sigma_col,
                                     neg_chi_square_rot_col],
-                           names = ['v_max_best',
+                           names = ['MaNGA_plate',
+                                    'MaNGA_fiberID',
+                                    'center_flux',
+                                    'center_flux_error',
+                                    'sMass_processed',
+                                    'v_max_best',
                                     'v_max_sigma',
                                     'turnover_rad_best',
                                     'turnover_rad_sigma',
@@ -812,150 +934,8 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     return best_fit_param_table
 
 
-def write_best_params( best_fit_param_table, gal_stat_files,
-                      MASTER_FILE_NAME, ROT_CURVE_MASTER_FOLDER):
-    """Writes the list of galaxies along with the respective best fit
-    parameters and galaxy statistics to a text file indicated in the
-    'MASTER_FILE_NAME' variable.
-
-    @param:
-        gal_stat_files:
-            string list of galaxies for which general statistical data exists
-
-        best_fit_param_table:
-            astropy QTable that contains:
-                i.) MaNGA plate and fiberID for identification
-               ii.) the best fit parameters for the max and min rotation
-                       curves
-              iii.) the best fit patameters for the max and min luminosity
-                       curves
-
-        LOCAL_PATH:
-            string representation of the directory path of this file
-
-        MASTER_FILE_NAME:
-            string representation of the name of the file which
-            'best_fit_param_table' will be written to
-
-        ROT_CURVE_MASTER_FOLDER:
-            string representation of the path of the folder containing all of
-            the galaxy data for all of the galaxies in the MaNGA survey
-
-    @return: function returns the boolean True upon completion
-    """
-    master_table = ascii.read( MASTER_FILE_NAME, format='ecsv')
-
-    ###########################################################################
-    # NOTE: Because the add_column method will not overwrite existing columns
-    #       with the same name, the columns are first removed from master_table
-    #       if they exist and then added back with the updated values.
-    #--------------------------------------------------------------------------
-    del_col_names = ['v_max_best',
-                     'v_max_sigma',
-                     'turnover_rad_best',
-                     'turnover_rad_sigma',
-                     'alpha_best',
-                     'alpha_sigma',
-                     'chi_square_rot',
-                     'pos_v_max_best',
-                     'pos_v_max_sigma',
-                     'pos_turnover_rad_best',
-                     'pos_turnover_rad_sigma',
-                     'pos_alpha_best',
-                     'pos_alpha_sigma',
-                     'pos_chi_square_rot',
-                     'neg_v_max_best',
-                     'neg_v_max_sigma',
-                     'neg_turnover_rad_best',
-                     'neg_turnover_rad_sigma',
-                     'neg_alpha_best',
-                     'neg_alpha_sigma',
-                     'neg_chi_square_rot',
-                     'center_luminosity',
-                     'center_luminosity_err',
-                     'sMass_processed']
-
-    for col in del_col_names:
-        try:
-            master_table.remove_column( col)
-        except KeyError:
-            print("USER GENERATED KeyError: \n" + \
-                  "Column name '" + col + "' not found in 'del_col_names'")
-    ###########################################################################
-
-    lum_center_master = []
-    lum_center_err_master = []
-    sMass_processed_master = []
-
-    for data_file in gal_stat_files:
-        gal_stat_table = ascii.read(data_file, format='ecsv')
-
-        lum_center = gal_stat_table['center_luminosity'].value[0]
-        lum_center_err = gal_stat_table['center_luminosity_error'].value[0]
-        sMass_processed = gal_stat_table['sMass_processed'].value[0]
-
-        lum_center_master.append( lum_center)
-        lum_center_err_master.append( lum_center_err)
-        sMass_processed_master.append( sMass_processed)
-
-    master_table.add_column( best_fit_param_table['v_max_best'],
-                            name='v_max_best')
-    master_table.add_column( best_fit_param_table['v_max_sigma'],
-                            name='v_max_sigma')
-    master_table.add_column( best_fit_param_table['turnover_rad_best'],
-                            name='turnover_rad_best')
-    master_table.add_column( best_fit_param_table['turnover_rad_sigma'],
-                            name='turnover_rad_sigma')
-    master_table.add_column( best_fit_param_table['alpha_best'],
-                            name='alpha_best')
-    master_table.add_column( best_fit_param_table['alpha_sigma'],
-                            name='alpha_sigma')
-    master_table.add_column( best_fit_param_table['chi_square_rot'],
-                            name='chi_square_rot')
-    master_table.add_column( best_fit_param_table['pos_v_max_best'],
-                            name='pos_v_max_best')
-    master_table.add_column( best_fit_param_table['pos_v_max_sigma'],
-                            name='pos_v_max_sigma')
-    master_table.add_column( best_fit_param_table['pos_turnover_rad_best'],
-                            name='pos_turnover_rad_best')
-    master_table.add_column( best_fit_param_table['pos_turnover_rad_sigma'],
-                            name='pos_turnover_rad_sigma')
-    master_table.add_column( best_fit_param_table['pos_alpha_best'],
-                            name='pos_alpha_best')
-    master_table.add_column( best_fit_param_table['pos_alpha_sigma'],
-                            name='pos_alpha_sigma')
-    master_table.add_column( best_fit_param_table['pos_chi_square_rot'],
-                            name='pos_chi_square_rot')
-    master_table.add_column( best_fit_param_table['neg_v_max_best'],
-                            name='neg_v_max_best')
-    master_table.add_column( best_fit_param_table['neg_v_max_sigma'],
-                            name='neg_v_max_sigma')
-    master_table.add_column( best_fit_param_table['neg_turnover_rad_best'],
-                            name='neg_turnover_rad_best')
-    master_table.add_column( best_fit_param_table['neg_turnover_rad_sigma'],
-                            name='neg_turnover_rad_sigma')
-    master_table.add_column( best_fit_param_table['neg_alpha_best'],
-                            name='neg_alpha_best')
-    master_table.add_column( best_fit_param_table['neg_alpha_sigma'],
-                            name='neg_alpha_sigma')
-    master_table.add_column( best_fit_param_table['neg_chi_square_rot'],
-                            name='neg_chi_square_rot')
-    master_table.add_column( Column( lum_center_master),
-                            name='center_luminosity')
-    master_table.add_column( Column( lum_center_err_master),
-                            name='center_luminosity_error')
-    master_table.add_column( Column( sMass_processed_master),
-                            name='sMass_processed')
-
-    ascii.write(master_table,
-                MASTER_FILE_NAME,
-                format = 'ecsv',
-                overwrite = True)
-
-
-def estimate_dark_matter( best_fit_param_table,
-                         rot_curve_files, gal_stat_files,
-                         IMAGE_DIR):
+def estimate_dark_matter( master_table,
+                         IMAGE_FORMAT, IMAGE_DIR):
     """Estimate the total matter interior to a radius from the fitted v_max
     parameter and the last recorded radius for the galaxy. Then estimate the
     total dark matter interior to that radius by subtracting the stellar mass
@@ -966,14 +946,6 @@ def estimate_dark_matter( best_fit_param_table,
             astropy QTable containing the best fit parameters for each galaxy
             along with the errors associated with them and the chi-square
             goodness of fit statistic
-
-        rot_curve_files:
-            a string list containing all of the rotation curve files within the
-            'rotation_curve_vX_X' output folder
-
-        gal_stat_files:
-            a string list containing all of the galaxy statistic files within
-            the 'rotation_curve_vX_X' output folder
 
         IMAGE_DIR:
             string representation of the file path that pictures are saved to
@@ -987,6 +959,9 @@ def estimate_dark_matter( best_fit_param_table,
     ###########################################################################
     # Initialize the arrays that will store the data.
     #--------------------------------------------------------------------------
+    MaNGA_plate_master = []
+    MaNGA_fiberID_master = []
+
     gal_mass_master = []
     gal_mass_err_master = []
     theorized_dmMass_master = []
@@ -998,13 +973,16 @@ def estimate_dark_matter( best_fit_param_table,
 
 
     ###########################################################################
-    # Gather the necessary information from the 'best_fit_param_table'.
+    # Gather the necessary information from the 'master_table'.
     #--------------------------------------------------------------------------
-    v_max_best_list = best_fit_param_table['v_max_best']
-    v_max_sigma_list = best_fit_param_table['v_max_sigma']
-    r_turn_best_list = best_fit_param_table['turnover_rad_best']
-    alpha_best_list = best_fit_param_table['alpha_best']
-    chi_square_rot_list = best_fit_param_table['chi_square_rot']
+    MaNGA_plate_list = master_table['MaNGA_plate']
+    MaNGA_fiberID_list = master_table['MaNGA_fiberID']
+
+    v_max_best_list = master_table['v_max_best']
+    v_max_sigma_list = master_table['v_max_sigma']
+    r_turn_best_list = master_table['turnover_rad_best']
+    alpha_best_list = master_table['alpha_best']
+    chi_square_rot_list = master_table['chi_square_rot']
     ###########################################################################
 
 
@@ -1018,16 +996,18 @@ def estimate_dark_matter( best_fit_param_table,
     #    mass interior to a radius are calculated.
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
     for v_max_best, v_max_sigma, r_turn_best, alpha_best, chi_square_rot, \
-      rot_data_file, gal_stat_file in zip(
+      plate, fiberID in zip(
               v_max_best_list, v_max_sigma_list,
               r_turn_best_list, alpha_best_list,
               chi_square_rot_list,
-              rot_curve_files, gal_stat_files):
+              MaNGA_plate_list, MaNGA_fiberID_list):
 
-        gal_stat_table = ascii.read( gal_stat_file, format='ecsv')
+        gal_stat_table = ascii.read( str( plate) + "-" + str( fiberID) \
+                                    + GAL_STAT_INDICATOR, format='ecsv')
         gal_id = gal_stat_table['gal_ID'][0]
 
-        rot_curve_table = ascii.read( rot_data_file, format='ecsv')
+        rot_curve_table = ascii.read( str( plate) + "-" + str( fiberID) \
+                                    + ROT_CURVE_INDICATOR, format='ecsv')
         depro_dist = rot_curve_table['deprojected_distance'].value
         rot_vel_data = rot_curve_table['rot_vel_avg'].value
         rot_vel_data_err = rot_curve_table['rot_vel_avg_error'].value
@@ -1071,12 +1051,15 @@ def estimate_dark_matter( best_fit_param_table,
 
         #######################################################################
         # Append the corresponding values to their respective arrays to
-        #    write to the roatation curve file. The quantities are stirpped
-        #    of their units at this stage in the algorithm because astropy
-        #    Column objects cannot be created with quantities that have
-        #    dimensions. The respective dimensions are added back when the
-        #    Column objects are added to the astropy QTable.
+        #    write to the master file. The quantities are stirpped of their
+        #    units at this stage in the algorithm because astropy Column
+        #    objects cannot be created with quantities that have dimensions.
+        #    The respective dimensions are added back when the Column objects
+        #    are added to the astropy QTable.
         #----------------------------------------------------------------------
+        MaNGA_plate_master.append( plate)
+        MaNGA_fiberID_master.append( fiberID)
+
         gal_mass_master.append( gal_mass / u.M_sun)
         gal_mass_err_master.append( gal_mass_err / u.M_sun)
         theorized_dmMass_master.append( theorized_dmMass / u.M_sun)
@@ -1126,7 +1109,8 @@ def estimate_dark_matter( best_fit_param_table,
                 color='black', fontsize=10, bbox=props)
 
         plt.savefig( IMAGE_DIR + '/fitted_rotation_curves/' + gal_id +\
-                    '_fitted_rotation_curve.png', format='eps')
+                    '_fitted_rotation_curve.' + IMAGE_FORMAT,
+                    format=IMAGE_FORMAT)
         plt.show()
         plt.close()
         #######################################################################
@@ -1137,6 +1121,9 @@ def estimate_dark_matter( best_fit_param_table,
     # Convert the data arrays into Column objects to add to the rotation
     #    curve data table.
     #--------------------------------------------------------------------------
+    MaNGA_plate_col = Column( MaNGA_plate_master)
+    MaNGA_fiberID_col = Column( MaNGA_fiberID_master)
+
     gal_mass_col = Column( gal_mass_master)
     gal_mass_err_col = Column( gal_mass_err_master)
     theorized_dmMass_col = Column( theorized_dmMass_master)
@@ -1151,14 +1138,18 @@ def estimate_dark_matter( best_fit_param_table,
     ###########################################################################
     # Add the column objects to astropy QTables.
     #--------------------------------------------------------------------------
-    mass_estimate_table = QTable( [ gal_mass_col * (u.M_sun),
+    mass_estimate_table = QTable( [ MaNGA_plate_col,
+                                   MaNGA_fiberID_col,
+                                   gal_mass_col * (u.M_sun),
                                    gal_mass_err_col * (u.M_sun),
                                    theorized_dmMass_col * (u.M_sun),
                                    theorized_dmMass_err_col * (u.M_sun),
                                    sMass_col * (u.M_sun),
                                    dmMass_to_sMass_ratio_col,
                                    dmMass_to_sMass_ratio_err_col],
-                          names = ['total_mass',
+                          names = ['MaNGA_plate',
+                                   'MaNGA_fiberID',
+                                   'total_mass',
                                    'total_mass_error',
                                    'dmMass',
                                    'dmMass_error',
@@ -1170,60 +1161,7 @@ def estimate_dark_matter( best_fit_param_table,
     return mass_estimate_table
 
 
-def write_mass_estimates( mass_estimate_table, MASTER_FILE_NAME):
-    """Writes the mass estimates obtained in the estimate_dark_matter
-    function. A try-except statementis included in the event that the master
-    file already has data for these columns, and the data needs to overwritten.
-
-    @param:
-        mass_estimate_table:
-            astropy QTable with the stellar, dark matter, and total mass
-            estimates interior to the outermost radius in the galaxy that was
-            analyzed in this project
-
-        MASTER_FILE_NAME:
-            string representation of the master file containing the best fit
-            parameters along with their errors, the mass estimates obtained in
-            estimate_dark_matter, and identifying information about each
-            galaxy
-    """
-    master_table = ascii.read( MASTER_FILE_NAME, format='ecsv')
-
-    ###########################################################################
-    # NOTE: Because the add_column method will not overwrite existing columns
-    #       with the same name, the columns are first removed from master_table
-    #       if they exist and then added back with the updated values.
-    #--------------------------------------------------------------------------
-    del_col_names = ['total_mass',
-                     'total_mass_error',
-                     'dmMass',
-                     'dmMass_error',
-                     'sMass',
-                     'dmMass_to_sMass_ratio',
-                     'dmMass_to_sMass_ratio_error']
-
-    for col in del_col_names:
-        try:
-            master_table.remove_column( col)
-        except KeyError:
-            print("USER GENERATED KeyError: \n" + \
-                  "Column name '" + col + "' not found in 'del_col_names'")
-    ###########################################################################
-
-    master_table.add_column( mass_estimate_table['total_mass'])
-    master_table.add_column( mass_estimate_table['total_mass_error'])
-    master_table.add_column( mass_estimate_table['dmMass'])
-    master_table.add_column( mass_estimate_table['dmMass_error'])
-    master_table.add_column( mass_estimate_table['dmMass_to_sMass_ratio'])
-    master_table.add_column( mass_estimate_table['dmMass_to_sMass_ratio_error'])
-
-    ascii.write(master_table,
-                MASTER_FILE_NAME,
-                format = 'ecsv',
-                overwrite = True)
-
-
-def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
+def plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR):
     """Function to histogram the dark matter to stellar mass ratios.
 
     @param:
@@ -1259,15 +1197,10 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
 
 
     ###########################################################################
-    # Import 'vflag' from the 'master_file,' and gather the mass
-    #    ratios from the 'mass_estimate_table' obtained in
-    #    'estimate_dark_matter().'
+    # Import 'vflag' and 'dmMass_to_sMass_ratio' from the 'master_table.'
     #--------------------------------------------------------------------------
-    master_table = ascii.read( MASTER_FILE_NAME, format='ecsv')
     vflag_list = master_table['vflag'].data
-
-    dm_to_stellar_mass_ratio_list = mass_estimate_table[
-                                        'dmMass_to_sMass_ratio'].data
+    dm_to_stellar_mass_ratio_list = master_table['dmMass_to_sMass_ratio'].data
     ###########################################################################
 
 
@@ -1287,14 +1220,16 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
     # Calculate the mean, RMS, and standard deviation for the void, wall, and
     #    total distributions in the histogram below.
     #--------------------------------------------------------------------------
-    ratio_mean = np.mean( dm_to_stellar_mass_ratio_list)
+#    ratio_mean = np.mean( dm_to_stellar_mass_ratio_list)
+#    ratio_stdev = np.std( dm_to_stellar_mass_ratio_list)
+#    ratio_rms = np.sqrt( np.mean( dm_to_stellar_mass_ratio_list**2))
+
     ratio_wall_mean = np.mean( dm_to_stellar_mass_ratio_wall)
-    ratio_void_mean = np.mean( dm_to_stellar_mass_ratio_void)
-    ratio_stdev = np.std( dm_to_stellar_mass_ratio_list)
     ratio_wall_stdev = np.std( dm_to_stellar_mass_ratio_wall)
-    ratio_void_stdev = np.std( dm_to_stellar_mass_ratio_void)
-    ratio_rms = np.sqrt( np.mean( dm_to_stellar_mass_ratio_list**2))
     ratio_wall_rms = np.sqrt( np.mean( dm_to_stellar_mass_ratio_wall**2))
+
+    ratio_void_mean = np.mean( dm_to_stellar_mass_ratio_void)
+    ratio_void_stdev = np.std( dm_to_stellar_mass_ratio_void)
     ratio_void_rms = np.sqrt( np.mean( dm_to_stellar_mass_ratio_void**2))
     ###########################################################################
 
@@ -1307,23 +1242,23 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
     xmin, xmax = plt.xlim()
     x = np.linspace(xmin, xmax, 100)
 
-    plt.hist( dm_to_stellar_mass_ratio_list,
-             BINS, color='green', density=True, alpha=0.9)
-    p = norm.pdf(x, ratio_mean, ratio_stdev)
-    plt.plot(x, p, 'g--', linewidth=2)
-    plt.axvline( ratio_mean, color='green', linestyle='-', linewidth=1.5)
-    plt.axvline( ratio_mean + ratio_stdev,
-                color='green', linestyle=':', linewidth=1)
-    plt.axvline( ratio_mean - ratio_stdev,
-                color='green', linestyle=':', linewidth=1)
-    plt.axvline( ratio_mean + 2*ratio_stdev,
-                color='green', linestyle=':', linewidth=1)
-    plt.axvline( ratio_mean - 2*ratio_stdev,
-                color='green', linestyle=':', linewidth=1)
-    _, mean_ratio_ = plt.ylim()
-    plt.text(ratio_mean + ratio_mean/10,
-         mean_ratio_ - mean_ratio_/10,
-         'Mean: {:.2f}'.format( ratio_mean))
+#    plt.hist( dm_to_stellar_mass_ratio_list,
+#             BINS, color='green', density=True, alpha=0.9)
+#    p = norm.pdf(x, ratio_mean, ratio_stdev)
+#    plt.plot(x, p, 'g--', linewidth=2)
+#    plt.axvline( ratio_mean, color='green', linestyle='-', linewidth=1.5)
+#    plt.axvline( ratio_mean + ratio_stdev,
+#                color='green', linestyle=':', linewidth=1)
+#    plt.axvline( ratio_mean - ratio_stdev,
+#                color='green', linestyle=':', linewidth=1)
+#    plt.axvline( ratio_mean + 2*ratio_stdev,
+#                color='green', linestyle=':', linewidth=1)
+#    plt.axvline( ratio_mean - 2*ratio_stdev,
+#                color='green', linestyle=':', linewidth=1)
+#    _, mean_ratio_ = plt.ylim()
+#    plt.text(ratio_mean + ratio_mean/10,
+#         mean_ratio_ - mean_ratio_/10,
+#         'Mean: {:.2f}'.format( ratio_mean))
 
     plt.hist( dm_to_stellar_mass_ratio_wall,
              BINS, color='black', density=True, alpha=0.8)
@@ -1371,10 +1306,10 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
     plt.title(r'$\frac{m_{*}}{m_{DM}}$ Ratio Histogram')
 
     textstr = '\n'.join((
-          r'STDEV: $%.2f$' % ( ratio_stdev, ),
+#          r'STDEV: $%.2f$' % ( ratio_stdev, ),
           r'$STDEV_{wall}$: $%.2f$' % ( ratio_wall_stdev, ),
           r'$STDEV_{void}$: $%.2f$' % ( ratio_void_stdev, ),
-          r'RMS: $%.2f$' % ( ratio_rms, ),
+#          r'RMS: $%.2f$' % ( ratio_rms, ),
           r'$RMS_{wall}$: $%.2f$' % ( ratio_wall_rms, ),
           r'$RMS_{void}$: $%.2f$' % ( ratio_void_rms, )))
 
@@ -1385,8 +1320,9 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
             transform=ax.transAxes,
             color='black', fontsize=8, bbox=props)
 
-    plt.savefig( IMAGE_DIR + '/histograms/dm_to_stellar_mass_ratio_hist.png',
-                format='eps')
+    plt.savefig( IMAGE_DIR + '/histograms/dm_to_stellar_mass_ratio_hist.' \
+                + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
@@ -1420,17 +1356,16 @@ def plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR):
 
     plt.text( 280, 0.15, "p-val: " + "{:.{}f}".format( p_val, 3))
 
-    plt.savefig( IMAGE_DIR + '/histograms/dm_to_stellar_mass_ratio_hist.png',
-                format='eps')
+    plt.savefig( IMAGE_DIR + '/histograms/dm_to_stellar_mass_ratio_hist.' \
+                + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
 
 
-def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
-                      MASTER_FILE_NAME, ROT_CURVE_MASTER_FOLDER, IMAGE_DIR):
+def analyze_rot_curve_discrep( master_table, IMAGE_FORMAT, IMAGE_DIR):
     """Analyze the discrepancies between minimum and maximum rotation curves.
-
 
     @param:
         rot_curve_files:
@@ -1483,7 +1418,6 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
     ###########################################################################
     # Import the necessary data from the master_file.
     #--------------------------------------------------------------------------
-    master_table = ascii.read( MASTER_FILE_NAME, format='ecsv')
     vflag_list = master_table['vflag']
     pos_v_max = master_table['pos_max_velocity_best']
     pos_v_max_error = master_table['pos_max_velocity_error']
@@ -1643,7 +1577,8 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
             transform=ax.transAxes,
             color='black', fontsize=8, bbox=props)
 
-    plt.savefig( IMAGE_DIR + '/histograms/v_max_diff_hist.png', format='eps')
+    plt.savefig( IMAGE_DIR + '/histograms/v_max_diff_hist.' + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
@@ -1677,7 +1612,8 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
     plt.ylabel(r'$v_{max} Difference$ [km/s]')
     plt.xlabel(r'Inclination Angle [rad]')
 
-    plt.savefig( IMAGE_DIR + '/v_max_vs_inclination.png', format='eps')
+    plt.savefig( IMAGE_DIR + '/v_max_vs_inclination.' + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
@@ -1714,13 +1650,14 @@ def analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
     plt.ylabel(r'$v_{max} Difference$ [km/s]')
     plt.xlabel('Mass Ratio')
 
-    plt.savefig( IMAGE_DIR + '/v_max_vs_mass_ratio.png', format='eps')
+    plt.savefig( IMAGE_DIR + '/v_max_vs_mass_ratio.' + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
 
 
-def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
+def analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR):
     """Histogram the chi square values for the fit function parameters obtained
     in fitting the curves.
 
@@ -1744,11 +1681,10 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
     ###########################################################################
     # Import the necessary data from the master_file.
     #--------------------------------------------------------------------------
-    master_file = ascii.read( MASTER_FILE_NAME, format='ecsv')
-    vflag_list = master_file['vflag']
-    avg_chi_square_rot_master = master_file['chi_square_rot']
-    pos_chi_square_rot_master = master_file['pos_chi_square_rot']
-    neg_chi_square_rot_master = master_file['neg_chi_square_rot']
+    vflag_list = master_table['vflag']
+    avg_chi_square_rot_master = master_table['chi_square_rot']
+    pos_chi_square_rot_master = master_table['pos_chi_square_rot']
+    neg_chi_square_rot_master = master_table['neg_chi_square_rot']
     ###########################################################################
 
 
@@ -1953,8 +1889,8 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             color='black', fontsize=8, bbox=props)
 
 
-    plt.savefig( IMAGE_DIR + '/histograms/avg_chi_square_hist.png',
-                format='eps')
+    plt.savefig( IMAGE_DIR + '/histograms/avg_chi_square_hist.' + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
@@ -2061,8 +1997,8 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             color='black', fontsize=8, bbox=props)
 
 
-    plt.savefig( IMAGE_DIR + '/histograms/pos_chi_square_hist.png',
-                format='eps')
+    plt.savefig( IMAGE_DIR + '/histograms/pos_chi_square_hist.' + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################
@@ -2169,8 +2105,8 @@ def analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR):
             color='black', fontsize=8, bbox=props)
 
 
-    plt.savefig( IMAGE_DIR + '/histograms/neg_chi_square_hist.png',
-                format='eps')
+    plt.savefig( IMAGE_DIR + '/histograms/neg_chi_square_hist.' + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
     plt.show()
     plt.close()
     ###########################################################################

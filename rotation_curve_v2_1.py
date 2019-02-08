@@ -159,7 +159,7 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                    axes_ratio, phi_EofN_deg, z, gal_ID,
-                   IMAGE_DIR, image_format):
+                   IMAGE_DIR, IMAGE_FORMAT):
     """Calculates the rotation curve (rotational velocity as a funciton of
     deprojected distance) of the galaxy in question. In addition a galaxy
     statistics file is created containing information about the galaxy's
@@ -208,7 +208,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
             string representation of the file path that pictures of the fitted
             rotation curves are saved to
 
-        image_format:
+        IMAGE_FORMAT:
             string representation of the saved image file format
 
     @return:
@@ -335,7 +335,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ (arcsec)')
 
     plt.savefig( IMAGE_DIR + "/unmasked_v_band/" + gal_ID + \
-                "_v_band_raw", format=image_format)
+                "_v_band_raw." + IMAGE_FORMAT, format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -375,7 +375,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ [arcsec]')
 
     plt.savefig( IMAGE_DIR + "/unmasked_Ha_vel/" + gal_ID + \
-                "_Ha_vel_raw", format=image_format)
+                "_Ha_vel_raw." + IMAGE_FORMAT, format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1056,7 +1056,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ [arcsec]')
 
     plt.savefig( IMAGE_DIR + "/masked_Ha_vel/" + gal_ID + \
-                "_Ha_vel_field", format=image_format)
+                "_Ha_vel_field." + IMAGE_FORMAT, format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1096,7 +1096,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'$\Delta \delta$ [arcsec]')
 
     plt.savefig( IMAGE_DIR + "/collected_velocity_fields/" + gal_ID + \
-                "_collected_vel_field", format=image_format)
+                "_collected_vel_field." + IMAGE_FORMAT, format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1131,8 +1131,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel('Rotational Velocity [km/s]')
     plt.legend(loc='upper left')
 
-    plt.savefig( IMAGE_DIR + "/rot_curves/" + gal_ID + "_rot_curve",
-                format=image_format)
+    plt.savefig( IMAGE_DIR + "/rot_curves/" + gal_ID + "_rot_curve." \
+                + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1163,8 +1164,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.ylabel(r'Mass Interior [$M_{\odot}$]')
     plt.legend(loc='upper left')
 
-    plt.savefig( IMAGE_DIR + "/mass_curves/" + gal_ID + "_mass_curve",
-                format=image_format)
+    plt.savefig( IMAGE_DIR + "/mass_curves/" + gal_ID + "_mass_curve." \
+                + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()
@@ -1269,8 +1271,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     panel_fig.tight_layout()
 
     plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + \
-                "_diagnostic_panel",
-                format=image_format)
+                "_diagnostic_panel." + IMAGE_FORMAT,
+                format=IMAGE_FORMAT)
 #    plt.show()
     plt.cla()
     plt.clf()

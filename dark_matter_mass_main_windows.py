@@ -16,7 +16,7 @@ import glob, os.path
 ###############################################################################
 # File format for saved images
 #------------------------------------------------------------------------------
-image_format = 'eps'
+IMAGE_FORMAT = 'eps'
 ###############################################################################
 
 
@@ -97,13 +97,12 @@ if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
 ###############################################################################
 # Import functions from 'dark_matter_mass_vX_X.'
 #------------------------------------------------------------------------------
-from dark_matter_mass_v1_1 import extract_matched_data, \
-                                write_matched_data, \
+from dark_matter_mass_v1_1 import initialize_master_table, \
+                                pull_matched_data, \
+                                build_vflag_ref_table, \
                                 fit_rot_curve_files, \
-                                write_best_params, \
                                 estimate_dark_matter, \
                                 plot_mass_ratios, \
-                                write_mass_estimates, \
                                 analyze_rot_curve_discrep, \
                                 analyze_chi_square
 ###############################################################################
@@ -141,37 +140,101 @@ for file_name in FILE_IDS:
 
 
 ###############################################################################
+# Read in the master file.
+#------------------------------------------------------------------------------
+master_table = ascii.read( MASTER_FILE_NAME, format = 'ecsv')
+###############################################################################
+
+
+###############################################################################
+# Initialize the 'master_table' to have -1's in all of the columns listed in
+#    the 'col_names' array.
+#------------------------------------------------------------------------------
+col_names = ['vflag',
+             'v_max_best',
+             'v_max_sigma',
+             'turnover_rad_best',
+             'turnover_rad_sigma',
+             'alpha_best',
+             'alpha_sigma',
+             'chi_square_rot',
+             'pos_v_max_best',
+             'pos_v_max_sigma',
+             'pos_turnover_rad_best',
+             'pos_turnover_rad_sigma',
+             'pos_alpha_best',
+             'pos_alpha_sigma',
+             'pos_chi_square_rot',
+             'neg_v_max_best',
+             'neg_v_max_sigma',
+             'neg_turnover_rad_best',
+             'neg_turnover_rad_sigma',
+             'neg_alpha_best',
+             'neg_alpha_sigma',
+             'neg_chi_square_rot',
+             'center_luminosity',
+             'center_luminosity_err',
+             'sMass_processed',
+             'total_mass',
+             'total_mass_error',
+             'dmMass',
+             'dmMass_error',
+             'sMass',
+             'dmMass_to_sMass_ratio',
+             'dmMass_to_sMass_ratio_error']
+
+master_table = initialize_master_table( master_table, col_names)
+###############################################################################
+
+
+###############################################################################
+# Initialize the data fields to pull in matching for each call to
+#    'pull_matched_data().'
+#------------------------------------------------------------------------------
+vflag_pulls = col_names[ 0 : 1]
+best_param_pulls = col_names[ 1 : 24]
+mass_estimate_pulls = col_names[ 24 : ]
+###############################################################################
+
+
+###############################################################################
 # Set of functions to run the set of rotation curves and set of galaxy
 # statistics through.
 #------------------------------------------------------------------------------
-vflag_list, mstar_NSA_list = extract_matched_data( MASTER_FILE_NAME,
-                                          CROSS_REF_FILE_NAMES)
-write_matched_data( vflag_list, mstar_NSA_list, MASTER_FILE_NAME)
+vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
+master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 best_fit_param_table = fit_rot_curve_files( rot_curve_files, gal_stat_files,
                                       TRY_N, ROT_CURVE_MASTER_FOLDER,
                                       IMAGE_DIR)
-write_best_params( best_fit_param_table, gal_stat_files,
-                  MASTER_FILE_NAME, ROT_CURVE_MASTER_FOLDER)
+master_table = pull_matched_data( master_table, best_fit_param_table,
+                                 best_param_pulls)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-mass_estimate_table = estimate_dark_matter( best_fit_param_table,
-                                           rot_curve_files, gal_stat_files,
-                                           IMAGE_DIR)
-write_mass_estimates( mass_estimate_table, MASTER_FILE_NAME)
-plot_mass_ratios( mass_estimate_table, MASTER_FILE_NAME, IMAGE_DIR)
+mass_estimate_table = estimate_dark_matter( master_table,
+                                           IMAGE_FORMAT, IMAGE_DIR)
+master_table = pull_matched_data( master_table, mass_estimate_table,
+                                 mass_estimate_pulls)
+# -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
 #------------------------------------------------------------------------------
 #     DIAGNOSTIC FUNCTIONS
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-analyze_rot_curve_discrep( rot_curve_files, gal_stat_files,
-                   MASTER_FILE_NAME, ROT_CURVE_MASTER_FOLDER, IMAGE_DIR)
+analyze_rot_curve_discrep( master_table, IMAGE_FORMAT, IMAGE_DIR)
+analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR)
+###############################################################################
 
-analyze_chi_square( MASTER_FILE_NAME, IMAGE_DIR)
+
+###############################################################################
+# Write the 'master_table'.
+#------------------------------------------------------------------------------
+ascii.write( master_table, MASTER_FILE_NAME, format='ecsv', overwrite = True)
 ###############################################################################
 
 
 
 ###############################################################################
 # Clock the program's run time to check performance.
-###############################################################################
+#------------------------------------------------------------------------------
 FINISH = datetime.datetime.now()
 print("Runtime (COMPLETED):", FINISH - START)
+###############################################################################

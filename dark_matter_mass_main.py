@@ -12,6 +12,7 @@ import datetime
 START = datetime.datetime.now()
 
 import glob, os.path
+import astropy.io.ascii as ascii
 
 ###############################################################################
 # File format for saved images

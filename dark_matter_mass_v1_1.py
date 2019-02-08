@@ -206,9 +206,16 @@ def match_catalogs( catalog_a, catalog_b, entry):
 
     ###########################################################################
     # Initialize a flag variable column to track the matches found and add it
-    #    to 'catalog_b.'
+    #    to 'catalog_b.' There exists a try-except statement to delete any
+    #    residual 'match_flag' Column. If this column is not found in
+    #    catalog_b, then continue the function as normal.
     #--------------------------------------------------------------------------
     match_flag_array = np.full( len( catalog_b), True)
+    try:
+        catalog_b.remove_column('match_flag')
+    except KeyError:
+        pass
+
     catalog_b.add_column( Column( match_flag_array), name='match_flag')
     ###########################################################################
 

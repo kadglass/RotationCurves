@@ -101,8 +101,8 @@ def extract_data( file_name):
     #       <https://data.sdss.org/datamodel/files/MANGA_PIPE3D/MANGADRP_VER
     #       /PIPE3D_VER/PLATE/manga.Pipe3D.cube.html#hdu1>
     ###########################################################################
-    v_band = ssp[0] * 1E-16  # in units of erg / s / cm^2
-    v_band_err = ssp[4] * 1E-16  # in units of erg / s / cm^2
+    v_band = ssp[0]  # in units of erg / s / cm^2
+    v_band_err = ssp[4]  # in units of erg / s / cm^2
     sMass_density = ssp[19] * u.dex( u.M_sun) # in units of
                                                 # log10( Msun / spaxel**2)
 

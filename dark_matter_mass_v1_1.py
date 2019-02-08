@@ -82,6 +82,13 @@ def initialize_master_table( master_table, col_names):
             as well as the identifying information about each galaxy
     """
     for name in col_names:
+        try:
+            master_table.remove_column( name)
+
+        except KeyError:
+            print("USER-GENERATED KEY ERROR: \n" \
+                  + "   Column '" + name + "' not found.")
+
         master_table.add_column( Column( np.full( len( master_table), -1)),
                                 name=name)
 

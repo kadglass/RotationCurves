@@ -1400,7 +1400,6 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     #--------------------------------------------------------------------------
     manga_plate_col = Column( manga_plate_master)
     manga_fiberID_col = Column( manga_fiberID_master)
-#    manga_data_release_col = Column( manga_data_release_master)
     nsa_plate_col = Column( nsa_plate_master)
     nsa_fiberID_col = Column( nsa_fiberID_master)
     nsa_mjd_col = Column( nsa_mjd_master)
@@ -1419,7 +1418,6 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     #--------------------------------------------------------------------------
     master_table = QTable([ manga_plate_col,
                             manga_fiberID_col,
-#                            manga_data_release_col,
                             nsa_plate_col,
                             nsa_fiberID_col,
                             nsa_mjd_col,
@@ -1432,7 +1430,6 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                             nsa_mStar_col],
                    names = ['MaNGA_plate',
                             'MaNGA_fiberID',
-#                            'MaNGA_data_release',
                             'NSA_plate',
                             'NSA_fiberID',
                             'NSA_MJD',

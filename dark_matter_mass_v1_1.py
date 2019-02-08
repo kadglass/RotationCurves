@@ -17,8 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from decimal import Decimal
 
-import glob, os.path
-
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 from scipy.stats import ks_2samp

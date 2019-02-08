@@ -25,7 +25,7 @@ warnings.simplefilter('ignore', np.RankWarning)
 ###############################################################################
 # File format for saved images
 #------------------------------------------------------------------------------
-image_format = 'eps'
+IMAGE_FORMAT = 'eps'
 ###############################################################################
 
 
@@ -52,7 +52,6 @@ WORKING_IN_BLUEHIVE = True
 if WORKING_IN_BLUEHIVE:
     import matplotlib
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
 
     LOCAL_PATH = '/home/jsm171'
     SCRATCH_PATH = '/scratch/jsm171'
@@ -72,6 +71,7 @@ else:
 
 ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
 GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
+#import matplotlib.pyplot as plt
 
 # Create output directories if they do not already exist
 if not os.path.isdir( IMAGE_DIR):
@@ -275,7 +275,7 @@ for file_name in files:
                                        v_band, v_band_err, sMass_density, \
                                        axes_ratio, phi_EofN_deg, z, \
                                        gal_ID, IMAGE_DIR, \
-                                       image_format)
+                                       IMAGE_FORMAT)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
 

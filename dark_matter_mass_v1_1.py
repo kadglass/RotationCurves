@@ -136,11 +136,11 @@ def pull_matched_data( master_table, ref_table, col_match_names):
             for col_name in col_match_names:
                 master_table[i][ col_name] = galaxy_matches[0][ col_name]
         except IndexError:
-            print("USER-CAUGHT INDEX ERROR: \n",
-                  "'galaxy_matches' has zero length (i.e. no matches were " \
-                  + "found in the 'ref_table' for " \
-                  + master_table[i]['MaNGA_plate'] + "-" \
-                  + master_table[i]['MaNGA_fiberID'] + ")")
+            print("USER-CAUGHT INDEX ERROR: \n", \
+                  "'galaxy_matches' has zero length (i.e. no matches were", \
+                  "found in the 'ref_table' for", \
+                  master_table[i]['MaNGA_plate'], "-", \
+                  master_table[i]['MaNGA_fiberID'], ")")
     ###########################################################################
 
     return master_table

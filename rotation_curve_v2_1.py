@@ -325,6 +325,11 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     if not os.path.isdir( IMAGE_DIR + '/unmasked_v_band'):
         os.makedirs( IMAGE_DIR + '/unmasked_v_band')
     #
+    v_band_cbar_ticks = np.linspace(  0, v_band.max(), 7)
+    for val, i in zip( v_band_cbar_ticks, range( len( v_band_cbar_ticks))):
+        val = '%.3f' % val
+        v_band_cbar_ticks[i] = val
+
     vband_image = plt.figure(2)
     plt.title( gal_ID + ' Visual Band Image (RAW)')
     plt.imshow( v_band, origin='lower')
@@ -457,8 +462,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     ellipse = ( x_diff*np.cos( phi_elip) - y_diff*np.sin( phi_elip))**2 \
             + ( x_diff*np.sin( phi_elip) + y_diff*np.cos( phi_elip))**2 \
                   / ( axes_ratio)**2
-
-    vel_contour_plot = np.zeros(( len(X_RANGE), len(Y_RANGE)))
     ###########################################################################
 
 
@@ -866,17 +869,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
                 ###############################################################
-                # The line below adds the pixels of the H-alpha velocity field
-                #    analyzed in the current iteration of the algorithm to an
-                #    image that plots all the pixels analyzed for a given
-                #    galaxy.
-                #--------------------------------------------------------------
-                vel_contour_plot[ pix_between_annuli] = masked_Ha_vel[
-                                                           pix_between_annuli]
-                ###############################################################
-
-
-                ###############################################################
                 # DIAGNOSTICS:
                 #--------------------------------------------------------------
                 # Below are print statements that give information about the
@@ -938,6 +930,18 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
     ###########################################################################
 
+
+    ###############################################################
+    # The line below adds the pixels of the H-alpha velocity field
+    #    analyzed in the current iteration of the algorithm to an
+    #    image that plots all the pixels analyzed for a given
+    #    galaxy.
+    #--------------------------------------------------------------
+    contour_boolean = ellipse >= R**2
+    contour_mask = np.logical_or( mask_data, contour_boolean)
+
+    masked_vel_contour_plot = ma.masked_where( contour_mask, Ha_vel)
+    ###############################################################
 
     ###########################################################################
     # Convert the data arrays into astropy Column objects and then add those
@@ -1043,7 +1047,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     # Declare constants used in plotting the graphs below.
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    vmax_bound = max( global_max, abs(global_min))
+    vmax_bound = min( global_max, abs(global_min))
     vmin_bound = -1 * vmax_bound
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 13, dtype='int')
     #--------------------------------------------------------------------------
@@ -1053,10 +1057,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     if not os.path.isdir( IMAGE_DIR + '/masked_Ha_vel'):
         os.makedirs( IMAGE_DIR + '/masked_Ha_vel')
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    vmax_bound = -1 * min( global_max, global_min)
-    vmin_bound = min( global_max, global_min)
-    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
-
     Ha_vel_field_fig = plt.figure(5)
     plt.title( gal_ID + r' H$\alpha$ Velocity Field')
     plt.imshow( masked_Ha_vel, cmap='bwr', origin='lower',
@@ -1094,8 +1094,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     if not os.path.isdir( IMAGE_DIR + '/collected_velocity_fields'):
         os.makedirs( IMAGE_DIR + '/collected_velocity_fields')
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-    masked_vel_contour_plot = ma.masked_where( mask_data, vel_contour_plot)
-
     vel_field_collected_fig = plt.figure(6, figsize=(6, 6))
     plt.title( gal_ID + " " + r'H$\alpha$ Velocity Field Collected',
               fontsize=12)
@@ -1233,8 +1231,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     '''
     v_band_im = v_band_panel.imshow( v_band_raw, origin='lower')
     v_band_panel.set_title( gal_ID + ' Visual Band Image')
-    v_cbar = plt.colorbar( v_band_im, ax=v_band_panel,
-                          ticks=np.linspace(  0, v_band_raw.max(), 6))
+    v_cbar = plt.colorbar( v_band_im, ax=v_band_panel, ticks=v_band_cbar_ticks)
     v_cbar.ax.tick_params( direction='in', color='white')
     v_cbar.set_label(r'Visual Band Flux [$10^{-17}$ erg s$^{-1}$ cm$^{-2}$]')
     v_band_panel.set_xlabel(r'$\Delta \alpha$ [arcsec]')

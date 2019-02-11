@@ -184,7 +184,7 @@ col_names = ['vflag',
              'dmMass_to_sMass_ratio',
              'dmMass_to_sMass_ratio_error']
 
-master_table = initialize_master_table( master_table, col_names)
+#master_table = initialize_master_table( master_table, col_names)
 ###############################################################################
 
 
@@ -202,8 +202,8 @@ mass_estimate_pulls = col_names[ 24 : ]
 # Set of functions to run the set of rotation curves and set of galaxy
 # statistics through.
 #------------------------------------------------------------------------------
-vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
-master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
+#vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
+#master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 best_fit_param_table = fit_rot_curve_files( rot_curve_files, gal_stat_files,
                                       TRY_N, ROT_CURVE_MASTER_FOLDER,

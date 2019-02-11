@@ -535,21 +535,22 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
             # alpha_guess: imperically-estimated, first guess of the 'alpha'
             #    parameter
             ###################################################################
-            v_max_guess = max( rot_vel_avg)
-            pos_v_max_guess = max( rot_vel_max)
-            neg_v_max_guess = max( rot_vel_min)
+            v_max_loc = np.argmax( rot_vel_avg)
+            pos_v_max_loc = np.argmax( rot_vel_max)
+            neg_v_max_loc = np.argmax( rot_vel_min)
+
+            v_max_guess = rot_vel_avg[ v_max_loc]
+            pos_v_max_guess = rot_vel_max[ pos_v_max_loc]
+            neg_v_max_guess = rot_vel_min[ neg_v_max_loc]
 
             ###################################################################
             # If the initial guesses for the maximum rotational velocity are
             #    not 0, continue with the fitting process.
             #------------------------------------------------------------------
             if v_max_guess > 0 and pos_v_max_guess > 0 and neg_v_max_guess > 0:
-                r_turn_guess = depro_radii[
-                        np.argwhere( rot_vel_avg == v_max_guess)][0][0]
-                pos_r_turn_guess = depro_radii[
-                        np.argwhere( rot_vel_max == pos_v_max_guess)][0][0]
-                neg_r_turn_guess = depro_radii[
-                        np.argwhere( rot_vel_min == neg_v_max_guess)][0][0]
+                r_turn_guess = depro_radii[ v_max_loc]
+                pos_r_turn_guess = depro_radii[ pos_v_max_loc]
+                neg_r_turn_guess = depro_radii[ neg_v_max_loc]
 
                 alpha_guess = 2
                 pos_alpha_guess = 2

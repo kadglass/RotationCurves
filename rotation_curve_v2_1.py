@@ -230,7 +230,15 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #    extracted from the .fits file.
     #--------------------------------------------------------------------------
     # Ha_vel_err = 0 mask
-    Ha_vel_err_boolean = Ha_vel_err == 0
+    Ha_vel_err_zero_boolean = Ha_vel_err == 0
+
+    # Ha_vel_err = np.nan mask
+    Ha_vel_err_nan_boolean = np.isnan( Ha_vel_err)
+
+    # Combination of the 'Ha_vel_err_zero_boolean' and 'Ha_vel_err_nan_boolean'
+    #    boolean variables
+    Ha_vel_err_boolean = np.logical_or( Ha_vel_err_zero_boolean,
+                                      Ha_vel_err_nan_boolean)
 
     # v_band = 0 mask
     v_band_boolean = v_band == 0

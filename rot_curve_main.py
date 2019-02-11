@@ -30,6 +30,13 @@ IMAGE_FORMAT = 'eps'
 
 
 ###############################################################################
+# Boolean variable to specify if the script is being run in Bluehive.
+#------------------------------------------------------------------------------
+WORKING_IN_BLUEHIVE = True
+###############################################################################
+
+
+###############################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
 #    working in bluehive). It is set to 'os.path.dirname(__file__)' when
 #    working on a local system.
@@ -47,8 +54,6 @@ IMAGE_FORMAT = 'eps'
 # ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
 #       being ran.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = True
-
 if WORKING_IN_BLUEHIVE:
     import matplotlib
     matplotlib.use('Agg')
@@ -107,7 +112,7 @@ files = glob.glob( MANGA_FOLDER + '/manga-*Pipe3D.cube.fits.gz')
 # Code to isolate files and run it through all of the functions from
 # rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#FILE_IDS = ['10001-12701']
+#FILE_IDS = ['8606-12702']
 #
 #files = []
 #for file_name in FILE_IDS:

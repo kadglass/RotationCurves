@@ -399,8 +399,8 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
         gal_ID = gal_stat_table['gal_ID'][0]
         print("gal_ID:", gal_ID)
 
-        center_flux = gal_stat_table['center_flux'][0]
-        center_flux_err = gal_stat_table['center_flux_error'][0]
+        center_flux = gal_stat_table['center_flux'][0].value
+        center_flux_err = gal_stat_table['center_flux_error'][0].value
 
         MaNGA_plate_master.append( gal_ID[ 0: gal_ID.find('-')] )
         MaNGA_fiberID_master.append( gal_ID[ gal_ID.find('-') + 1:])

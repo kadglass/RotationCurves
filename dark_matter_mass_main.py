@@ -212,7 +212,9 @@ master_table = pull_matched_data( master_table, best_fit_param_table,
                                  best_param_pulls)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 mass_estimate_table = estimate_dark_matter( master_table,
+                                           ROT_CURVE_MASTER_FOLDER,
                                            IMAGE_FORMAT, IMAGE_DIR)
+
 master_table = pull_matched_data( master_table, mass_estimate_table,
                                  mass_estimate_pulls)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -

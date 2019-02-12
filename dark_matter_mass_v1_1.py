@@ -949,7 +949,7 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     return best_fit_param_table
 
 
-def estimate_dark_matter( master_table,
+def estimate_dark_matter( master_table, ROT_CURVE_MASTER_FOLDER,
                          IMAGE_FORMAT, IMAGE_DIR):
     """Estimate the total matter interior to a radius from the fitted v_max
     parameter and the last recorded radius for the galaxy. Then estimate the

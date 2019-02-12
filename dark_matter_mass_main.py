@@ -218,22 +218,31 @@ mass_estimate_pulls = col_names_with_units[ 24 : ]
 ###############################################################################
 # Set of functions to run the set of rotation curves and set of galaxy
 # statistics through.
+#
+# NOTE: After each function is ran and the data is matched to the
+#       'master_table,' the 'master_table' is written so data is not lost if
+#       one function crashes the program.
 #------------------------------------------------------------------------------
-#vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
-#master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
+vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
+master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
+
+ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 best_fit_param_table = fit_rot_curve_files( rot_curve_files, gal_stat_files,
                                       TRY_N, ROT_CURVE_MASTER_FOLDER,
                                       IMAGE_DIR)
 master_table = pull_matched_data( master_table, best_fit_param_table,
                                  best_param_pulls)
+
+ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 mass_estimate_table = estimate_dark_matter( master_table,
                                            ROT_CURVE_MASTER_FOLDER,
                                            IMAGE_FORMAT, IMAGE_DIR)
-
 master_table = pull_matched_data( master_table, mass_estimate_table,
                                  mass_estimate_pulls)
+
+ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
 #------------------------------------------------------------------------------
@@ -242,14 +251,6 @@ plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
 analyze_rot_curve_discrep( master_table, IMAGE_FORMAT, IMAGE_DIR)
 analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR)
 ###############################################################################
-
-
-###############################################################################
-# Write the 'master_table'.
-#------------------------------------------------------------------------------
-ascii.write( master_table, MASTER_FILE_NAME, format='ecsv', overwrite = True)
-###############################################################################
-
 
 
 ###############################################################################

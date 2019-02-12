@@ -12,7 +12,8 @@ import datetime
 START = datetime.datetime.now()
 
 import glob, os.path
-import astropy.io.ascii as ascii
+from astropy.io import ascii
+from astropy.units import Unit
 
 ###############################################################################
 # File format for saved images
@@ -148,43 +149,51 @@ master_table = ascii.read( MASTER_FILE_NAME, format = 'ecsv')
 
 
 ###############################################################################
+# Create a list of tuples with the column names along with the associated units
+#    for each column.
+#
+# NOTE: If a column has an associated unit of 'Unit(1),' the column is
+#       dimensionless
+#------------------------------------------------------------------------------
+col_names_with_units = [('vflag', Unit(1)),
+                        ('v_max_best', Unit('km/s')),
+                        ('v_max_sigma', Unit('km/s')),
+                        ('turnover_rad_best', Unit('kpc')),
+                        ('turnover_rad_sigma', Unit('kpc')),
+                        ('alpha_best', Unit(1)),
+                        ('alpha_sigma', Unit(1)),
+                        ('chi_square_rot', Unit(1)),
+                        ('pos_v_max_best', Unit('km/s')),
+                        ('pos_v_max_sigma', Unit('km/s')),
+                        ('pos_turnover_rad_best', Unit('kpc')),
+                        ('pos_turnover_rad_sigma', Unit('kpc')),
+                        ('pos_alpha_best', Unit(1)),
+                        ('pos_alpha_sigma', Unit(1)),
+                        ('pos_chi_square_rot', Unit(1)),
+                        ('neg_v_max_best', Unit('km/s')),
+                        ('neg_v_max_sigma', Unit('km/s')),
+                        ('neg_turnover_rad_best', Unit('kpc')),
+                        ('neg_turnover_rad_sigma', Unit('kpc')),
+                        ('neg_alpha_best', Unit(1)),
+                        ('neg_alpha_sigma', Unit(1)),
+                        ('neg_chi_square_rot', Unit(1)),
+                        ('center_flux', Unit('erg / (cm2 s)')),
+                        ('center_flux_err', Unit('erg / (cm2 s)')),
+                        ('total_mass', Unit('solMass')),
+                        ('total_mass_error', Unit('solMass')),
+                        ('dmMass', Unit('solMass')),
+                        ('dmMass_error', Unit('solMass')),
+                        ('sMass', Unit('solMass')),
+                        ('dmMass_to_sMass_ratio', Unit(1)),
+                        ('dmMass_to_sMass_ratio_error', Unit(1))]
+###############################################################################
+
+
+###############################################################################
 # Initialize the 'master_table' to have -1's in all of the columns listed in
 #    the 'col_names' array.
 #------------------------------------------------------------------------------
-col_names = ['vflag',
-             'v_max_best',
-             'v_max_sigma',
-             'turnover_rad_best',
-             'turnover_rad_sigma',
-             'alpha_best',
-             'alpha_sigma',
-             'chi_square_rot',
-             'pos_v_max_best',
-             'pos_v_max_sigma',
-             'pos_turnover_rad_best',
-             'pos_turnover_rad_sigma',
-             'pos_alpha_best',
-             'pos_alpha_sigma',
-             'pos_chi_square_rot',
-             'neg_v_max_best',
-             'neg_v_max_sigma',
-             'neg_turnover_rad_best',
-             'neg_turnover_rad_sigma',
-             'neg_alpha_best',
-             'neg_alpha_sigma',
-             'neg_chi_square_rot',
-             'center_luminosity',
-             'center_luminosity_err',
-             'sMass_processed',
-             'total_mass',
-             'total_mass_error',
-             'dmMass',
-             'dmMass_error',
-             'sMass',
-             'dmMass_to_sMass_ratio',
-             'dmMass_to_sMass_ratio_error']
-
-#master_table = initialize_master_table( master_table, col_names)
+master_table = initialize_master_table( master_table, col_names_with_units)
 ###############################################################################
 
 
@@ -192,9 +201,9 @@ col_names = ['vflag',
 # Initialize the data fields to pull in matching for each call to
 #    'pull_matched_data().'
 #------------------------------------------------------------------------------
-vflag_pulls = col_names[ 0 : 1]
-best_param_pulls = col_names[ 1 : 24]
-mass_estimate_pulls = col_names[ 24 : ]
+vflag_pulls = col_names_with_units[ 0 : 1]
+best_param_pulls = col_names_with_units[ 1 : 24]
+mass_estimate_pulls = col_names_with_units[ 24 : ]
 ###############################################################################
 
 

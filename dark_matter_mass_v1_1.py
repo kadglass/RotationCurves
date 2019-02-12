@@ -1090,51 +1090,51 @@ def estimate_dark_matter( master_table, ROT_CURVE_MASTER_FOLDER,
         dm_to_stellar_mass_ratio_err_master.append( dmMass_to_sMass_ratio_err)
         #######################################################################
 
+        if v_max_best != -1 and v_max_best != -100 and v_max_best != -999:
+            ###################################################################
+            # Plot the fitted rotation curve along with its errorbars. In addition,
+            #    several statistics about the goodness of fit, and mass interior to
+            #    the outermost radius recorded are displayed in the lower right
+            #    side of the figure.
+            #------------------------------------------------------------------
+            fitted_rot_curve_fig = plt.figure(20)
+            plt.errorbar( depro_dist, rot_vel_data,
+                         yerr=rot_vel_data_err, fmt='o', color='purple',
+                         markersize=4, capthick=1, capsize=3)
 
-        #######################################################################
-        # Plot the fitted rotation curve along with its errorbars. In addition,
-        #    several statistics about the goodness of fit, and mass interior to
-        #    the outermost radius recorded are displayed in the lower right
-        #    side of the figure.
-        #----------------------------------------------------------------------
-        fitted_rot_curve_fig = plt.figure(20)
-        plt.errorbar( depro_dist, rot_vel_data,
-                     yerr=rot_vel_data_err, fmt='o', color='purple',
-                     markersize=4, capthick=1, capsize=3)
-
-        plt.plot( np.linspace( 0, depro_dist[-1] / u.kpc, 10000),
+            plt.plot( np.linspace( 0, depro_dist[-1] / u.kpc, 10000),
                  rot_fit_func(np.linspace( 0, depro_dist[-1] / u.kpc, 10000),
-                              v_max_best.value / ( u.km / u.s),
-                              r_turn_best.value / ( u.kpc),
+                              v_max_best,
+                              r_turn_best,
                               alpha_best),
                               color='purple', linestyle='--')
 
-        ax = fitted_rot_curve_fig.add_subplot(111)
-        plt.tick_params( axis='both', direction='in')
-        ax.yaxis.set_ticks_position('both')
-        ax.xaxis.set_ticks_position('both')
-        plt.ylabel(r'$V_{ROT}$ [$kms^{-1}$]')
-        plt.xlabel(r'$d_{depro}$ [kpc]')
-        plt.title( gal_id + ' Fitted Rotation Curve')
+            ax = fitted_rot_curve_fig.add_subplot(111)
+            plt.tick_params( axis='both', direction='in')
+            ax.yaxis.set_ticks_position('both')
+            ax.xaxis.set_ticks_position('both')
+            plt.ylabel(r'$V_{ROT}$ [$kms^{-1}$]')
+            plt.xlabel(r'$d_{depro}$ [kpc]')
+            plt.title( gal_id + ' Fitted Rotation Curve')
 
-        textstr = '\n'.join((
-          r'$\chi^{2}$: $%.3f$' % ( chi_square_rot, ),
-          r'$m_{DM}$ [$M_{\odot}$]: $%9.2E$' % Decimal( theorized_dmMass.value, ),
-          r'$m_{*}$ [$M_{\odot}$]: $%9.2E$' % Decimal( sMass_processed.value, ),
-          r'$\frac{m_{*}}{m_{DM}}$: $%.3f$' % ( dmMass_to_sMass_ratio.value, )))
-        props = dict( boxstyle='round', facecolor='cornsilk', alpha=0.6)
+            textstr = '\n'.join((
+                    r'$\chi^{2}$: $%.3f$' % ( chi_square_rot, ),
+                    r'$m_{DM}$ [$M_{\odot}$]: $%9.2E$' % Decimal( theorized_dmMass.value, ),
+                    r'$m_{*}$ [$M_{\odot}$]: $%9.2E$' % Decimal( sMass_processed.value, ),
+                    r'$\frac{m_{*}}{m_{DM}}$: $%.3f$' % ( dmMass_to_sMass_ratio.value, )))
+            props = dict( boxstyle='round', facecolor='cornsilk', alpha=0.6)
 
-        ax.text(0.65, 0.34, textstr,
-                verticalalignment='top', horizontalalignment='left',
-                transform=ax.transAxes,
-                color='black', fontsize=10, bbox=props)
+            ax.text(0.65, 0.34, textstr,
+                    verticalalignment='top', horizontalalignment='left',
+                    transform=ax.transAxes,
+                    color='black', fontsize=10, bbox=props)
 
-        plt.savefig( IMAGE_DIR + '/fitted_rotation_curves/' + gal_id +\
-                    '_fitted_rotation_curve.' + IMAGE_FORMAT,
-                    format=IMAGE_FORMAT)
-        plt.show()
-        plt.close()
-        #######################################################################
+            plt.savefig( IMAGE_DIR + '/fitted_rotation_curves/' + gal_id +\
+                        '_fitted_rotation_curve.' + IMAGE_FORMAT,
+                        format=IMAGE_FORMAT)
+            plt.show()
+            plt.close()
+            ###################################################################
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 
 

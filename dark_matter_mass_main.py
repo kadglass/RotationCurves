@@ -23,6 +23,13 @@ IMAGE_FORMAT = 'eps'
 
 
 ###############################################################################
+# Boolean variable to specify if the script is being run in Bluehive.
+#------------------------------------------------------------------------------
+WORKING_IN_BLUEHIVE = True
+###############################################################################
+
+
+###############################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
 #    working in bluehive). It is set to 'os.path.dirname(__file__)' when
 #    working on a local system.
@@ -40,8 +47,6 @@ IMAGE_FORMAT = 'eps'
 # ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
 #       being ran.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = True
-
 if WORKING_IN_BLUEHIVE:
     import matplotlib
     matplotlib.use('Agg')
@@ -114,10 +119,8 @@ from dark_matter_mass_v1_1 import initialize_master_table, \
 # Create the file name lists of the rotation curve and galaxy statistic
 # files to be ran.
 #------------------------------------------------------------------------------
-#rot_curve_files = glob.glob( ROT_CURVE_MASTER_FOLDER + \
-#                              '/*_rot_curve_data.txt')
-#gal_stat_files = glob.glob( ROT_CURVE_MASTER_FOLDER + \
-#                              '/*_gal_stat_data.txt')
+rot_curve_files = glob.glob( ROT_CURVE_MASTER_FOLDER + '/*_rot_curve_data.txt')
+gal_stat_files = glob.glob( ROT_CURVE_MASTER_FOLDER + '/*_gal_stat_data.txt')
 ###############################################################################
 
 
@@ -130,14 +133,12 @@ FILE_IDS = ['7495-6104']
 rot_curve_files = []
 gal_stat_files = []
 
-for file_name in FILE_IDS:
-    rot_curve_files.append( ROT_CURVE_MASTER_FOLDER + '/' + file_name \
-                           + '_rot_curve_data.txt')
-    gal_stat_files.append( ROT_CURVE_MASTER_FOLDER + '/' + file_name  \
-                           + '_gal_stat_data.txt')
 
-print("rot_curve_files:", rot_curve_files)
-print("gal_stat_files:", gal_stat_files)
+###############################################################################
+# Print the list of file names.
+#------------------------------------------------------------------------------
+#print("rot_curve_files:", rot_curve_files)
+#print("gal_stat_files:", gal_stat_files)
 ###############################################################################
 
 

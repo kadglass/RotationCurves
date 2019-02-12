@@ -128,10 +128,17 @@ gal_stat_files = glob.glob( ROT_CURVE_MASTER_FOLDER + '/*_gal_stat_data.txt')
 # Code to isolate files and run it through all of the functions from
 # fit_rotation_curve_vX_X.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-FILE_IDS = ['7495-6104']
-
-rot_curve_files = []
-gal_stat_files = []
+#FILE_IDS = ['7495-6104']
+#
+#rot_curve_files = []
+#gal_stat_files = []
+#
+#for file_name in FILE_IDS:
+#    rot_curve_files.append( ROT_CURVE_MASTER_FOLDER + '/' + file_name \
+#                           + '_rot_curve_data.txt')
+#    gal_stat_files.append( ROT_CURVE_MASTER_FOLDER + '/' + file_name  \
+#                           + '_gal_stat_data.txt')
+###############################################################################
 
 
 ###############################################################################

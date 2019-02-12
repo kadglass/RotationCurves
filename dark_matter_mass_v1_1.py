@@ -559,9 +559,11 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
                 # Print statement to track the first guesses for the
                 #    'rot_fit_func', and 'lum_fit_func' parameters.
                 #--------------------------------------------------------------
-                print("Rot Parameter Guess:", rot_guess)
-                print("POS Rot Parameter Guess:", pos_rot_guess)
-                print("NEG Rot Parameter Guess:", neg_rot_guess)
+                if gal_ID == '7495-6104':
+
+                    print("Rot Parameter Guess:", rot_guess)
+                    print("POS Rot Parameter Guess:", pos_rot_guess)
+                    print("NEG Rot Parameter Guess:", neg_rot_guess)
                 ###############################################################
 
 

@@ -63,7 +63,7 @@ def rot_fit_func( depro_radius, v_max, r_turn, alpha):
            (depro_radius / (r_turn**alpha + depro_radius**alpha)**(1/alpha))
 
 
-def initialize_master_table( master_table, col_names):
+def initialize_master_table( master_table, col_names_with_units):
     """Initialize the master_table to contain all of the columns listed in
     col_names but with fill values of -1.
 
@@ -81,16 +81,17 @@ def initialize_master_table( master_table, col_names):
             estimates, environmental classification, and the associated errors
             as well as the identifying information about each galaxy
     """
-    for name in col_names:
+    for entry in col_names_with_units:
         try:
-            master_table.remove_column( name)
+            master_table.remove_column( entry[0])
 
         except KeyError:
             print("USER-GENERATED KEY ERROR: \n" \
-                  + "   Column '" + name + "' not found.")
+                  + "   Column '" + entry[0] + "' not found.")
 
-        master_table.add_column( Column( np.full( len( master_table), -1)),
-                                name=name)
+        master_table.add_column(
+                Column( np.full( len( master_table), -1.0) * entry[1],
+                       name=entry[0]))
 
     return master_table
 
@@ -139,8 +140,8 @@ def pull_matched_data( master_table, ref_table, col_match_names):
             print("USER-CAUGHT INDEX ERROR: \n", \
                   "'galaxy_matches' has zero length (i.e. no matches were", \
                   "found in the 'ref_table' for", \
-                  master_table[i]['MaNGA_plate'], "-", \
-                  master_table[i]['MaNGA_fiberID'], ")")
+                  str(master_table[i]['MaNGA_plate']) + "-" + \
+                  str(master_table[i]['MaNGA_fiberID']) + ")")
     ###########################################################################
 
     return master_table
@@ -391,21 +392,17 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
     # ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~
     for rot_file, gal_stat_file in zip( rot_curve_files, gal_stat_files):
         #######################################################################
-        # Extract the data from the gal_stat_file, and append the
-        #    'MaNGA_plate,' 'MaNGA_fiberID,' 'center_flux,' and
-        #    'center_flux_error,' data to their respective master arrays
+        # Extract the data from the gal_stat_file, and extract the
+        #    'MaNGA_plate' and 'MaNGA_fiberID' from the 'gal_ID' column.
         #----------------------------------------------------------------------
         gal_stat_table = ascii.read( gal_stat_file, format='ecsv')
         gal_ID = gal_stat_table['gal_ID'][0]
-        print("gal_ID:", gal_ID)
-
-        center_flux = gal_stat_table['center_flux'][0].value
-        center_flux_err = gal_stat_table['center_flux_error'][0].value
 
         MaNGA_plate_master.append( gal_ID[ 0: gal_ID.find('-')] )
         MaNGA_fiberID_master.append( gal_ID[ gal_ID.find('-') + 1:])
-        center_flux_master.append( center_flux)
-        center_flux_err_master.append( center_flux_err)
+
+        center_flux = gal_stat_table['center_flux'][0].value
+        center_flux_err = gal_stat_table['center_flux_error'][0].value
         #######################################################################
 
 
@@ -466,13 +463,10 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
 
         #######################################################################
         # Extract the total stellar mass processed for the galaxy from the last
-        #    data point in the 'sMass_interior' column for the galaxy and
-        #    append that value to the
+        #    data point in the 'sMass_interior' column for the galaxy.
         #----------------------------------------------------------------------
         sMass_interior = rot_data_table['sMass_interior'].value
         sMass_processed = sMass_interior[ -1]
-
-        sMass_processed_master.append( sMass_processed)
 
 #        print("sMass_processed:", sMass_processed)
         #######################################################################
@@ -827,6 +821,10 @@ def fit_rot_curve_files( rot_curve_files, gal_stat_files,
         # Append the corresponding values to their respective arrays to
         #    write to the master_file.
         #----------------------------------------------------------------------
+        center_flux_master.append( center_flux)
+        center_flux_err_master.append( center_flux_err)
+        sMass_processed_master.append( sMass_processed)
+
         v_max_best_master.append( v_max_best)
         r_turn_best_master.append( r_turn_best)
         alpha_best_master.append( alpha_best)
@@ -993,11 +991,11 @@ def estimate_dark_matter( master_table,
     MaNGA_plate_list = master_table['MaNGA_plate']
     MaNGA_fiberID_list = master_table['MaNGA_fiberID']
 
-    v_max_best_list = master_table['v_max_best']
-    v_max_sigma_list = master_table['v_max_sigma']
-    r_turn_best_list = master_table['turnover_rad_best']
-    alpha_best_list = master_table['alpha_best']
-    chi_square_rot_list = master_table['chi_square_rot']
+    v_max_best_list = master_table['v_max_best'].value
+    v_max_sigma_list = master_table['v_max_sigma'].value
+    r_turn_best_list = master_table['turnover_rad_best'].value
+    alpha_best_list = master_table['alpha_best'].value
+    chi_square_rot_list = master_table['chi_square_rot'].value
     ###########################################################################
 
 
@@ -1017,18 +1015,24 @@ def estimate_dark_matter( master_table,
               chi_square_rot_list,
               MaNGA_plate_list, MaNGA_fiberID_list):
 
-        gal_stat_table = ascii.read( str( plate) + "-" + str( fiberID) \
+
+        gal_stat_table = ascii.read( ROT_CURVE_MASTER_FOLDER + "/" \
+                                    + str( plate) + "-" + str( fiberID) \
                                     + GAL_STAT_INDICATOR, format='ecsv')
         gal_id = gal_stat_table['gal_ID'][0]
 
-        rot_curve_table = ascii.read( str( plate) + "-" + str( fiberID) \
-                                    + ROT_CURVE_INDICATOR, format='ecsv')
+
+
+        rot_curve_table = ascii.read( ROT_CURVE_MASTER_FOLDER + "/" \
+                                     + str( plate) + "-" + str( fiberID) \
+                                     + ROT_CURVE_INDICATOR, format='ecsv')
         depro_dist = rot_curve_table['deprojected_distance'].value
         rot_vel_data = rot_curve_table['rot_vel_avg'].value
         rot_vel_data_err = rot_curve_table['rot_vel_avg_error'].value
         sMass_interior = rot_curve_table['sMass_interior']
 
         sMass_processed = sMass_interior[-1]
+
 
         if v_max_best == -1 or v_max_best == -100 or v_max_best == -999:
             gal_mass = np.nan * u.M_sun
@@ -1155,11 +1159,11 @@ def estimate_dark_matter( master_table,
     #--------------------------------------------------------------------------
     mass_estimate_table = QTable( [ MaNGA_plate_col,
                                    MaNGA_fiberID_col,
-                                   gal_mass_col * (u.M_sun),
-                                   gal_mass_err_col * (u.M_sun),
-                                   theorized_dmMass_col * (u.M_sun),
-                                   theorized_dmMass_err_col * (u.M_sun),
-                                   sMass_col * (u.M_sun),
+                                   gal_mass_col,
+                                   gal_mass_err_col,
+                                   theorized_dmMass_col,
+                                   theorized_dmMass_err_col,
+                                   sMass_col,
                                    dmMass_to_sMass_ratio_col,
                                    dmMass_to_sMass_ratio_err_col],
                           names = ['MaNGA_plate',
@@ -1228,6 +1232,16 @@ def plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR):
 
         elif vflag == 1:
             dm_to_stellar_mass_ratio_void.append( mass_ratio)
+    ###########################################################################
+
+
+    ###########################################################################
+    # Lists cannot be raised to powers, and this operation is needed to find
+    #    RMS of the data in question. Thus, the mass ratio lists are converted
+    #    into np.array() instances here.
+    #--------------------------------------------------------------------------
+    dm_to_stellar_mass_ratio_wall = np.array( dm_to_stellar_mass_ratio_wall)
+    dm_to_stellar_mass_ratio_void = np.array( dm_to_stellar_mass_ratio_void)
     ###########################################################################
 
 

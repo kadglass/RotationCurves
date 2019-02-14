@@ -346,6 +346,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
     #----------------------------------------------------------------------
     rot_data_table = ascii.read( rot_curve_file, format='ecsv')
     depro_radii = rot_data_table['deprojected_distance'].value
+    depro_radii_fit = np.abs( depro_radii)
     rot_vel_avg = rot_data_table['rot_vel_avg'].value
     rot_vel_avg_err = rot_data_table['rot_vel_avg_error'].value
     rot_vel_max = rot_data_table['max_velocity'].value
@@ -353,13 +354,13 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
     rot_vel_min = np.abs( rot_data_table['min_velocity'].value)
     rot_vel_min_err = rot_data_table['min_velocity_error'].value
 
-#        print("depro_radii:", depro_radii)
-#        print("rot_vel_avg:", rot_vel_avg)
-#        print("rot_vel_avg_err:", rot_vel_avg_err)
-#        print("rot_vel_max:", rot_vel_max)
-#        print("rot_vel_max_err:", rot_vel_max_err)
-#        print("rot_vel_min:", rot_vel_min)
-#        print("rot_vel_min_err:", rot_vel_min_err)
+#    print("depro_radii:", depro_radii)
+#    print("rot_vel_avg:", rot_vel_avg)
+#    print("rot_vel_avg_err:", rot_vel_avg_err)
+#    print("rot_vel_max:", rot_vel_max)
+#    print("rot_vel_max_err:", rot_vel_max_err)
+#    print("rot_vel_min:", rot_vel_min)
+#    print("rot_vel_min_err:", rot_vel_min_err)
     #######################################################################
 
 
@@ -370,7 +371,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
     sMass_interior = rot_data_table['sMass_interior'].value
     sMass_processed = sMass_interior[ -1]
 
-#        print("sMass_processed:", sMass_processed)
+#    print("sMass_processed:", sMass_processed)
     #######################################################################
 
 
@@ -378,28 +379,28 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
     # General information about the data file in question as well as a plot
     #    of the data before fitting.
     #----------------------------------------------------------------------
-#        print( rot_file, ":\n\n", rot_data_table, "\n\n")
-#        print("DATA TABLE INFORMATION \n",
-#              'Columns:', rot_data_table.columns, '\n',
-#              'Column Names:', rot_data_table.colnames, '\n',
-#              'Meta Data:', rot_data_table.meta, '\n',
-#              'Number of Rows:', len( rot_data_table))
+#    print( rot_file, ":\n\n", rot_data_table, "\n\n")
+#    print("DATA TABLE INFORMATION \n",
+#          'Columns:', rot_data_table.columns, '\n',
+#          'Column Names:', rot_data_table.colnames, '\n',
+#          'Meta Data:', rot_data_table.meta, '\n',
+#          'Number of Rows:', len( rot_data_table))
 #
-#        rot_curve_decomposed_fig = plt.figure(10)
-#        plt.errorbar( depro_radii, rot_vel_max,
-#                     yerr=rot_vel_max_err, 'ro', ecolor='red')
-#        plt.errorbar( depro_radii, rot_vel_min,
-#                     yerr=rot_vel_min_err, 'bo', ecolor='blue')
+#    rot_curve_decomposed_fig = plt.figure(10)
+#    plt.errorbar( depro_radii, rot_vel_max,
+#                 yerr=rot_vel_max_err, 'ro', ecolor='red')
+#    plt.errorbar( depro_radii, rot_vel_min,
+#                 yerr=rot_vel_min_err, 'bo', ecolor='blue')
 #
-#        ax = rot_curve_decomposed_fig.add_subplot(111)
-#        plt.tick_params( axis='both', direction='in')
-#        ax.yaxis.set_ticks_position('both')
-#        ax.xaxis.set_ticks_position('both')
+#    ax = rot_curve_decomposed_fig.add_subplot(111)
+#    plt.tick_params( axis='both', direction='in')
+#    ax.yaxis.set_ticks_position('both')
+#    ax.xaxis.set_ticks_position('both')
 #
-#        plt.ylabel(r'$V_{ROT}$ [$kms^{-1}$]')
-#        plt.xlabel(r'$d_{depro}$ [kpc]')
-#        plt.title( gal_ID + " Decomposed Rotation Curves")
-#        plt.show()
+#    plt.ylabel(r'$V_{ROT}$ [$kms^{-1}$]')
+#    plt.xlabel(r'$d_{depro}$ [kpc]')
+#    plt.title( gal_ID + " Decomposed Rotation Curves")
+#    plt.show()
     #######################################################################
 
 
@@ -444,9 +445,9 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
         #    not 0, continue with the fitting process.
         #------------------------------------------------------------------
         if v_max_guess > 0 and pos_v_max_guess > 0 and neg_v_max_guess > 0:
-            r_turn_guess = depro_radii[ v_max_loc]
-            pos_r_turn_guess = depro_radii[ pos_v_max_loc]
-            neg_r_turn_guess = depro_radii[ neg_v_max_loc]
+            r_turn_guess = depro_radii_fit[ v_max_loc]
+            pos_r_turn_guess = depro_radii_fit[ pos_v_max_loc]
+            neg_r_turn_guess = depro_radii_fit[ neg_v_max_loc]
 
             alpha_guess = 2
             pos_alpha_guess = 2
@@ -462,7 +463,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             # Print statement to track the first guesses for the
             #    'rot_fit_func' parameters.
             #--------------------------------------------------------------
-            if gal_ID == '7495-9101':
+            if gal_ID == '8158-12704':
 
                 print("Rot Parameter Guess:", rot_guess)
                 print("POS Rot Parameter Guess:", pos_rot_guess)
@@ -505,7 +506,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             #--------------------------------------------------------------
             try:
                 rot_popt, rot_pcov = curve_fit( rot_fit_func,
-                        depro_radii, rot_vel_avg,
+                        depro_radii_fit, rot_vel_avg,
                         p0 = rot_guess,
                         sigma = rot_vel_avg_err,
                         bounds=( ( v_max_guess / 2,
@@ -529,7 +530,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
 
                 chi_square_rot = 0
                 for radius, velocity, vel_err in \
-                  zip( depro_radii, rot_vel_avg, rot_vel_avg_err):
+                  zip( depro_radii_fit, rot_vel_avg, rot_vel_avg_err):
                       observed = velocity
                       expected = rot_fit_func(
                               radius,
@@ -555,7 +556,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             #--------------------------------------------------------------
             try:
                 pos_rot_popt, pos_rot_pcov = curve_fit( rot_fit_func,
-                        depro_radii, rot_vel_max,
+                        depro_radii_fit, rot_vel_max,
                         p0 = pos_rot_guess,
                         sigma = rot_vel_max_err,
                         bounds=( ( pos_v_max_guess / 2,
@@ -579,7 +580,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
 
                 pos_chi_square_rot = 0
                 for radius, velocity, vel_err in \
-                  zip( depro_radii, rot_vel_max, rot_vel_max_err):
+                  zip( depro_radii_fit, rot_vel_max, rot_vel_max_err):
                       observed = velocity
                       expected = rot_fit_func(
                               radius,
@@ -606,7 +607,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             #--------------------------------------------------------------
             try:
                 neg_rot_popt, neg_rot_pcov = curve_fit( rot_fit_func,
-                        depro_radii, rot_vel_min,
+                        depro_radii_fit, rot_vel_min,
                         p0 = neg_rot_guess,
                         sigma = rot_vel_min_err,
                         bounds=( ( neg_v_max_guess / 2,
@@ -630,7 +631,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
 
                 neg_chi_square_rot = 0
                 for radius, velocity, vel_err in \
-                  zip( depro_radii, rot_vel_min, rot_vel_min_err):
+                  zip( depro_radii_fit, rot_vel_min, rot_vel_min_err):
                       observed = velocity
                       expected = rot_fit_func(
                               radius,
@@ -1036,7 +1037,8 @@ def estimate_dark_matter( input_dict, rot_curve_file):
 
 
 def plot_fitted_rot_curve():
-
+    # Make sure to take abs of deprojected distance in plotting
+    depro_dist = np.abs()
     r_turn_best = input_dict['turnover_rad_best'] * ( u.kpc)
     alpha_best = input_dict['alpha_best']
     chi_square_rot = input_dict['chi_square_rot']

@@ -2,17 +2,13 @@
 # -*- coding: utf-8 -*-
 """Created on Tues Jan 15 2019
 @author: Jacob A. Smith
-@version: 1.0
+@version: 1.1
 
 Extracts rotation curve data points from files written with rotation_curve_vX_X
 and fits a function to the data given several parameters. A total mass for the
 galaxy is then extracted from the v_max parameter and the stellar mass is then
 subtracted to find the galaxy's dark matter mass.
 """
-###############################
-# Optional import statements  #
-#    for diagnostics.         #
-###############################
 import matplotlib.pyplot as plt
 import numpy as np
 from decimal import Decimal
@@ -25,10 +21,6 @@ from astropy.table import QTable, Column
 from astropy.io import ascii
 import astropy.units as u
 import astropy.constants as const
-
-
-GAL_STAT_INDICATOR = "_gal_stat_data.txt"
-ROT_CURVE_INDICATOR = "_rot_curve_data.txt"
 
 
 def rot_fit_func( depro_radius, v_max, r_turn, alpha):
@@ -992,16 +984,16 @@ def estimate_dark_matter( input_dict, rot_curve_file):
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
     rot_curve_table = ascii.read( rot_curve_file, format='ecsv')
     depro_dist = rot_curve_table['deprojected_distance'].value
-    sMass_interior = rot_curve_table['sMass_interior']
+    sMass_interior = rot_curve_table['sMass_interior'].value
 
     sMass_processed = sMass_interior[-1]
 
 
     if v_max_best == -1 or v_max_best == -100 or v_max_best == -999:
-        gal_mass = np.nan * u.M_sun
-        gal_mass_err = np.nan * u.M_sun
-        theorized_dmMass = np.nan * u.M_sun
-        theorized_dmMass_err = np.nan * u.M_sun
+        gal_mass = np.nan
+        gal_mass_err = np.nan
+        theorized_dmMass = np.nan
+        theorized_dmMass_err = np.nan
 
     else:
         depro_dist_end = depro_dist[-1] * ( u.kpc)
@@ -1011,6 +1003,8 @@ def estimate_dark_matter( input_dict, rot_curve_file):
 
         gal_mass = v_max_best_m_per_s**2 * depro_dist_end_m / const.G
         gal_mass = gal_mass.to('M_sun')
+        gal_mass /= u.M_sun
+
         gal_mass_err = np.sqrt(
              ((2 * v_max_best_m_per_s * depro_dist_end_m) \
              / ( const.G * const.M_sun) )**2 \
@@ -1020,8 +1014,7 @@ def estimate_dark_matter( input_dict, rot_curve_file):
              * ( const.G.uncertainty * const.G.unit)**2 \
           + ((-1 * v_max_best_m_per_s**2 * depro_dist_end_m) \
              / ( const.G * const.M_sun**2) )**2 \
-             * (const.M_sun.uncertainty * const.M_sun.unit)**2) \
-          * ( u.M_sun)
+             * (const.M_sun.uncertainty * const.M_sun.unit)**2)
 
         theorized_dmMass = gal_mass - sMass_processed
         theorized_dmMass_err = gal_mass_err  # no error assumed in
@@ -1052,12 +1045,13 @@ def estimate_dark_matter( input_dict, rot_curve_file):
     ###########################################################################
     # Create a dictionary to house the mass estimate data.
     #--------------------------------------------------------------------------
-    row_data_dict = {'total_mass': gal_mass, 'total_mass_error': gal_mass_err,
-                     'dmMass': theorized_dmMass,
-                     'dmMass_error': theorized_dmMass_err,
-                     'sMass': sMass_processed,
-                     'dmMass_to_sMass_ratio': dmMass_to_sMass_ratio,
-                     'dmMass_to_sMass_ratio_error': dmMass_to_sMass_ratio_err}
+    row_data_dict = {'total_mass': gal_mass.value,
+               'total_mass_error': gal_mass_err.value,
+               'dmMass': theorized_dmMass.value,
+               'dmMass_error': theorized_dmMass_err.value,
+               'sMass': sMass_processed,
+               'dmMass_to_sMass_ratio': dmMass_to_sMass_ratio.value,
+               'dmMass_to_sMass_ratio_error': dmMass_to_sMass_ratio_err.value}
     ###########################################################################
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 

@@ -5,8 +5,7 @@ Created on Fri Jul 20 2018
 @author: Jacob A. Smith
 @version: 1.1
 
-Main script file to fit rotation curve data files
-(see rotation_curve_vX_X output) from MaNGA .fits files.
+Main script file for dark_matter_mass_vX_X.
 """
 import datetime
 START = datetime.datetime.now()

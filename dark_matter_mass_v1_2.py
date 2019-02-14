@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Created on Tues Jan 15 2019
+"""Created on Thur Feb 14 2019
 @author: Jacob A. Smith
-@version: 1.1
+@version: 1.2
 
 Extracts rotation curve data points from files written with rotation_curve_vX_X
 and fits a function to the data given several parameters. A total mass for the
@@ -53,187 +53,6 @@ def rot_fit_func( depro_radius, v_max, r_turn, alpha):
     """
     return v_max * \
            (depro_radius / (r_turn**alpha + depro_radius**alpha)**(1/alpha))
-
-
-def initialize_master_table( master_table, col_names_with_units):
-    """Initialize the master_table to contain all of the columns listed in
-    col_names but with fill values of -1.
-
-    @param:
-        master_table:
-            astropy QTable containing identifying information about each galaxy
-
-        col_names:
-            an array of strings containing the names of all of the column data
-            to be calculated in this script
-
-    @return:
-        master_table:
-            astropy QTable containing the best fit parameters, the mass
-            estimates, environmental classification, and the associated errors
-            as well as the identifying information about each galaxy
-    """
-    for entry in col_names_with_units:
-        try:
-            master_table.remove_column( entry[0])
-
-        except KeyError:
-            print("USER-GENERATED KEY ERROR: \n" \
-                  + "   Column '" + entry[0] + "' not found.")
-
-        master_table.add_column(
-                Column( np.full( len( master_table), -1.0) * entry[1],
-                       name=entry[0]))
-
-    return master_table
-
-
-def pull_matched_data( master_table, ref_table, col_match_names):
-    """Match the master_table to a reference table via the
-
-    @param:
-        master_table:
-            astropy QTable containing the best fit parameters, the mass
-            estimates, environmental classification, and the associated errors
-            as well as the identifying information about each galaxy
-
-        ref_table:
-            astropy QTable containing identifying information on the galaxy
-            in question and the vflag parameter associated with the galaxy
-
-        col_match_names:
-            array of strings containing the column names of the data to be
-            pulled from the ref_table
-
-    @return:
-        master_table:
-            astropy QTable containing each galaxy's matched parameter in
-            addition to the information originally contained in the table
-    """
-    ###########################################################################
-    # Match each entry in 'master_table' to 'ref_table' according to the
-    #    'MaNGA_plate' and 'MaNGA_fiberID.' The matched parameter is then
-    #    pulled from 'ref_table' and added to the 'master_table.'
-    #
-    # NOTE: In cases where the 'ref_table' does not contain all of the
-    #       'MaNGA_plate' and 'MaNGA_fiberID' match combinations found in the
-    #       'master_table,' the return of 'match_catalogs()' will have some
-    #       empty return statements because of the lack of matches. The
-    #       try-except statement below catches this exception and prints a
-    #       message detailing what happened.
-    #--------------------------------------------------------------------------
-    for i in range( len( master_table)):
-        galaxy_matches = match_catalogs( master_table, ref_table, i)
-
-        try:
-            for col_name in col_match_names:
-                master_table[i][ col_name[0]] = galaxy_matches[
-                        col_name[0]][0] * col_name[1]
-        except IndexError:
-            pass
-#            print("USER-CAUGHT INDEX ERROR: \n", \
-#                  "'galaxy_matches' has zero length (i.e. no matches were", \
-#                  "found in the 'ref_table' for", \
-#                  str(master_table[i]['MaNGA_plate']) + "-" + \
-#                  str(master_table[i]['MaNGA_fiberID']) + ")")
-    ###########################################################################
-
-    return master_table
-
-
-def match_catalogs( catalog_a, catalog_b, entry):
-    """Finds the matches in 'catalog_b' according to the 'entry' data found in
-    the data fields of 'catalog_a.'
-
-    @param:
-        catalog_a:
-            astropy QTable in which the target data is to be taken from
-
-        catalog_b:
-            astropy QTable containing potential matches according to the
-            'MaNGA_plate' and 'MaNGA_fiberID' in the selected row's data fields
-
-        entry:
-            the row in which the specific 'MaNGA_plate' and 'MaNGA_fiberID'
-            are to be used in matching to catalog_b
-
-    @return:
-        cat_b_matches:
-            astropy QTable containg the matches found in catalog_b
-    """
-    def match_catalogs_sub( catalog_a, catalog_b, match_criteria, entry):
-        """Recursive sub-function of match_catalogs() to match catalog_b
-        according to the data in one of catalog_a's entries.
-        """
-        n = len( match_criteria) - 1
-
-        target_data = catalog_a[ match_criteria[n]][ entry]
-
-        for row in catalog_b:
-            if row[ match_criteria[n]] != target_data:
-                row['match_flag'] = False
-
-        boolean = row[ match_criteria[n]] != target_data
-        row['match_flag'][boolean] = False
-
-        #######################################################################
-        # If there are no more catagories to be matched, return an astropy
-        #    QTable containg all the matches found in 'catalog_b.' Otherwise,
-        #    recall the function with the matches already found and match
-        #    according to the next set of criteria.
-        #----------------------------------------------------------------------
-        if n == 0:
-            return catalog_b
-        else:
-            return match_catalogs_sub( catalog_a, catalog_b,
-                                  match_criteria[0: n], entry)
-        #######################################################################
-
-
-    # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
-    # 'match_catalogs()' is a general function to match two astropy Tables
-    #    given a set of 'match_criteria.' At the time this function was
-    #    written, the 'MaNGA_plate' and 'MaNGA_fiberID' were sufficent to match
-    #    the galaxies one-to-one. However, if the user desires to match two
-    #    astropy Tables via some other criteria, the user only need to set
-    #    'match_criteria' to an n-length array of column name strings.
-    #--------------------------------------------------------------------------
-    match_criteria = ['MaNGA_plate', 'MaNGA_fiberID']
-    # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
-
-
-    ###########################################################################
-    # Initialize a flag variable column to track the matches found and add it
-    #    to 'catalog_b.' There exists a try-except statement to delete any
-    #    residual 'match_flag' Column. If this column is not found in
-    #    catalog_b, then continue the function as normal.
-    #--------------------------------------------------------------------------
-    match_flag_array = np.ones( len( catalog_b), dtype=bool)
-    catalog_b['match_flag'] = match_flag_array
-    ###########################################################################
-
-
-    ###########################################################################
-    # Initial call to the recursive 'match_catalogs_sub()' sub-function. The
-    #    output of this function, 'cat_b_matches' contains all of the entries
-    #    found in 'catalog_b' but with the added 'match_flag' column to
-    #    reference the matches found.
-    #
-    # 'matches' extracts the rows of 'cat_b_matches' where 'match_flag' equals
-    #    True.
-    #
-    # Finally, the 'match_flag' column is then removed from the 'matches'
-    #    table before returning.
-    #--------------------------------------------------------------------------
-    cat_b_matches = match_catalogs_sub( catalog_a, catalog_b, match_criteria,
-                                       entry)
-
-    matches = cat_b_matches[ cat_b_matches['match_flag']]
-    catalog_b.remove_column('match_flag')
-    matches.remove_column('match_flag')
-    ###########################################################################
-
-    return matches
 
 
 def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
@@ -287,7 +106,6 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
     #
     # alpha_guess: imperically-estimated, first guess of the 'alpha' parameter
     # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
-
 
     ###########################################################################
     # Find the array index of the point with the maximum rotational velocity
@@ -507,6 +325,7 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
     #    'rot_fit_func()' via 'scipy.optimize.curve_fit().'
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
     if len( rot_data_table) > 2:
+
         #######################################################################
         # Fit the rotation curve data and extract the best fit parameters,
         #    their errors, and the chi-square (goodness of fit) statistic.
@@ -565,6 +384,8 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
         print("-----------------------------------------------------")
         #######################################################################
         '''
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+
 
     ###########################################################################
     # Create a dictionary to house each galaxy's data.
@@ -597,7 +418,6 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
                     'neg_alpha_sigma': neg_alpha_sigma,
                     'neg_chi_square_rot': neg_chi_square_rot}
     ###########################################################################
-    # ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~
 
     return row_data_dic
 
@@ -661,7 +481,7 @@ def estimate_dark_matter( input_dict, rot_curve_file):
 
         gal_mass = v_max_best_m_per_s**2 * depro_dist_end_m / const.G
         gal_mass = gal_mass.to('M_sun')
-        gal_mass /= u.M_sun
+        gal_mass /= u.M_sun  # strip 'gal_mass' of its units
 
         gal_mass_err = np.sqrt(
              ((2 * v_max_best_m_per_s * depro_dist_end_m) \
@@ -676,29 +496,12 @@ def estimate_dark_matter( input_dict, rot_curve_file):
 
         theorized_dmMass = gal_mass - sMass_processed
         theorized_dmMass_err = gal_mass_err  # no error assumed in
-                                             #   sMass_processed
+                                             #   'sMass_processed'
 
     dmMass_to_sMass_ratio = theorized_dmMass / sMass_processed
     dmMass_to_sMass_ratio_err = theorized_dmMass_err / sMass_processed
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 
-    '''
-    #######################################################################
-    # Append the corresponding values to their respective arrays to
-    #    write to the master file. The quantities are stirpped of their
-    #    units at this stage in the algorithm because astropy Column
-    #    objects cannot be created with quantities that have dimensions.
-    #    The respective dimensions are added back when the Column objects
-    #    are added to the astropy QTable.
-    #----------------------------------------------------------------------
-    gal_mass_master.append( gal_mass / u.M_sun)
-    gal_mass_err_master.append( gal_mass_err / u.M_sun)
-    theorized_dmMass_master.append( theorized_dmMass / u.M_sun)
-    theorized_dmMass_err_master.append( theorized_dmMass_err / u.M_sun)
-    sMass_processed_master.append( sMass_processed / u.M_sun)
-    dm_to_stellar_mass_ratio_master.append( dmMass_to_sMass_ratio)
-    dm_to_stellar_mass_ratio_err_master.append( dmMass_to_sMass_ratio_err)
-    #######################################################################
-    '''
 
     ###########################################################################
     # Create a dictionary to house the mass estimate data.
@@ -711,50 +514,6 @@ def estimate_dark_matter( input_dict, rot_curve_file):
                'dmMass_to_sMass_ratio': dmMass_to_sMass_ratio.value,
                'dmMass_to_sMass_ratio_error': dmMass_to_sMass_ratio_err.value}
     ###########################################################################
-    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-
-    '''
-    ###########################################################################
-    # Convert the data arrays into Column objects to add to the rotation
-    #    curve data table.
-    #--------------------------------------------------------------------------
-    MaNGA_plate_col = Column( MaNGA_plate_master)
-    MaNGA_fiberID_col = Column( MaNGA_fiberID_master)
-
-    gal_mass_col = Column( gal_mass_master)
-    gal_mass_err_col = Column( gal_mass_err_master)
-    theorized_dmMass_col = Column( theorized_dmMass_master)
-    theorized_dmMass_err_col = Column( theorized_dmMass_err_master)
-    sMass_col = Column( sMass_processed_master)
-    dmMass_to_sMass_ratio_col = Column( dm_to_stellar_mass_ratio_master)
-    dmMass_to_sMass_ratio_err_col = Column(
-                                       dm_to_stellar_mass_ratio_err_master)
-    ###########################################################################
-    '''
-    '''
-    ###########################################################################
-    # Add the column objects to astropy QTables.
-    #--------------------------------------------------------------------------
-    mass_estimate_table = QTable( [ MaNGA_plate_col,
-                                   MaNGA_fiberID_col,
-                                   gal_mass_col,
-                                   gal_mass_err_col,
-                                   theorized_dmMass_col,
-                                   theorized_dmMass_err_col,
-                                   sMass_col,
-                                   dmMass_to_sMass_ratio_col,
-                                   dmMass_to_sMass_ratio_err_col],
-                          names = ['MaNGA_plate',
-                                   'MaNGA_fiberID',
-                                   'total_mass',
-                                   'total_mass_error',
-                                   'dmMass',
-                                   'dmMass_error',
-                                   'sMass',
-                                   'dmMass_to_sMass_ratio',
-                                   'dmMass_to_sMass_ratio_error'])
-    ###########################################################################
-    '''
 
     return row_data_dict
 

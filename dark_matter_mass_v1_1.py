@@ -327,7 +327,7 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
                                                      np.nextafter( 0, 1)),
                                                     ( v_max_guess * 1.5,
                                                      r_turn_guess * 2,
-                                                     np.nextafter( np.inf, 0))),
+                                                     np.inf)),
                                            max_nfev=TRY_N, loss='cauchy')
 
             rot_perr = np.sqrt( np.diag( rot_pcov))

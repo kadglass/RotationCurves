@@ -222,7 +222,7 @@ if RUN_ALL_GALAXIES:
     ###########################################################################
     # Save the 'master_table.'
     #--------------------------------------------------------------------------
-    master_table.write( MASTER_FILE_NAME, format='ascii.commented_header',
+    master_table.write( MASTER_FILE_NAME, format='ascii.ecsv',
                        overwrite=True)
     ###########################################################################
 

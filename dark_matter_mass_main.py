@@ -3,7 +3,7 @@
 """
 Created on Fri Jul 20 2018
 @author: Jacob A. Smith
-@version: 1.1
+@version: 1.2
 
 Main script file for dark_matter_mass_vX_X.
 """
@@ -116,9 +116,7 @@ if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
 ###############################################################################
 # Import functions from 'dark_matter_mass_vX_X.'
 #------------------------------------------------------------------------------
-from dark_matter_mass_v1_1 import initialize_master_table, \
-                                pull_matched_data, \
-                                fit_rot_curve, \
+from dark_matter_mass_v1_2 import fit_rot_curve, \
                                 estimate_dark_matter, \
                                 plot_mass_ratios, \
                                 analyze_rot_curve_discrep, \

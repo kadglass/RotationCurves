@@ -32,7 +32,7 @@ TRY_N = 100000
 #    all galaxies are to be ran through the script and saved to the
 #    'master_file' or not.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = False
+WORKING_IN_BLUEHIVE = True
 RUN_ALL_GALAXIES = True
 ###############################################################################
 

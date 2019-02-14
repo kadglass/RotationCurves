@@ -118,7 +118,7 @@ if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
 #------------------------------------------------------------------------------
 from dark_matter_mass_v1_1 import initialize_master_table, \
                                 pull_matched_data, \
-                                fit_rot_curve_files, \
+                                fit_rot_curve, \
                                 estimate_dark_matter, \
                                 plot_mass_ratios, \
                                 analyze_rot_curve_discrep, \
@@ -206,7 +206,7 @@ if RUN_ALL_GALAXIES:
         # Set of functions to run the set of rotation curve and of galaxy
         #    statistic files through.
         #----------------------------------------------------------------------
-        param_outputs = fit_rot_curve_files( rot_curve_filename,
+        param_outputs = fit_rot_curve( rot_curve_filename,
                                             gal_stat_filename,
                                             TRY_N)
 
@@ -258,7 +258,7 @@ else:
         # Set of functions to run the set of rotation curve and of galaxy
         #    statistic files through.
         #----------------------------------------------------------------------
-        param_outputs = fit_rot_curve_files( rot_curve_filename,
+        param_outputs = fit_rot_curve( rot_curve_filename,
                                             gal_stat_filename,
                                             TRY_N)
 

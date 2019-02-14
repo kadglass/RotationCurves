@@ -118,7 +118,6 @@ if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
 #------------------------------------------------------------------------------
 from dark_matter_mass_v1_1 import initialize_master_table, \
                                 pull_matched_data, \
-                                build_vflag_ref_table, \
                                 fit_rot_curve_files, \
                                 estimate_dark_matter, \
                                 plot_mass_ratios, \
@@ -133,17 +132,6 @@ if RUN_ALL_GALAXIES:
     #--------------------------------------------------------------------------
     master_table = Table.read( MASTER_FILE_NAME, format='ascii.ecsv')
     N_galaxies = len( master_table)
-    ###########################################################################
-
-
-    ###########################################################################
-    # Create the file name lists of the rotation curve and galaxy statistic
-    # files to be ran.
-    #--------------------------------------------------------------------------
-    rot_curve_files = glob.glob( ROT_CURVE_MASTER_FOLDER \
-                                + '/*_rot_curve_data.txt')
-    gal_stat_files = glob.glob( ROT_CURVE_MASTER_FOLDER \
-                               + '/*_gal_stat_data.txt')
     ###########################################################################
 
 
@@ -204,11 +192,13 @@ if RUN_ALL_GALAXIES:
         #----------------------------------------------------------------------
         plate = master_table['MaNGA_plate'][i]
         fiberID = master_table['MaNGA_fiberID'][i]
+        gal_ID = str(plate) + '-' + str(fiberID)
+        print("gal_ID MAIN:", gal_ID)
 
-        rot_curve_filename = ROT_CURVE_MASTER_FOLDER + '/' + str(plate) + '-' \
-                                    + str(fiberID) + '_rot_curve_data.txt'
-        gal_stat_filename = ROT_CURVE_MASTER_FOLDER + '/' + str(plate) + '-' \
-                                    + str(fiberID) + '_gal_stat_data.txt'
+        rot_curve_filename = ROT_CURVE_MASTER_FOLDER + '/' + gal_ID \
+                                        + '_rot_curve_data.txt'
+        gal_stat_filename = ROT_CURVE_MASTER_FOLDER + '/' + gal_ID \
+                                        + '_gal_stat_data.txt'
         #######################################################################
 
 
@@ -243,6 +233,8 @@ else:
     # For the galaxies contained within the 'FILE_IDS' array...
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
     for i in range( len( FILE_IDS)):
+        print("gal_ID MAIN:", FILE_IDS[i])
+
         #######################################################################
         # Build the file names for the rotation curve and galaxy statistic data
         #    from the 'FILE_IDS' array.

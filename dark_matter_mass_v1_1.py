@@ -369,8 +369,11 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
     #    'MaNGA_plate' and 'MaNGA_fiberID' from the 'gal_ID' column.
     #----------------------------------------------------------------------
     gal_stat_table = ascii.read( gal_stat_file, format='ecsv')
+    gal_ID = gal_stat_table['gal_ID'][0]
     center_flux = gal_stat_table['center_flux'][0].value
     center_flux_err = gal_stat_table['center_flux_error'][0].value
+
+    print("gal_ID IN FUNC:", gal_ID)
     #######################################################################
 
 
@@ -523,18 +526,18 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
                              pos_alpha_guess]
             neg_rot_guess = [ neg_v_max_guess, neg_r_turn_guess,
                              neg_alpha_guess]
-            '''
+
             ###############################################################
             # Print statement to track the first guesses for the
-            #    'rot_fit_func', and 'lum_fit_func' parameters.
+            #    'rot_fit_func' parameters.
             #--------------------------------------------------------------
-            if gal_ID == '7495-6104':
+            if gal_ID == '7495-9101':
 
                 print("Rot Parameter Guess:", rot_guess)
                 print("POS Rot Parameter Guess:", pos_rot_guess)
                 print("NEG Rot Parameter Guess:", neg_rot_guess)
             ###############################################################
-            '''
+
 
             ###############################################################
             # NOTES:

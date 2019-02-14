@@ -236,7 +236,7 @@ def match_catalogs( catalog_a, catalog_b, entry):
     return matches
 
 
-def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
+def fit_rot_curve_data( rot_curve_file, gal_stat_file, TRY_N):
     """Finds the function of the line of best fit TRY_N times for the rotation
     curve data file in question. Returns back a table containg the best fit
     parameters for the fit function obtained with scipy.optimize.curve_fit.
@@ -255,18 +255,10 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             fit before generating a timeout error (see scipy.optimize.curve_fit
             documentation for more information)
 
-        ROT_CURVE_MASTER_FOLDER:
-            string representation of the path of the folder containing all of
-            the galaxy data for all of the galaxies in the MaNGA survey
-
-        IMAGE_DIR:
-            string representation of the file path that pictures are saved to
-
     @return:
-        best_fit_param_table:
-            astropy QTable containing the best fit parameters for each galaxy
-            along with the errors associated with them and the chi-square
-            goodness of fit statistic
+        row_data_dic:
+            dictionary containing the best fit parameters, center flux and its
+            error, and stellar mass processed for a galaxy
     """
     '''
     ###########################################################################
@@ -295,26 +287,25 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
                  float))
     ###########################################################################
     '''
-    #######################################################################
-    # Extract the data from the gal_stat_file, and extract the
-    #    'MaNGA_plate' and 'MaNGA_fiberID' from the 'gal_ID' column.
-    #----------------------------------------------------------------------
+    ###########################################################################
+    # Extract the data from the gal_stat_file.
+    #--------------------------------------------------------------------------
     gal_stat_table = ascii.read( gal_stat_file, format='ecsv')
     gal_ID = gal_stat_table['gal_ID'][0]
     center_flux = gal_stat_table['center_flux'][0].value
     center_flux_err = gal_stat_table['center_flux_error'][0].value
 
     print("gal_ID IN FUNC:", gal_ID)
-    #######################################################################
+    ###########################################################################
 
 
-    #######################################################################
-    # Best fit parameters and errors in those parameters are initialized to
-    # -1 to indicate that they start out as 'not found.' A value of -1 in
-    # the master file therefore indicates that the galaxy was not fitted or
-    # that there was otherwise insufficent data to find the best fit
-    # parameters and their errors.
-    #----------------------------------------------------------------------
+    ###########################################################################
+    # Best fit parameters and errors in those parameters are initialized to be
+    #    -1 to indicate that they start out as 'not found.' A value of -1 in
+    #    the master file therefore indicates that the galaxy was not fitted
+    #    because there was insufficent data to find the best fit parameters and
+    #    their errors.
+    #--------------------------------------------------------------------------
     v_max_best = -1
     r_turn_best = -1
     alpha_best = -1
@@ -338,15 +329,15 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
     neg_r_turn_sigma = -1
     neg_alpha_sigma = -1
     neg_chi_square_rot = -1
-    #######################################################################
+    ###########################################################################
 
 
-    #######################################################################
+    ###########################################################################
     # Import the necessary data from the rotation curve files.
-    #----------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     rot_data_table = ascii.read( rot_curve_file, format='ecsv')
     depro_radii = rot_data_table['deprojected_distance'].value
-    depro_radii_fit = np.abs( depro_radii)
+    depro_radii_fit = np.abs( depro_radii)  # version used in 'curve_fit()'
     rot_vel_avg = rot_data_table['rot_vel_avg'].value
     rot_vel_avg_err = rot_data_table['rot_vel_avg_error'].value
     rot_vel_max = rot_data_table['max_velocity'].value
@@ -361,69 +352,68 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
 #    print("rot_vel_max_err:", rot_vel_max_err)
 #    print("rot_vel_min:", rot_vel_min)
 #    print("rot_vel_min_err:", rot_vel_min_err)
-    #######################################################################
+    ###########################################################################
 
 
-    #######################################################################
+    ###########################################################################
     # Extract the total stellar mass processed for the galaxy from the last
     #    data point in the 'sMass_interior' column for the galaxy.
-    #----------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     sMass_interior = rot_data_table['sMass_interior'].value
     sMass_processed = sMass_interior[ -1]
 
 #    print("sMass_processed:", sMass_processed)
-    #######################################################################
+    ###########################################################################
 
+    '''
+    ###########################################################################
+    # General information about the data file in question as well as a plot of
+    #    the data before fitting.
+    #--------------------------------------------------------------------------
+    print( rotcurve__file, ":\n\n", rot_data_table, "\n\n")
+    print("DATA TABLE INFORMATION \n",
+          'Columns:', rot_data_table.columns, '\n',
+          'Column Names:', rot_data_table.colnames, '\n',
+          'Meta Data:', rot_data_table.meta, '\n',
+          'Number of Rows:', len( rot_data_table))
 
-    #######################################################################
-    # General information about the data file in question as well as a plot
-    #    of the data before fitting.
-    #----------------------------------------------------------------------
-#    print( rot_file, ":\n\n", rot_data_table, "\n\n")
-#    print("DATA TABLE INFORMATION \n",
-#          'Columns:', rot_data_table.columns, '\n',
-#          'Column Names:', rot_data_table.colnames, '\n',
-#          'Meta Data:', rot_data_table.meta, '\n',
-#          'Number of Rows:', len( rot_data_table))
-#
-#    rot_curve_decomposed_fig = plt.figure(10)
-#    plt.errorbar( depro_radii, rot_vel_max,
-#                 yerr=rot_vel_max_err, 'ro', ecolor='red')
-#    plt.errorbar( depro_radii, rot_vel_min,
-#                 yerr=rot_vel_min_err, 'bo', ecolor='blue')
-#
-#    ax = rot_curve_decomposed_fig.add_subplot(111)
-#    plt.tick_params( axis='both', direction='in')
-#    ax.yaxis.set_ticks_position('both')
-#    ax.xaxis.set_ticks_position('both')
-#
-#    plt.ylabel(r'$V_{ROT}$ [$kms^{-1}$]')
-#    plt.xlabel(r'$d_{depro}$ [kpc]')
-#    plt.title( gal_ID + " Decomposed Rotation Curves")
-#    plt.show()
-    #######################################################################
+    rot_curve_decomposed_fig = plt.figure(10)
+    plt.errorbar( depro_radii, rot_vel_max,
+                 yerr=rot_vel_max_err, 'ro', ecolor='red')
+    plt.errorbar( depro_radii, rot_vel_min,
+                 yerr=rot_vel_min_err, 'bo', ecolor='blue')
 
+    ax = rot_curve_decomposed_fig.add_subplot(111)
+    plt.tick_params( axis='both', direction='in')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
 
+    plt.ylabel(r'$V_{ROT}$ [km/s]')
+    plt.xlabel(r'$d_{depro}$ [kpc]')
+    plt.title( gal_ID + " Decomposed Rotation Curves")
+    plt.show()
     #######################################################################
+    '''
+
+    ###########################################################################
     # Create a set of conditions to test for valid data:
     #
-    # I.)  The data file should contain at least three data points so as to
-    #      fit a rotation curve.
-    # II.) The absolute maximum and absolute minimum of each data file
-    #      should not be 0.
-    #######################################################################
+    # I.)  The data file should contain at least three data points so as to fit
+    #      a rotation curve.
+    # II.) The absolute maximum and absolute minimum of each data file should
+    #      be greater than zero.
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
     if len( rot_data_table) >= 3:
-        ###################################################################
+        # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
         # NOTES:
-        #------------------------------------------------------------------
+        #----------------------------------------------------------------------
         # Following from 'rot_fit_func,' the following first guesses of the
         #    parameters 'v_max,' 'r_turn,' and 'alpha' are described as
         #    such:
         #
         # v_max_guess / v_min_guess:
-        #    the absolute maximum and absolute minimum (respectively) of
-        #    the data file in question; first guess of the 'v_max'
-        #    parameter
+        #    the absolute maximum and absolute minimum (respectively) of the
+        #    data file in question; first guess of the 'v_max' parameter
         #
         # r_turn_max_guess / r_turn_min_guess:
         #    the radius atwhich 'v_max' and 'v_min' are respectively found;
@@ -431,7 +421,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
         #
         # alpha_guess: imperically-estimated, first guess of the 'alpha'
         #    parameter
-        ###################################################################
+        # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
         v_max_loc = np.argmax( rot_vel_avg)
         pos_v_max_loc = np.argmax( rot_vel_max)
         neg_v_max_loc = np.argmax( rot_vel_min)
@@ -440,10 +430,10 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
         pos_v_max_guess = rot_vel_max[ pos_v_max_loc]
         neg_v_max_guess = rot_vel_min[ neg_v_max_loc]
 
-        ###################################################################
+        #######################################################################
         # If the initial guesses for the maximum rotational velocity are
-        #    not 0, continue with the fitting process.
-        #------------------------------------------------------------------
+        #    greater than 0, continue with the fitting process.
+        # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
         if v_max_guess > 0 and pos_v_max_guess > 0 and neg_v_max_guess > 0:
             r_turn_guess = depro_radii_fit[ v_max_loc]
             pos_r_turn_guess = depro_radii_fit[ pos_v_max_loc]
@@ -459,49 +449,47 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             neg_rot_guess = [ neg_v_max_guess, neg_r_turn_guess,
                              neg_alpha_guess]
 
-            ###############################################################
-            # Print statement to track the first guesses for the
-            #    'rot_fit_func' parameters.
-            #--------------------------------------------------------------
+            '''
+            ###################################################################
+            # Print statement to track the first guesses for the 'rot_fit_func'
+            #    parameters.
+            #------------------------------------------------------------------
             print("Rot Parameter Guess:", rot_guess)
             print("POS Rot Parameter Guess:", pos_rot_guess)
             print("NEG Rot Parameter Guess:", neg_rot_guess)
-            ###############################################################
+            ###################################################################
+            '''
 
-
-            ###############################################################
+            # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
             # NOTES:
-            #--------------------------------------------------------------
-            # Each respective popt holds an array of the best fit
-            #    parameters for the data file in question.
+            #------------------------------------------------------------------
+            # Each respective 'popt' holds an array of the best fit parameters
+            #    for the data file in question.
             #
-            # Each respective pcov holds the covarience matrix of the
+            # Each respective 'pcov' holds the covarience matrix of the
             #    parameters for the data file in question.
             #
             # bounds: imperically-devised limits for the 'rot_fit_func'
             #
-            # max_nfev: the number of times the algorithm will try to fit
-            #    the data
+            # max_nfev: the number of times the algorithm will try to fit the
+            #    data
             #
             # loss='cauchy': "Severely weakens outliers influence, but may
-            #    cause difficulties in optimization process"
-            #    (see link below).
+            #    cause difficulties in optimization process"            #    (see link below).
             #
             # <docs.scipy.org/doc/scipy/reference/generated/
             # scipy.optimize.least_squares.html
-            # #scipy.optimize.least_squares>
             #
             #
-            # If the program experiences a RuntimeError, it is assumed
-            #    that scipy.optimize.curve_fit could not find the best
-            #    fit parameters. The data given in the rotation curve
-            #    file was otherwise satisfactory. Values of -999 are
+            # If the program experiences a RuntimeError, it is assumed that
+            #    'scipy.optimize.curve_fit()' could not find the best fit
+            #    parameters given TRY_N number of attempts. Values of -999 are
             #    reported in instances where this RuntimeError occurs.
-            ###############################################################
+            # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
 
-            ###############################################################
-            # Average rotation curve
-            #--------------------------------------------------------------
+            ###################################################################
+            # Fit the average rotation curve.
+            #------------------------------------------------------------------
             try:
                 rot_popt, rot_pcov = curve_fit( rot_fit_func,
                         depro_radii_fit, rot_vel_avg,
@@ -547,11 +535,11 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
                 r_turn_sigma = -999
                 alpha_sigma = -999
                 chi_square_rot = -999
-            ###############################################################
+            ###################################################################
 
-            ###############################################################
-            # Positve rotation curve
-            #--------------------------------------------------------------
+            ###################################################################
+            # Fit the positve rotation curve.
+            #------------------------------------------------------------------
             try:
                 pos_rot_popt, pos_rot_pcov = curve_fit( rot_fit_func,
                         depro_radii_fit, rot_vel_max,
@@ -598,11 +586,11 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
                 pos_r_turn_sigma = -999
                 pos_alpha_sigma = -999
                 pos_chi_square_rot = -999
-            ###############################################################
+            ###################################################################
 
-            ###############################################################
-            # Negative rotation curve
-            #--------------------------------------------------------------
+            ###################################################################
+            # Fit the negative rotation curve.
+            #------------------------------------------------------------------
             try:
                 neg_rot_popt, neg_rot_pcov = curve_fit( rot_fit_func,
                         depro_radii_fit, rot_vel_min,
@@ -649,43 +637,43 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
                 neg_r_turn_sigma = -999
                 neg_alpha_sigma = -999
                 neg_chi_square_rot = -999
-            ###############################################################
+            ###################################################################
 
 
-            ###############################################################
-            # If a chi_square value is calculated to be infinity, set the
-            #    chi_square to -50 so that it does not trigger issues in
+            ###################################################################
+            # If a 'chi_square' value is calculated to be infinity, set the
+            #    'chi_square' to -50 so that it does not trigger issues in
             #    plotting a histogram of the values.
-            ###############################################################
+            #------------------------------------------------------------------
             if chi_square_rot == float('inf'):
                 chi_square_rot = -50
             if pos_chi_square_rot == float('inf'):
                 pos_chi_square_rot = -50
             if neg_chi_square_rot == float('inf'):
                 neg_chi_square_rot = -50
-            ###############################################################
+            ###################################################################
 
-
-            ###############################################################
+            '''
+            ###################################################################
             # Print statement to track the best fit parameters for the data
-            #    file in question as well as the chi square (goodness of
-            #    fit) statistic.
-            #--------------------------------------------------------------
-#                print("Rot Curve Best Param:", rot_popt)
-#                print("Rot Curve Best Param (Positive):", pos_rot_popt)
-#                print("Rot Curve Best Param (Negative):", neg_rot_popt)
-#                print("Chi^{2}:", chi_square_rot)
-#                print("Chi^{2} (Pos):", pos_chi_square_rot)
-#                print("Chi^{2} (Neg):", neg_chi_square_rot)
-#                print("-----------------------------------------------------")
-            ###############################################################
+            #    file in question as well as the chi square (goodness of fit)
+            #    statistic.
+            #------------------------------------------------------------------
+            print("Rot Curve Best Param:", rot_popt)
+            print("Rot Curve Best Param (Positive):", pos_rot_popt)
+            print("Rot Curve Best Param (Negative):", neg_rot_popt)
+            print("Chi^{2}:", chi_square_rot)
+            print("Chi^{2} (Pos):", pos_chi_square_rot)
+            print("Chi^{2} (Neg):", neg_chi_square_rot)
+            print("-----------------------------------------------------")
+            ###################################################################
+            '''
 
-
-        ###################################################################
-        # If either the absolute maximum or the absolute minimum of the
-        #    data file in question is zero, the best fit parameters and
-        #    their errors are set to -100.
-        #------------------------------------------------------------------
+        #######################################################################
+        # If either the average, absolute maximum or the absolute minimum of
+        #    the data file in question less than zero, the best fit parameters
+        #    and their errors are set to -100.
+        #----------------------------------------------------------------------
         elif v_max_guess <= 0 or pos_v_max_guess <= 0 or neg_v_max_guess <= 0:
             v_max_best = -100
             r_turn_best = -100
@@ -709,7 +697,7 @@ def fit_rot_curve_files( rot_curve_file, gal_stat_file, TRY_N):
             neg_r_turn_sigma = -100
             neg_alpha_sigma = -100
             neg_chi_square_rot = -100
-        ###################################################################
+        #######################################################################
 
     '''
     #######################################################################

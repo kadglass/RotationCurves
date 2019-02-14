@@ -917,7 +917,7 @@ def estimate_dark_matter( input_dict, rot_curve_file):
         theorized_dmMass_err = np.nan
 
     else:
-        depro_dist_end = depro_dist[-1] * ( u.kpc)
+        depro_dist_end = np.abs( depro_dist[-1]) * ( u.kpc)
         depro_dist_end_m = depro_dist_end.to('m')
         v_max_best_m_per_s = v_max_best.to('m/s')
         v_max_sigma_m_per_s = v_max_sigma.to('m/s')

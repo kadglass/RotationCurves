@@ -21,11 +21,26 @@ from astropy.units import Unit
 IMAGE_FORMAT = 'eps'
 ###############################################################################
 
+###############################################################################
+# Number of times to try to fit the data within 'scipy.optimize.curve_fit().'
+#------------------------------------------------------------------------------
+TRY_N = 100000
+###############################################################################
 
 ###############################################################################
-# Boolean variable to specify if the script is being run in Bluehive.
+# Boolean variables to specify if the script is being run in Bluehive and if
+#    all galaxies are to be ran through the script and saved to the
+#    'master_file' or not.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = True
+WORKING_IN_BLUEHIVE = False
+RUN_ALL_GALAXIES = True
+###############################################################################
+
+###############################################################################
+# List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
+#    the individual galaxy version of this script.
+#------------------------------------------------------------------------------
+FILE_IDS = ['7495-9101']
 ###############################################################################
 
 
@@ -90,8 +105,6 @@ else:
                      '/wall_reclassification_RECLASS.txt']
 
 MASTER_FILE_NAME = LOCAL_PATH + '/master_file.txt'
-TRY_N = 100000      # number of times to try line of best fit within
-                    #    scipy.optimize.curve_fit
 
 # Create output directories if they do not already exist
 if not os.path.isdir( IMAGE_DIR):
@@ -186,7 +199,7 @@ col_names_with_units = [('vflag', Unit(1)),
                         ('neg_alpha_sigma', Unit(1)),
                         ('neg_chi_square_rot', Unit(1)),
                         ('center_flux', Unit('erg / (cm2 s)')),
-                        ('center_flux_err', Unit('erg / (cm2 s)')),
+                        ('center_flux_error', Unit('erg / (cm2 s)')),
                         ('total_mass', Unit('solMass')),
                         ('total_mass_error', Unit('solMass')),
                         ('dmMass', Unit('solMass')),
@@ -195,16 +208,16 @@ col_names_with_units = [('vflag', Unit(1)),
                         ('dmMass_to_sMass_ratio', Unit(1)),
                         ('dmMass_to_sMass_ratio_error', Unit(1))]
 ###############################################################################
-
-
+'''
+'''
 ###############################################################################
 # Initialize the 'master_table' to have -1's in all of the columns listed in
 #    the 'col_names' array.
 #------------------------------------------------------------------------------
 master_table = initialize_master_table( master_table, col_names_with_units)
 ###############################################################################
-
-
+'''
+'''
 ###############################################################################
 # Initialize the data fields to pull in matching for each call to
 #    'pull_matched_data().'
@@ -213,8 +226,8 @@ vflag_pulls = col_names_with_units[ 0 : 1]
 best_param_pulls = col_names_with_units[ 1 : 24]
 mass_estimate_pulls = col_names_with_units[ 24 : ]
 ###############################################################################
-
-
+'''
+'''
 ###############################################################################
 # Set of functions to run the set of rotation curves and set of galaxy
 # statistics through.
@@ -251,7 +264,7 @@ plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
 analyze_rot_curve_discrep( master_table, IMAGE_FORMAT, IMAGE_DIR)
 analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR)
 ###############################################################################
-
+'''
 
 ###############################################################################
 # Clock the program's run time to check performance.

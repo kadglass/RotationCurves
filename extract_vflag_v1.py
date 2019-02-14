@@ -6,7 +6,7 @@
 Extracts the environmental classification parameter from various output files
 and matches the data to the master file.
 """
-from astropy.table import QTable
+from astropy.table import Table
 import numpy as np
 
 def build_ref_table( CROSS_REF_FILE_NAMES):
@@ -36,7 +36,7 @@ def build_ref_table( CROSS_REF_FILE_NAMES):
     # Initialize the 'vflag_ref_table' to contain the 'MaNGA_plate,'
     #    'MaNGA_fiberID,' and 'vflag' columns.
     #--------------------------------------------------------------------------
-    vflag_ref_table = QTable( names=('MaNGA_plate', 'MaNGA_fiberID', 'vflag'),
+    vflag_ref_table = Table( names=('MaNGA_plate', 'MaNGA_fiberID', 'vflag'),
                              dtype = ( int, int, int))
     ###########################################################################
 
@@ -44,18 +44,18 @@ def build_ref_table( CROSS_REF_FILE_NAMES):
     ###########################################################################
     # Read in each of the 'void_finder' output files.
     #--------------------------------------------------------------------------
-    doug_not_classified = ascii.read( CROSS_REF_FILE_NAMES[1],
+    doug_not_classified = Table.read( CROSS_REF_FILE_NAMES[1],
                            include_names = ('MaNGA_plate', 'MaNGA_fiberID',
-                                            'vflag'), format='ecsv')
-    doug_not_found = ascii.read( CROSS_REF_FILE_NAMES[2],
+                                            'vflag'), format='ascii.ecsv')
+    doug_not_found = Table.read( CROSS_REF_FILE_NAMES[2],
                            include_names = ('MaNGA_plate', 'MaNGA_fiberID',
-                                            'vflag'), format='ecsv')
-    doug_void_reclass = ascii.read( CROSS_REF_FILE_NAMES[3],
+                                            'vflag'), format='ascii.ecsv')
+    doug_void_reclass = Table.read( CROSS_REF_FILE_NAMES[3],
                            include_names = ('MaNGA_plate', 'MaNGA_fiberID',
-                                            'vflag'), format='ecsv')
-    doug_wall_reclass = ascii.read( CROSS_REF_FILE_NAMES[4],
+                                            'vflag'), format='ascii.ecsv')
+    doug_wall_reclass = Table.read( CROSS_REF_FILE_NAMES[4],
                            include_names = ('MaNGA_plate', 'MaNGA_fiberID',
-                                            'vflag'), format='ecsv')
+                                            'vflag'), format='ascii.ecsv')
     ###########################################################################
 
 

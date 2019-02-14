@@ -537,6 +537,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #        pix_scale_factor_err = np.sqrt( ( np.tan( MANGA_FIBER_DIAMETER))**2 \
 #                                       * dist_to_galaxy_kpc_err)
 
+#        print("z:", z)
 #        print("dist_to_galaxy_kpc:", dist_to_galaxy_kpc)
 #        print("dist_to_galaxy_kpc_err:", dist_to_galaxy_kpc_err)
 #        print("dist_to_galaxy_cm:", dist_to_galaxy_cm)

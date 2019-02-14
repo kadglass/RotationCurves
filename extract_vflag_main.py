@@ -112,3 +112,12 @@ master_table = match_vflag( master_table, vflag_ref_table, match_criteria)
 #------------------------------------------------------------------------------
 master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
 ###############################################################################
+
+
+
+###############################################################################
+# Clock the program's run time to check performance.
+#------------------------------------------------------------------------------
+FINISH = datetime.datetime.now()
+print("Runtime (COMPLETED):", FINISH - START)
+###############################################################################

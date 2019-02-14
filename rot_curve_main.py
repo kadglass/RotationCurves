@@ -28,11 +28,18 @@ warnings.simplefilter('ignore', np.RankWarning)
 IMAGE_FORMAT = 'eps'
 ###############################################################################
 
-
 ###############################################################################
 # Boolean variable to specify if the script is being run in Bluehive.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = True
+WORKING_IN_BLUEHIVE = False
+RUN_ALL_GALAXIES = False
+###############################################################################
+
+###############################################################################
+# List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
+#    the individual galaxy version of this script.
+#------------------------------------------------------------------------------
+FILE_IDS = ['8158-12704']
 ###############################################################################
 
 
@@ -96,37 +103,41 @@ from rotation_curve_v2_1 import extract_data, \
                                 write_master_file
 ###############################################################################
 
+if RUN_ALL_GALAXIES:
+    ###########################################################################
+    # Create list of .fits file names to extract a rotation curve from.
+    #--------------------------------------------------------------------------
+    files = glob.glob( MANGA_FOLDER + '/manga-*Pipe3D.cube.fits.gz')
+    ###########################################################################
+
+
+else:
+    ###########################################################################
+    # Code to isolate files and run it through all of the functions from
+    # rotation_curve_vX_X.
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+    files = []
+
+    for file_name in FILE_IDS:
+        files.append( MANGA_FOLDER \
+                     + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
+    ###########################################################################
+
 
 ###############################################################################
-# Create list of .fits file names to extract a rotation curve from.
-#
-# IMPORTANT: rot_curve_main.py must be run outside the folder that
-#            houses the plate folders. The default folder is
-#            '/manga_files'.
+# Extract the length of the 'files' array for future use in creating the
+#    'master_table.'
 #------------------------------------------------------------------------------
-files = glob.glob( MANGA_FOLDER + '/manga-*Pipe3D.cube.fits.gz')
+N_files = len( files)
 ###############################################################################
 
-
-###############################################################################
-# Code to isolate files and run it through all of the functions from
-# rotation_curve_vX_X.
-# ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#FILE_IDS = ['8606-12702']
-#
-#files = []
-#for file_name in FILE_IDS:
-#    files.append( MANGA_FOLDER \
-#    + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
-###############################################################################
-
-
+'''
 ###############################################################################
 # Print the list of file names.
 #------------------------------------------------------------------------------
-#print("files:", files)
+print("files:", files)
 ###############################################################################
-
+'''
 
 ###############################################################################
 # Open NASA-Sloan-Atlas (NSA) master catalog and extract the data structurers
@@ -168,22 +179,22 @@ catalog_coords = SkyCoord( ra = nsa_ra_all*u.degree,
 ###############################################################################
 # # Initialize the master arrays that create the structure of the master file.
 #------------------------------------------------------------------------------
-manga_plate_master = []
-manga_fiberID_master = []
+manga_plate_master = -1 * np.ones( N_files)
+manga_fiberID_master = -1 * np.ones( N_files)
 
-nsa_axes_ratio_master = []
-nsa_phi_master = []
-nsa_z_master = []
-#nsa_zdist_master = []
-#nsa_zdist_err_master = []
-nsa_mStar_master = []
+nsa_axes_ratio_master = -1 * np.ones( N_files)
+nsa_phi_master = -1 * np.ones( N_files)
+nsa_z_master = -1 * np.ones( N_files)
+#nsa_zdist_master = -1 * np.ones( N_files)
+#nsa_zdist_err_master = -1 * np.ones( N_files)
+nsa_mStar_master = -1 * np.ones( N_files)
 
-nsa_ra_master = []
-nsa_dec_master = []
-nsa_plate_master = []
-nsa_fiberID_master = []
-nsa_mjd_master = []
-nsaID_master = []
+nsa_ra_master = -1 * np.ones( N_files)
+nsa_dec_master = -1 * np.ones( N_files)
+nsa_plate_master = -1 * np.ones( N_files)
+nsa_fiberID_master = -1 * np.ones( N_files)
+nsa_mjd_master = -1 * np.ones( N_files)
+nsaID_master = -1 * np.ones( N_files)
 ###############################################################################
 
 '''
@@ -197,10 +208,11 @@ iteration_times = []
 
 ###############################################################################
 # This for loop runs through the necessary calculations to calculte and write
-#    the rotation curve for all of the galaxies in the MaNGA survey.
+#    the rotation curve for all of the galaxies in the 'files' array.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-for file_name in files:
+for i in range( len( files)):
 #    iteration_start = datetime.datetime.now()
+    file_name = files[i]
 
     ###########################################################################
     # file_id is a simplified string that identifies each file that is run
@@ -225,8 +237,8 @@ for file_name in files:
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
-    manga_plate_master.append( manga_plate)
-    manga_fiberID_master.append( manga_fiberID)
+    manga_plate_master[i] = manga_plate
+    manga_fiberID_master[i] = manga_fiberID
     ###########################################################################
 
 
@@ -256,19 +268,19 @@ for file_name in files:
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
-    nsa_axes_ratio_master.append( axes_ratio)
-    nsa_phi_master.append( phi_EofN_deg / u.degree)
-    nsa_z_master.append( z)
-#    nsa_zdist_master.append( zdist)
-#    nsa_zdist_err_master.append( zdist_err)
-    nsa_mStar_master.append( mStar / u.M_sun)
+    nsa_axes_ratio_master[i] = axes_ratio
+    nsa_phi_master[i] = phi_EofN_deg / u.degree
+    nsa_z_master[i] = z
+#    nsa_zdist_master[i] = zdist
+#    nsa_zdist_err_master[i] = zdist_err
+    nsa_mStar_master[i] = mStar / u.M_sun
 
-    nsa_ra_master.append( nsa_ra)
-    nsa_dec_master.append( nsa_dec)
-    nsa_plate_master.append( nsa_plate)
-    nsa_fiberID_master.append( nsa_fiberID)
-    nsa_mjd_master.append( nsa_mjd)
-    nsaID_master.append( nsaID)
+    nsa_ra_master[i] = nsa_ra
+    nsa_dec_master[i] = nsa_dec
+    nsa_plate_master[i] = nsa_plate
+    nsa_fiberID_master[i] = nsa_fiberID
+    nsa_mjd_master[i] = nsa_mjd
+    nsaID_master[i] = nsaID
     ###########################################################################
 
 
@@ -354,7 +366,7 @@ plt.close()
 del iteration_clock_fig
 ###############################################################################
 '''
-
+'''
 ###############################################################################
 # Build master file that contains identifying information for each galaxy
 #   as well as scientific information as taken from the NSA catalog.
@@ -367,7 +379,7 @@ write_master_file( manga_plate_master, manga_fiberID_master,
                   LOCAL_PATH)
 print("MASTER FILE WRITTEN")
 ###############################################################################
-
+'''
 
 ###############################################################################
 # Clock the program's run time to check performance.

@@ -12,8 +12,8 @@ import datetime
 START = datetime.datetime.now()
 
 import glob, os.path
-from astropy.io import ascii
-from astropy.units import Unit
+import numpy as np
+from astropy.table import Table
 
 ###############################################################################
 # File format for saved images
@@ -127,48 +127,164 @@ from dark_matter_mass_v1_1 import initialize_master_table, \
                                 analyze_chi_square
 ###############################################################################
 
-
-###############################################################################
-# Create the file name lists of the rotation curve and galaxy statistic
-# files to be ran.
-#------------------------------------------------------------------------------
-rot_curve_files = glob.glob( ROT_CURVE_MASTER_FOLDER + '/*_rot_curve_data.txt')
-gal_stat_files = glob.glob( ROT_CURVE_MASTER_FOLDER + '/*_gal_stat_data.txt')
-###############################################################################
-
-
-###############################################################################
-# Code to isolate files and run it through all of the functions from
-# fit_rotation_curve_vX_X.
-# ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-#FILE_IDS = ['7495-6104']
-#
-#rot_curve_files = []
-#gal_stat_files = []
-#
-#for file_name in FILE_IDS:
-#    rot_curve_files.append( ROT_CURVE_MASTER_FOLDER + '/' + file_name \
-#                           + '_rot_curve_data.txt')
-#    gal_stat_files.append( ROT_CURVE_MASTER_FOLDER + '/' + file_name  \
-#                           + '_gal_stat_data.txt')
-###############################################################################
+if RUN_ALL_GALAXIES:
+    ###########################################################################
+    # Read in the 'master_file' and extract its length for use later in the
+    #    program.
+    #--------------------------------------------------------------------------
+    master_table = Table.read( MASTER_FILE_NAME, format='ascii.ecsv')
+    N_galaxies = len( master_table)
+    ###########################################################################
 
 
-###############################################################################
-# Print the list of file names.
-#------------------------------------------------------------------------------
-#print("rot_curve_files:", rot_curve_files)
-#print("gal_stat_files:", gal_stat_files)
-###############################################################################
+    ###########################################################################
+    # Create the file name lists of the rotation curve and galaxy statistic
+    # files to be ran.
+    #--------------------------------------------------------------------------
+    rot_curve_files = glob.glob( ROT_CURVE_MASTER_FOLDER \
+                                + '/*_rot_curve_data.txt')
+    gal_stat_files = glob.glob( ROT_CURVE_MASTER_FOLDER \
+                               + '/*_gal_stat_data.txt')
+    ###########################################################################
 
 
-###############################################################################
-# Read in the master file.
-#------------------------------------------------------------------------------
-master_table = ascii.read( MASTER_FILE_NAME, format = 'ecsv')
-###############################################################################
+    ###########################################################################
+    # Master arrays initialized to contain memory-holding values.
+    #--------------------------------------------------------------------------
+    master_table['center_flux'] = -1 * np.ones( N_galaxies)
+    master_table['center_flux_error'] = -1 * np.ones( N_galaxies)
+    master_table['sMass_processed'] = -1 * np.ones( N_galaxies)
 
 
+    master_table['v_max_best'] = -1 * np.ones( N_galaxies)
+    master_table['r_turn_best'] = -1 * np.ones( N_galaxies)
+    master_table['alpha_best'] = -1 * np.ones( N_galaxies)
+
+    master_table['v_max_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['r_turn_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['alpha_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['chi_square_rot'] = -1 * np.ones( N_galaxies)
+
+    master_table['pos_v_max_best'] = -1 * np.ones( N_galaxies)
+    master_table['pos_r_turn_best'] = -1 * np.ones( N_galaxies)
+    master_table['pos_alpha_best'] = -1 * np.ones( N_galaxies)
+
+    master_table['pos_v_max_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['pos_r_turn_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['pos_alpha_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['pos_chi_square_rot'] = -1 * np.ones( N_galaxies)
+
+    master_table['neg_v_max_best'] = -1 * np.ones( N_galaxies)
+    master_table['neg_r_turn_best'] = -1 * np.ones( N_galaxies)
+    master_table['neg_alpha_best'] = -1 * np.ones( N_galaxies)
+
+    master_table['neg_v_max_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['neg_r_turn_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['neg_alpha_sigma'] = -1 * np.ones( N_galaxies)
+    master_table['neg_chi_square_rot'] = -1 * np.ones( N_galaxies)
+
+
+    master_table['total_mass'] = -1 * np.ones( N_galaxies)
+    master_table['total_mass_error'] = -1 * np.ones( N_galaxies)
+    master_table['dmMass'] = np.zeros( N_galaxies)
+    master_table['dmMass_error'] = -1 * np.ones( N_galaxies)
+    master_table['sMass'] = -1 * np.ones( N_galaxies)
+    master_table['dmMass_to_sMass_ratio'] = np.zeros( N_galaxies)
+    master_table['dmMass_to_sMass_ratio_error'] = -1 * np.ones( N_galaxies)
+    ###########################################################################
+
+
+    ###########################################################################
+    # For all of the galaxies in the 'master_table'...
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+    for i in range( N_galaxies):
+        #######################################################################
+        # Build the file names for the rotation curve and galaxy statistic data
+        #    from the 'MaNGA_plate' and 'MaGNA_fiberID' columns of the
+        #    'master_file.'
+        #----------------------------------------------------------------------
+        plate = master_table['MaNGA_plate'][i]
+        fiberID = master_table['MaNGA_fiberID'][i]
+
+        rot_curve_filename = ROT_CURVE_MASTER_FOLDER + '/' + str(plate) + '-' \
+                                    + str(fiberID) + '_rot_curve_data.txt'
+        gal_stat_filename = ROT_CURVE_MASTER_FOLDER + '/' + str(plate) + '-' \
+                                    + str(fiberID) + '_gal_stat_data.txt'
+        #######################################################################
+
+
+        #######################################################################
+        # Set of functions to run the set of rotation curve and of galaxy
+        #    statistic files through.
+        #----------------------------------------------------------------------
+        param_outputs = fit_rot_curve_files( rot_curve_filename,
+                                            gal_stat_filename,
+                                            TRY_N)
+
+        for col_name in param_outputs:
+            master_table[ col_name][i] = param_outputs[ col_name]
+
+        mass_outputs = estimate_dark_matter( param_outputs, rot_curve_filename)
+
+        for col_name in mass_outputs:
+            master_table[ col_name][i] = mass_outputs[ col_name]
+        #######################################################################
+        # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~     ~
+
+
+    ###########################################################################
+    # Save the 'master_table.'
+    #--------------------------------------------------------------------------
+    master_table.write( MASTER_FILE_NAME, format='ascii.commented_header',
+                       overwrite=True)
+    ###########################################################################
+
+else:
+    ###########################################################################
+    # For the galaxies contained within the 'FILE_IDS' array...
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+    for i in range( len( FILE_IDS)):
+        #######################################################################
+        # Build the file names for the rotation curve and galaxy statistic data
+        #    from the 'FILE_IDS' array.
+        #----------------------------------------------------------------------
+        rot_curve_filename = ROT_CURVE_MASTER_FOLDER + '/' + FILE_IDS[i] \
+                                            + '_rot_curve_data.txt'
+        gal_stat_filename = ROT_CURVE_MASTER_FOLDER + '/' + FILE_IDS[i] \
+                                            + '_gal_stat_data.txt'
+        #######################################################################
+
+
+        #######################################################################
+        # Print the list of file names.
+        #----------------------------------------------------------------------
+#        print("rot_curve_files:", rot_curve_files)
+#        print("gal_stat_files:", gal_stat_files)
+        #######################################################################
+
+
+        #######################################################################
+        # Set of functions to run the set of rotation curve and of galaxy
+        #    statistic files through.
+        #----------------------------------------------------------------------
+        param_outputs = fit_rot_curve_files( rot_curve_filename,
+                                            gal_stat_filename,
+                                            TRY_N)
+
+        mass_outputs = estimate_dark_matter( param_outputs, rot_curve_filename)
+        #######################################################################
+
+
+        #######################################################################
+        # Print the 'param_outputs' and 'mass_outputs' dictionaries.
+        #----------------------------------------------------------------------
+        print("param_outputs:", param_outputs)
+        print("mass_outputs:", mass_outputs)
+        #######################################################################
+    # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+
+
+'''
 ###############################################################################
 # Create a list of tuples with the column names along with the associated units
 #    for each column.
@@ -213,6 +329,9 @@ col_names_with_units = [('vflag', Unit(1)),
 ###############################################################################
 # Initialize the 'master_table' to have -1's in all of the columns listed in
 #    the 'col_names' array.
+#
+# WARNING: If this function is ran, the data contained in the columns with
+#          names specified in 'col_names_with_units' are overwritten with -1s.
 #------------------------------------------------------------------------------
 master_table = initialize_master_table( master_table, col_names_with_units)
 ###############################################################################
@@ -239,30 +358,29 @@ mass_estimate_pulls = col_names_with_units[ 24 : ]
 vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
 master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
 
-ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
+#ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-best_fit_param_table = fit_rot_curve_files( rot_curve_files, gal_stat_files,
-                                      TRY_N, ROT_CURVE_MASTER_FOLDER,
-                                      IMAGE_DIR)
-master_table = pull_matched_data( master_table, best_fit_param_table,
-                                 best_param_pulls)
+master_table = fit_rot_curve_files( master_table,
+                                   rot_curve_files, gal_stat_files,
+                                   TRY_N, ROT_CURVE_MASTER_FOLDER,
+                                   IMAGE_DIR)
 
-ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
+#ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-mass_estimate_table = estimate_dark_matter( master_table,
-                                           ROT_CURVE_MASTER_FOLDER,
-                                           IMAGE_FORMAT, IMAGE_DIR)
-master_table = pull_matched_data( master_table, mass_estimate_table,
-                                 mass_estimate_pulls)
-
-ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
+#mass_estimate_table = estimate_dark_matter( best_fit_param_table,
+#                                           ROT_CURVE_MASTER_FOLDER,
+#                                           IMAGE_FORMAT, IMAGE_DIR)
+#master_table = pull_matched_data( master_table, mass_estimate_table,
+#                                 mass_estimate_pulls)
+#
+#ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
+#plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
 #------------------------------------------------------------------------------
 #     DIAGNOSTIC FUNCTIONS
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
-analyze_rot_curve_discrep( master_table, IMAGE_FORMAT, IMAGE_DIR)
-analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR)
+#analyze_rot_curve_discrep( master_table, IMAGE_FORMAT, IMAGE_DIR)
+#analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR)
 ###############################################################################
 '''
 

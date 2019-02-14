@@ -39,7 +39,7 @@ RUN_ALL_GALAXIES = True
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 #    the individual galaxy version of this script.
 #------------------------------------------------------------------------------
-FILE_IDS = ['7495-9101']
+FILE_IDS = ['8158-12704']
 ###############################################################################
 
 
@@ -274,95 +274,6 @@ else:
 
 
 '''
-###############################################################################
-# Create a list of tuples with the column names along with the associated units
-#    for each column.
-#
-# NOTE: If a column has an associated unit of 'Unit(1),' the column is
-#       dimensionless
-#------------------------------------------------------------------------------
-col_names_with_units = [('vflag', Unit(1)),
-                        ('v_max_best', Unit('km/s')),
-                        ('v_max_sigma', Unit('km/s')),
-                        ('turnover_rad_best', Unit('kpc')),
-                        ('turnover_rad_sigma', Unit('kpc')),
-                        ('alpha_best', Unit(1)),
-                        ('alpha_sigma', Unit(1)),
-                        ('chi_square_rot', Unit(1)),
-                        ('pos_v_max_best', Unit('km/s')),
-                        ('pos_v_max_sigma', Unit('km/s')),
-                        ('pos_turnover_rad_best', Unit('kpc')),
-                        ('pos_turnover_rad_sigma', Unit('kpc')),
-                        ('pos_alpha_best', Unit(1)),
-                        ('pos_alpha_sigma', Unit(1)),
-                        ('pos_chi_square_rot', Unit(1)),
-                        ('neg_v_max_best', Unit('km/s')),
-                        ('neg_v_max_sigma', Unit('km/s')),
-                        ('neg_turnover_rad_best', Unit('kpc')),
-                        ('neg_turnover_rad_sigma', Unit('kpc')),
-                        ('neg_alpha_best', Unit(1)),
-                        ('neg_alpha_sigma', Unit(1)),
-                        ('neg_chi_square_rot', Unit(1)),
-                        ('center_flux', Unit('erg / (cm2 s)')),
-                        ('center_flux_error', Unit('erg / (cm2 s)')),
-                        ('total_mass', Unit('solMass')),
-                        ('total_mass_error', Unit('solMass')),
-                        ('dmMass', Unit('solMass')),
-                        ('dmMass_error', Unit('solMass')),
-                        ('sMass', Unit('solMass')),
-                        ('dmMass_to_sMass_ratio', Unit(1)),
-                        ('dmMass_to_sMass_ratio_error', Unit(1))]
-###############################################################################
-'''
-'''
-###############################################################################
-# Initialize the 'master_table' to have -1's in all of the columns listed in
-#    the 'col_names' array.
-#
-# WARNING: If this function is ran, the data contained in the columns with
-#          names specified in 'col_names_with_units' are overwritten with -1s.
-#------------------------------------------------------------------------------
-master_table = initialize_master_table( master_table, col_names_with_units)
-###############################################################################
-'''
-'''
-###############################################################################
-# Initialize the data fields to pull in matching for each call to
-#    'pull_matched_data().'
-#------------------------------------------------------------------------------
-vflag_pulls = col_names_with_units[ 0 : 1]
-best_param_pulls = col_names_with_units[ 1 : 24]
-mass_estimate_pulls = col_names_with_units[ 24 : ]
-###############################################################################
-'''
-'''
-###############################################################################
-# Set of functions to run the set of rotation curves and set of galaxy
-# statistics through.
-#
-# NOTE: After each function is ran and the data is matched to the
-#       'master_table,' the 'master_table' is written so data is not lost if
-#       one function crashes the program.
-#------------------------------------------------------------------------------
-vflag_ref_table = build_vflag_ref_table( CROSS_REF_FILE_NAMES)
-master_table = pull_matched_data( master_table, vflag_ref_table, vflag_pulls)
-
-#ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
-# -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-master_table = fit_rot_curve_files( master_table,
-                                   rot_curve_files, gal_stat_files,
-                                   TRY_N, ROT_CURVE_MASTER_FOLDER,
-                                   IMAGE_DIR)
-
-#ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
-# -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-#mass_estimate_table = estimate_dark_matter( best_fit_param_table,
-#                                           ROT_CURVE_MASTER_FOLDER,
-#                                           IMAGE_FORMAT, IMAGE_DIR)
-#master_table = pull_matched_data( master_table, mass_estimate_table,
-#                                 mass_estimate_pulls)
-#
-#ascii.write( master_table, MASTER_FILE_NAME, format = 'ecsv', overwrite = True)
 # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 #plot_mass_ratios( master_table, IMAGE_FORMAT, IMAGE_DIR)
 #------------------------------------------------------------------------------
@@ -372,6 +283,7 @@ master_table = fit_rot_curve_files( master_table,
 #analyze_chi_square( master_table, IMAGE_FORMAT, IMAGE_DIR)
 ###############################################################################
 '''
+
 
 ###############################################################################
 # Clock the program's run time to check performance.

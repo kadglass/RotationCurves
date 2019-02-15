@@ -113,6 +113,8 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
     #--------------------------------------------------------------------------
     v_max_loc = np.argmax( rot_vel)
     v_max_guess = rot_vel[ v_max_loc]
+
+#    print("v_max_guess:", v_max_guess)
     ###########################################################################
 
 
@@ -131,7 +133,7 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
         # Print statement to track the first guesses for the 'rot_fit_func'
         #    parameters.
         #----------------------------------------------------------------------
-        print("Rot Parameter Guess:", rot_guess)
+        print("Rot Parameter Guess:", rot_param_guess)
         #######################################################################
         '''
 
@@ -324,6 +326,8 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
     # If there are more than two data points, fit the rotation curve data to
     #    'rot_fit_func()' via 'scipy.optimize.curve_fit().'
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+#    print("length rot_data_table:", len( rot_data_table))
+
     if len( rot_data_table) > 2:
 
         #######################################################################
@@ -397,24 +401,24 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
                     'center_flux_error': center_flux_err,
                     'sMass_processed': sMass_processed,
                     'v_max_best': v_max_best,
-                    'r_turn_best': r_turn_best,
+                    'turnover_rad_best': r_turn_best,
                     'alpha_best': alpha_best,
                     'v_max_sigma': v_max_sigma,
-                    'r_turn_sigma': r_turn_sigma,
+                    'turnover_rad_sigma': r_turn_sigma,
                     'alpha_sigma': alpha_sigma,
                     'chi_square_rot': chi_square_rot,
                     'pos_v_max_best': pos_v_max_best,
-                    'pos_r_turn_best': pos_r_turn_best,
+                    'pos_turnover_rad_best': pos_r_turn_best,
                     'pos_alpha_best': pos_alpha_best,
                     'pos_v_max_sigma': pos_v_max_sigma,
-                    'pos_r_turn_sigma': pos_r_turn_sigma,
+                    'pos_turnover_rad_sigma': pos_r_turn_sigma,
                     'pos_alpha_sigma': pos_alpha_sigma,
                     'pos_chi_square_rot': pos_chi_square_rot,
                     'neg_v_max_best': neg_v_max_best,
-                    'neg_r_turn_best': neg_r_turn_best,
+                    'neg_turnover_rad_best': neg_r_turn_best,
                     'neg_alpha_best': neg_alpha_best,
                     'neg_v_max_sigma': neg_v_max_sigma,
-                    'neg_r_turn_sigma': neg_r_turn_sigma,
+                    'neg_turnover_rad_sigma': neg_r_turn_sigma,
                     'neg_alpha_sigma': neg_alpha_sigma,
                     'neg_chi_square_rot': neg_chi_square_rot}
     ###########################################################################

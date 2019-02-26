@@ -14,7 +14,7 @@ from astropy.table import Table
 ###############################################################################
 # Boolean variables to specify if the script is being run in Bluehive.
 #------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = True
+WORKING_IN_BLUEHIVE = False
 ###############################################################################
 
 

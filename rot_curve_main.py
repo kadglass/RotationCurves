@@ -288,11 +288,11 @@ for i in range( len( files)):
     # Extract rotation curve data for the .fits file in question and create an
     #    astropy Table containing said data.
     #--------------------------------------------------------------------------
-    rot_data_table, gal_stat_table = calc_rot_curve( Ha_vel, Ha_vel_error, \
-                                       v_band, v_band_err, sMass_density, \
-                                       axes_ratio, phi_EofN_deg, z, \
-                                       gal_ID, IMAGE_DIR, \
-                                       IMAGE_FORMAT)
+    rot_data_table, gal_stat_table = calc_rot_curve( Ha_vel, Ha_vel_error, 
+                                                     v_band, v_band_err, 
+                                                     sMass_density, axes_ratio, 
+                                                     phi_EofN_deg, z, gal_ID, 
+                                                     IMAGE_DIR, IMAGE_FORMAT)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
 
@@ -304,10 +304,9 @@ for i in range( len( files)):
     #            folder 'rot_curve_data_files'. It also saves the file with the
     #            default extension '_rot_curve_data'.
     #--------------------------------------------------------------------------
-    write_rot_curve( rot_data_table, gal_stat_table,
-                    gal_ID,
-                    ROT_CURVE_MASTER_FOLDER,
-                    ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR)
+    write_rot_curve( rot_data_table, gal_stat_table, gal_ID, 
+                     ROT_CURVE_MASTER_FOLDER, ROT_CURVE_DATA_INDICATOR, 
+                     GAL_STAT_DATA_INDICATOR)
     print(gal_ID, " WRITTEN")
     ###########################################################################
 

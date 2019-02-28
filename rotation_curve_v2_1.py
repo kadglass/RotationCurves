@@ -95,7 +95,7 @@ def extract_data( file_name):
     main_file.close()
 
     ###########################################################################
-    # NOTE: The visual band fluxes are multiplied by 10**-16 as stated in the
+    # NOTE: The visual band fluxes are multiplied by 10^-16 as stated in the
     #       units of the MaNGA Data Model.
     #
     #       <https://data.sdss.org/datamodel/files/MANGA_PIPE3D/MANGADRP_VER
@@ -103,8 +103,7 @@ def extract_data( file_name):
     ###########################################################################
     v_band = ssp[0]  # in units of erg / s / cm^2
     v_band_err = ssp[4]  # in units of erg / s / cm^2
-    sMass_density = ssp[19] * u.dex( u.M_sun) # in units of
-                                                # log10( Msun / spaxel**2)
+    sMass_density = ssp[19] * u.dex( u.M_sun) # in units of log10( Msun / spaxel**2)
 
     Ha_vel = flux_elines[102]  # in units of km/s
     Ha_vel_err = flux_elines[330]  # in units of km/s
@@ -114,8 +113,8 @@ def extract_data( file_name):
     gal_ra = org_hdr['OBJRA']
     gal_dec = org_hdr['OBJDEC']
 
-    return Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density, \
-                manga_plate, manga_fiberID, gal_ra, gal_dec
+    return Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density, manga_plate, 
+           manga_fiberID, gal_ra, gal_dec
 
 
 def match_to_NSA( gal_ra, gal_dec, cat_coords):
@@ -282,7 +281,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
     ###########################################################################
-    # Initialize the rotation curve arrays that will store the rotation curve
+    # Initialize the rotation curve lists that will store the rotation curve
     #    data.
     #--------------------------------------------------------------------------
     rot_curve_dist = []
@@ -1385,7 +1384,8 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
 
         nsa_gal_idx_master:
             master list containing the matched index for each galaxy as
-            calculated through the 'match' function above
+            calculated through the 'match' function above (LOOKS LIKE THIS 
+            FIELD IS ACTUALLY STORING THE "NSAID" VALUE FROM THE NSA CATALOG)
 
         nsa_ra_master:
             master list containing all of the righthand ascension values for

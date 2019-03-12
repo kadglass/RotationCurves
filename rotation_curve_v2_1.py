@@ -46,6 +46,10 @@ MANGA_FIBER_DIAMETER = 9.69627362219072e-06   # angular fiber diameter
                                               #   (2") in radians
 
 
+###############################################################################
+###############################################################################
+###############################################################################
+
 def extract_data( file_name):
     """Open the MaNGA .fits file and extract data.
 
@@ -117,6 +121,12 @@ def extract_data( file_name):
            manga_fiberID, gal_ra, gal_dec
 
 
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
 def match_to_NSA( gal_ra, gal_dec, cat_coords):
     """Match the galaxy in question to the NSA Catalog and extract the NSA
     Catalog index to.
@@ -154,6 +164,12 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
     ###########################################################################
 
     return idx
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
@@ -319,7 +335,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 #    print("Center: (%d, %d)" % (x_center, y_center))
     #--------------------------------------------------------------------------
     # Plot visual-band image.
-    #
+    
     # Create output directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR + '/unmasked_v_band'):
         os.makedirs( IMAGE_DIR + '/unmasked_v_band')
@@ -354,12 +370,13 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.close( vband_image)
     del vband_image, cbar, ax
     gc.collect()
+
     #--------------------------------------------------------------------------
     # Plot H-alpha velocity field before systemic redshift
     #   subtraction. Galaxy velocities vary from file to file, so vmin and vmax
     #   will have to be manually adjusted for each galaxy before reshift
     #   subtraction.
-    #
+    
     # Create output directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR + '/unmasked_Ha_vel'):
         os.makedirs( IMAGE_DIR + '/unmasked_Ha_vel')
@@ -1050,9 +1067,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     vmax_bound = min( global_max, abs(global_min))
     vmin_bound = -1 * vmax_bound
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 13, dtype='int')
+
     #--------------------------------------------------------------------------
     # Plot H-alpha velocity field with redshift subtracted.
-    #
+    
     # Create output directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR + '/masked_Ha_vel'):
         os.makedirs( IMAGE_DIR + '/masked_Ha_vel')
@@ -1083,13 +1101,14 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.close( Ha_vel_field_fig)
     del Ha_vel_field_fig, cbar, ax
     gc.collect()
+
     #--------------------------------------------------------------------------
     # Ha velocity field collected though all iterations of the loop.
     #
     # NOTE: 'vel_contour_plot' is masked at this stage because in plotting the
     #       image, masked data points were being plotted even though they did
     #       not influence the construction of the rotation curves.
-    #
+    
     # Create output directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR + '/collected_velocity_fields'):
         os.makedirs( IMAGE_DIR + '/collected_velocity_fields')
@@ -1121,9 +1140,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.close( vel_field_collected_fig)
     del vel_field_collected_fig, cbar, ax
     gc.collect()
+
     #--------------------------------------------------------------------------
     # Rotational velocity as a function of deprojected radius.
-    #
+    
     # Create output directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR + '/rot_curves'):
         os.makedirs( IMAGE_DIR + '/rot_curves')
@@ -1158,9 +1178,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     plt.close( rot_curve_fig)
     del rot_curve_fig, ax
     gc.collect()
+
     #--------------------------------------------------------------------------
     # Mass interior to a radius.
-    #
+    
     # Create output directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR + '/mass_curves'):
         os.makedirs( IMAGE_DIR + '/mass_curves')
@@ -1302,6 +1323,12 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     return data_table, gal_stats
 
 
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
 def write_rot_curve( data_table, gal_stats,
                     gal_ID,
                     ROT_CURVE_MASTER_FOLDER,
@@ -1352,6 +1379,12 @@ def write_rot_curve( data_table, gal_stats,
                 format = 'ecsv',
                 overwrite = True)
     ###########################################################################
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 def write_master_file( manga_plate_master, manga_fiberID_master,

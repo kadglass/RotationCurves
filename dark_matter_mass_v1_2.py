@@ -20,6 +20,11 @@ import astropy.units as u
 import astropy.constants as const
 
 
+
+###############################################################################
+###############################################################################
+###############################################################################
+
 def rot_fit_func( depro_radius, v_max, r_turn, alpha):
     """Function in which to fit the rotation curve data to.
 
@@ -50,6 +55,12 @@ def rot_fit_func( depro_radius, v_max, r_turn, alpha):
     """
     return v_max * \
            (depro_radius / (r_turn**alpha + depro_radius**alpha)**(1/alpha))
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
@@ -204,6 +215,12 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
     param_err = ( v_max_sigma, r_turn_sigma, alpha_sigma)
 
     return best_param, param_err, chi_square_rot
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
@@ -423,8 +440,14 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N):
     return row_data_dic
 
 
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
 def estimate_dark_matter( input_dict, rot_curve_file):
-    """Estimate the total matter interior to a radius from the fitted v_max
+    """Estimate the total mass interior to a radius from the fitted v_max
     parameter and the last recorded radius for the galaxy. Then estimate the
     total dark matter interior to that radius by subtracting the stellar mass
     interior to that radius.

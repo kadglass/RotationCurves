@@ -32,7 +32,7 @@ IMAGE_FORMAT = 'eps'
 # Boolean variable to specify if the script is being run in Bluehive.
 #------------------------------------------------------------------------------
 WORKING_IN_BLUEHIVE = False
-RUN_ALL_GALAXIES = False
+RUN_ALL_GALAXIES = True
 ###############################################################################
 
 ###############################################################################
@@ -150,17 +150,22 @@ print("files:", files)
 #       galaxies to the NSA catalog index.
 #------------------------------------------------------------------------------
 if WORKING_IN_BLUEHIVE:
-    nsa_catalog = fits.open( SCRATCH_PATH + '/nsa_v0_1_2.fits')
+    nsa_catalog_filename = SCRATCH_PATH + '/nsa_v0_1_2.fits'
 else:
-    nsa_catalog = fits.open( LOCAL_PATH + '/nsa_v0_1_2.fits')
-    #nsa_catalog = fits.open('/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.fits')
+    #nsa_catalog_filename = LOCAL_PATH + '/nsa_v0_1_2.fits'
+    #nsa_catalog_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.fits'
+    nsa_catalog_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v1_0_1.fits'
+nsa_catalog = fits.open( nsa_catalog_filename)
 
 nsa_axes_ratio_all = nsa_catalog[1].data['SERSIC_BA']
 nsa_phi_EofN_deg_all = nsa_catalog[1].data['SERSIC_PHI']
 nsa_z_all = nsa_catalog[1].data['Z']
 #nsa_zdist_all = nsa_catalog[1].data['ZDIST']
 #nsa_zdist_all_err = nsa_catalog[1].data['ZDIST_ERR']
-nsa_mStar_all = nsa_catalog[1].data['MASS']
+if nsa_catalog_filename[-6] == '1':
+    nsa_mStar_all = nsa_catalog[1].data['SERSIC_MASS']
+else:
+    nsa_mStar_all = nsa_catalog[1].data['MASS']
 
 nsa_ra_all = nsa_catalog[1].data['RA']
 nsa_dec_all = nsa_catalog[1].data['DEC']
@@ -175,7 +180,7 @@ catalog_coords = SkyCoord( ra = nsa_ra_all*u.degree,
                              dec = nsa_dec_all*u.degree)
 ###############################################################################
 
-
+'''
 ###############################################################################
 # # Initialize the master arrays that create the structure of the master file.
 #------------------------------------------------------------------------------
@@ -196,7 +201,7 @@ nsa_fiberID_master = -1 * np.ones( N_files)
 nsa_mjd_master = -1 * np.ones( N_files)
 nsaID_master = -1 * np.ones( N_files)
 ###############################################################################
-
+'''
 '''
 ###############################################################################
 # Create an array to store the time spent on each iteration of the fot-loop.
@@ -233,14 +238,14 @@ for i in range( len( files)):
     print( gal_ID, " EXTRACTED")
     ###########################################################################
 
-
+    '''
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
     manga_plate_master[i] = manga_plate
     manga_fiberID_master[i] = manga_fiberID
     ###########################################################################
-
+    '''
 
     ###########################################################################
     # Match the galaxy's RA and DEC from the to the NSA catalog index, and pull
@@ -264,7 +269,7 @@ for i in range( len( files)):
     nsaID = nsaID_all[ nsa_gal_idx]
     ###########################################################################
 
-
+    '''
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -282,7 +287,7 @@ for i in range( len( files)):
     nsa_mjd_master[i] = nsa_mjd
     nsaID_master[i] = nsaID
     ###########################################################################
-
+    '''
 
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an

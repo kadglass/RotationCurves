@@ -885,7 +885,7 @@ def calc_dark_matter( tot_mass, tot_mass_err, stellar_mass):
 
 
 
-def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err):
+def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err, frac_masked_spaxels):
     '''
     Unpacks the lists dictionary and creates a QTable of the data.
 
@@ -904,6 +904,9 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err):
 
     center_flux_err : float
         Uncertainty in center_flux
+
+    frac_masked_spaxels : float
+        Fraction of spaxels which were masked
 
 
     Returns:
@@ -944,6 +947,7 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err):
     gal_ID_col = Column( [gal_ID])
     flux_center_col = Column( [center_flux])
     flux_center_err_col = Column( [center_flux_err])
+    frac_masked_spaxels_col = Column( [frac_masked_spaxels])
     ###########################################################################
 
 
@@ -996,10 +1000,12 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err):
     #--------------------------------------------------------------------------
     gal_stats = QTable([ gal_ID_col,
                         flux_center_col * ( u.erg / ( u.s * u.cgs.cm**2)),
-                        flux_center_err_col * ( u.erg / ( u.s * u.cgs.cm**2))],
+                        flux_center_err_col * ( u.erg / ( u.s * u.cgs.cm**2)),
+                        frac_masked_spaxels_col],
                names = ['gal_ID',
                         'center_flux',
-                        'center_flux_error'])
+                        'center_flux_error',
+                        'frac_masked_spaxels'])
     ###########################################################################
 
     return data_table, gal_stats

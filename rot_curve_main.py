@@ -68,22 +68,18 @@ if WORKING_IN_BLUEHIVE:
     LOCAL_PATH = '/home/jsm171'
     SCRATCH_PATH = '/scratch/jsm171'
 
-    IMAGE_DIR = SCRATCH_PATH + '/images'
-    MANGA_FOLDER = SCRATCH_PATH + '/manga_files/dr15'
-    ROT_CURVE_MASTER_FOLDER = SCRATCH_PATH + '/rot_curve_data_files'
+    IMAGE_DIR = SCRATCH_PATH + '/images/'
+    MANGA_FOLDER = SCRATCH_PATH + '/manga_files/dr15/'
+    ROT_CURVE_MASTER_FOLDER = SCRATCH_PATH + '/rot_curve_data_files/'
 
 else:
     LOCAL_PATH = os.path.dirname(__file__)
     if LOCAL_PATH == '':
         LOCAL_PATH = '.'
 
-    IMAGE_DIR = LOCAL_PATH + '/images'
-    MANGA_FOLDER = LOCAL_PATH + '/manga_files/dr15'
-    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files'
-
-ROT_CURVE_DATA_INDICATOR = '_rot_curve_data'
-GAL_STAT_DATA_INDICATOR = '_gal_stat_data'
-#import matplotlib.pyplot as plt
+    IMAGE_DIR = LOCAL_PATH + '/images/'
+    MANGA_FOLDER = LOCAL_PATH + '/manga_files/MaNGA_DR15/'
+    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files/'
 
 # Create output directories if they do not already exist
 if not os.path.isdir( IMAGE_DIR):
@@ -107,7 +103,7 @@ if RUN_ALL_GALAXIES:
     ###########################################################################
     # Create list of .fits file names to extract a rotation curve from.
     #--------------------------------------------------------------------------
-    files = glob.glob( MANGA_FOLDER + '/manga-*Pipe3D.cube.fits.gz')
+    files = glob.glob( MANGA_FOLDER + '*/manga-*.Pipe3D.cube.fits.gz')
     ###########################################################################
 
 
@@ -176,8 +172,7 @@ nsaID_all = nsa_catalog[1].data['NSAID']
 
 nsa_catalog.close()
 
-catalog_coords = SkyCoord( ra = nsa_ra_all*u.degree,
-                             dec = nsa_dec_all*u.degree)
+catalog_coords = SkyCoord( ra=nsa_ra_all*u.degree, dec=nsa_dec_all*u.degree)
 ###############################################################################
 
 '''
@@ -215,18 +210,19 @@ iteration_times = []
 # This for loop runs through the necessary calculations to calculte and write
 #    the rotation curve for all of the galaxies in the 'files' array.
 # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
+num_masked_gal = 0 # Number of completely masked galaxies
+
 for i in range( len( files)):
-#    iteration_start = datetime.datetime.now()
+    #iteration_start = datetime.datetime.now()
     file_name = files[i]
 
     ###########################################################################
     # file_id is a simplified string that identifies each file that is run
     #    through the algorithm. The file_id name scheme is [PLATE]-[FIBER ID].
     #--------------------------------------------------------------------------
-    gal_ID = file_name[ file_name.find(MANGA_FOLDER) \
-                           + len( MANGA_FOLDER) + 7: file_name.find('.Pipe3D')]
+    gal_ID = file_name[ file_name.find('manga-') + 6 : file_name.find('.Pipe3D')]
 
-#    print( gal_ID)
+    #print( gal_ID)
     ###########################################################################
 
 
@@ -257,8 +253,8 @@ for i in range( len( files)):
     axes_ratio = nsa_axes_ratio_all[ nsa_gal_idx]
     phi_EofN_deg = nsa_phi_EofN_deg_all[ nsa_gal_idx] * u.degree
     z = nsa_z_all[ nsa_gal_idx]
-#    zdist = nsa_zdist_all[ nsa_gal_idx]
-#    zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
+    #zdist = nsa_zdist_all[ nsa_gal_idx]
+    #zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
     mStar = nsa_mStar_all[ nsa_gal_idx] * u.M_sun
 
     nsa_ra = nsa_ra_all[ nsa_gal_idx]
@@ -276,8 +272,8 @@ for i in range( len( files)):
     nsa_axes_ratio_master[i] = axes_ratio
     nsa_phi_master[i] = phi_EofN_deg / u.degree
     nsa_z_master[i] = z
-#    nsa_zdist_master[i] = zdist
-#    nsa_zdist_err_master[i] = zdist_err
+    #nsa_zdist_master[i] = zdist
+    #nsa_zdist_err_master[i] = zdist_err
     nsa_mStar_master[i] = mStar / u.M_sun
 
     nsa_ra_master[i] = nsa_ra
@@ -293,11 +289,17 @@ for i in range( len( files)):
     # Extract rotation curve data for the .fits file in question and create an
     #    astropy Table containing said data.
     #--------------------------------------------------------------------------
-    rot_data_table, gal_stat_table = calc_rot_curve( Ha_vel, Ha_vel_error, 
-                                                     v_band, v_band_err, 
-                                                     sMass_density, axes_ratio, 
-                                                     phi_EofN_deg, z, gal_ID, 
-                                                     IMAGE_DIR, IMAGE_FORMAT)
+    rot_data_table, gal_stat_table, num_masked_gal = calc_rot_curve( Ha_vel, 
+                                                                     Ha_vel_error, 
+                                                                     v_band, 
+                                                                     v_band_err, 
+                                                                     sMass_density, 
+                                                                     axes_ratio, 
+                                                                     phi_EofN_deg, 
+                                                                     z, gal_ID, 
+                                                                     IMAGE_DIR, 
+                                                                     IMAGE_FORMAT, 
+                                                                     num_masked_gal)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
 
@@ -309,9 +311,8 @@ for i in range( len( files)):
     #            folder 'rot_curve_data_files'. It also saves the file with the
     #            default extension '_rot_curve_data'.
     #--------------------------------------------------------------------------
-    write_rot_curve( rot_data_table, gal_stat_table, gal_ID, 
-                     ROT_CURVE_MASTER_FOLDER, ROT_CURVE_DATA_INDICATOR, 
-                     GAL_STAT_DATA_INDICATOR)
+    write_rot_curve( rot_data_table, gal_stat_table, gal_ID, ROT_CURVE_MASTER_FOLDER)
+
     print(gal_ID, " WRITTEN")
     ###########################################################################
 
@@ -384,6 +385,13 @@ write_master_file( manga_plate_master, manga_fiberID_master,
 print("MASTER FILE WRITTEN")
 ###############################################################################
 '''
+
+###############################################################################
+# Print number of galaxies that were completely masked
+#------------------------------------------------------------------------------
+print('There were', num_masked_gal, 'galaxies that were completely masked.')
+###############################################################################
+
 
 ###############################################################################
 # Clock the program's run time to check performance.

@@ -171,7 +171,7 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                    axis_ratio, phi_EofN_deg, z, gal_ID,
-                   IMAGE_DIR, IMAGE_FORMAT):
+                   IMAGE_DIR, IMAGE_FORMAT, num_masked_gal):
     """Calculates the rotation curve (rotational velocity as a funciton of
     deprojected distance) of the galaxy in question. In addition a galaxy
     statistics file is created containing information about the galaxy's
@@ -223,6 +223,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         IMAGE_FORMAT:
             string representation of the saved image file format
 
+        num_masked_gal : float
+            Cumulative number of completely masked galaxies seen so far
+
     @return:
         data_table:
             an astropy QTable containing the deprojected distance; maximum,
@@ -234,7 +237,11 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
         gal_stats:
             an astropy QTable containing single-valued columns of the center
-            luminosity and its error and the stellar mass processed
+            luminosity and its error, the stellar mass processed, and the 
+            fraction of spaxels masked
+
+        num_masked_gal : float
+            Cumulative number of completely masked galaxies
     """
 
     ###########################################################################
@@ -265,6 +272,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     mask_data_a = np.logical_or( Ha_vel_err_boolean, v_band_boolean)
     mask_data_b = np.logical_or( v_band_err_boolean, sMass_density_boolean)
     mask_data = np.logical_or( mask_data_a, mask_data_b)
+
+    num_masked_spaxels = np.sum(mask_data) - np.sum(v_band_boolean)
+    frac_masked_spaxels = num_masked_spaxels/np.sum(np.logical_not(v_band_boolean))
 
     masked_Ha_vel = ma.masked_where( mask_data, Ha_vel)
     masked_Ha_vel_err = ma.masked_where( mask_data, Ha_vel_err)
@@ -396,6 +406,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         center_flux = -1
         center_flux_err = -1
 
+        num_masked_gal += 1
+
         print("ALL DATA POINTS FOR THE GALAXY ARE MASKED!!!")
     ###########################################################################
 
@@ -443,7 +455,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     # NOTE: 'gal_stats' contains general statistics about luminosity and
     #       stellar mass for the entire galaxy
     #--------------------------------------------------------------------------
-    data_table, gal_stats = put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err)
+    data_table, gal_stats = put_data_in_QTable(lists, gal_ID, center_flux, 
+                                               center_flux_err, frac_masked_spaxels)
     ###########################################################################
 
 
@@ -497,7 +510,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         #######################################################################
 
 
-    return data_table, gal_stats
+    return data_table, gal_stats, num_masked_gal
 
 
 
@@ -506,13 +519,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 ###############################################################################
 
 
-def write_rot_curve( data_table, gal_stats,
-                    gal_ID,
-                    ROT_CURVE_MASTER_FOLDER,
-                    ROT_CURVE_DATA_INDICATOR, GAL_STAT_DATA_INDICATOR):
+def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
     """Write data_table with an ascii-commented header to a .txt file
     specified by the LOCAL_PATH, ROT_CURVE_MASTER_FOLDER, output_data_folder,
-    output_data_name, and ROT_CURVE_DATA_INDICATOR variables.
+    and the output_data_name variables.
 
     @param:
         data_table:
@@ -523,8 +533,9 @@ def write_rot_curve( data_table, gal_stats,
 
         gal_stats:
             an astropy QTable containing single valued columns of the processed
-            and unprocessed luminosities and corresponding masses as well as
-            the luminosity at the center of the galaxy in question
+            and unprocessed luminosities and corresponding masses, the 
+            luminosity at the center of the galaxy, and the fraction of masked 
+            spaxels
 
         gal_ID:
             a string representation of the galaxy in question in the
@@ -535,22 +546,15 @@ def write_rot_curve( data_table, gal_stats,
         ROT_CURVE_MASTER_FOLDER:
             name in which to store the data subfolders into
 
-        ROT_CURVE_DATA_INDICATOR:
-            the extension of the file before '.txt' that identifies the
-            respective file as a rotation curve data file
-
-        GAL_STAT_DATA_INDICATOR:
-            the extension of the file before '.txt' that identifies the
-            respective file as a galaxy statistics data file
     """
     ###########################################################################
     # Write the astropy QTables to text files in ecsv format.
     #--------------------------------------------------------------------------
-    data_table.write( ROT_CURVE_MASTER_FOLDER + '/' + gal_ID + ROT_CURVE_DATA_INDICATOR + '.txt',
+    data_table.write( ROT_CURVE_MASTER_FOLDER + gal_ID + '_rot_curve_data.txt',
                       format='ascii.ecsv', overwrite=True)
 
-    gal_stats.write( ROT_CURVE_MASTER_FOLDER + '/' + gal_ID + GAL_STAT_DATA_INDICATOR + '.txt',
-                     format='ascii.ecsv', overwrite = True)
+    gal_stats.write( ROT_CURVE_MASTER_FOLDER + gal_ID + '_gal_stat_data.txt',
+                     format='ascii.ecsv', overwrite=True)
     ###########################################################################
 
 

@@ -5,7 +5,7 @@ import datetime
 START = datetime.datetime.now()
 
 import os.path
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 ###############################################################################
 # Boolean variables to specify if the script is being run in Bluehive.
@@ -32,9 +32,12 @@ WORKING_IN_BLUEHIVE = False
 # ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
 #       being ran.
 #------------------------------------------------------------------------------
-ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
+method = 'N2'
 
-MASTER_FILE_NAME = 'master_file_vflag.txt'
+#ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
+ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Programs/MartiniMethods/comp_Z_Martini_' + method + '_kias1033_5_Martini_MPAJHU_flux_oii_dustCorr.txt'
+
+MASTER_FILE_NAME = 'master_file_vflag_10.txt'
 ###############################################################################
 
 
@@ -48,7 +51,7 @@ from extract_abundance_v1 import match_abundance
 ###############################################################################
 # Read in the 'master_table.'
 #------------------------------------------------------------------------------
-master_table = Table.read( MASTER_FILE_NAME, format='ascii.ecsv')
+master_table = QTable.read( MASTER_FILE_NAME, format='ascii.ecsv')
 ###############################################################################
 
 
@@ -60,10 +63,9 @@ abundance_table = Table.read( ABUNDANCE_FILE_NAME, format='ascii.commented_heade
 
 
 ###############################################################################
-# Match to the 'master_table' according to 'NSA_plate', 'NSA_MJD', and 
-# 'MaNGA_fiberID'
+# Match to the 'master_table' according to 'index'
 #------------------------------------------------------------------------------
-master_table = match_abundance( master_table, abundance_table)
+master_table = match_abundance( master_table, abundance_table, method)
 ###############################################################################
 
 

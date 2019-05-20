@@ -25,7 +25,9 @@ MANGA_FIBER_DIAMETER = 9.69627362219072E-06   # angular fiber diameter (2") in r
 
 
 
-def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel, masked_Ha_vel_err, masked_sMass_density, optical_center, phi_EofN_deg, axis_ratio):
+def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel, 
+                    masked_Ha_vel_err, masked_sMass_density, optical_center, 
+                    phi_EofN_deg, axis_ratio):
     '''
     Measure the rotation curves for the galaxy based on the unmasked Halpha 
     velocity data.
@@ -369,7 +371,9 @@ def flag_data_ends( v_band, phi, center):
 
 
 
-def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel, masked_Ha_vel_err, masked_sMass_density, sMass_interior, list_dict):
+def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel, 
+                           masked_Ha_vel_err, masked_sMass_density, 
+                           sMass_interior, list_dict):
     '''
     Locate the minimum and maximum velocity values on each annulus
 

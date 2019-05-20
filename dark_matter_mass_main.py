@@ -12,7 +12,10 @@ START = datetime.datetime.now()
 
 import glob, os.path
 import numpy as np
+
 from astropy.table import QTable
+
+import astropy.units as u
 
 
 ###############################################################################
@@ -36,7 +39,7 @@ RUN_ALL_GALAXIES = False
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 #    the individual galaxy version of this script.
 #------------------------------------------------------------------------------
-FILE_IDS = ['7444-6104']
+FILE_IDS = ['8466-3704']
 ###############################################################################
 
 
@@ -77,7 +80,7 @@ else:
     ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files/'
 
 
-MASTER_FILE_NAME = LOCAL_PATH + '/master_file_vflag.txt'
+MASTER_FILE_NAME = LOCAL_PATH + '/master_file_vflag_10.txt'
 
 # Create output directories if they do not already exist
 if not os.path.isdir( IMAGE_DIR):
@@ -106,56 +109,88 @@ if RUN_ALL_GALAXIES:
     ###########################################################################
     # Master arrays initialized to contain memory-holding values.
     #--------------------------------------------------------------------------
-    master_table['center_flux'] = -1. #* np.ones( N_galaxies)
-    master_table['center_flux_error'] = -1. #* np.ones( N_galaxies)
+    master_table['center_flux'] = -1. 
+    master_table['center_flux_error'] = -1.
+    master_table['frac_masked_spaxels'] = -1.
 
-
-    master_table['avg_v_max'] = -1. #* np.ones( N_galaxies)
-    master_table['avg_r_turn'] = -1. #* np.ones( N_galaxies)
+    master_table['avg_v_max'] = -1. * (u.km / u.s)
+    master_table['avg_r_turn'] = -1. * (u.kpc)
     master_table['avg_alpha'] = -1. #* np.ones( N_galaxies)
 
-    master_table['avg_v_max_sigma'] = -1. #* np.ones( N_galaxies)
-    master_table['avg_r_turn_sigma'] = -1. #* np.ones( N_galaxies)
+    master_table['avg_v_max_sigma'] = -1. * (u.km / u.s)
+    master_table['avg_r_turn_sigma'] = -1. * (u.kpc)
     master_table['avg_alpha_sigma'] = -1. #* np.ones( N_galaxies)
     master_table['avg_chi_square_rot'] = -1. #* np.ones( N_galaxies)
     master_table['avg_chi_square_ndf'] = -1.
 
-    master_table['pos_v_max'] = -1. #* np.ones( N_galaxies)
-    master_table['pos_r_turn'] = -1. #* np.ones( N_galaxies)
+    master_table['pos_v_max'] = -1. * (u.km / u.s)
+    master_table['pos_r_turn'] = -1. * (u.kpc)
     master_table['pos_alpha'] = -1. #* np.ones( N_galaxies)
 
-    master_table['pos_v_max_sigma'] = -1. #* np.ones( N_galaxies)
-    master_table['pos_r_turn_sigma'] = -1. #* np.ones( N_galaxies)
+    master_table['pos_v_max_sigma'] = -1. * (u.km / u.s)
+    master_table['pos_r_turn_sigma'] = -1. * (u.kpc)
     master_table['pos_alpha_sigma'] = -1. #* np.ones( N_galaxies)
     master_table['pos_chi_square_rot'] = -1. #* np.ones( N_galaxies)
     master_table['pos_chi_square_ndf'] = -1.
 
-    master_table['neg_v_max'] = -1. #* np.ones( N_galaxies)
-    master_table['neg_r_turn'] = -1. #* np.ones( N_galaxies)
+    master_table['neg_v_max'] = -1. * (u.km / u.s)
+    master_table['neg_r_turn'] = -1. * (u.kpc)
     master_table['neg_alpha'] = -1. #* np.ones( N_galaxies)
 
-    master_table['neg_v_max_sigma'] = -1. #* np.ones( N_galaxies)
-    master_table['neg_r_turn_sigma'] = -1. #* np.ones( N_galaxies)
+    master_table['neg_v_max_sigma'] = -1. * (u.km / u.s)
+    master_table['neg_r_turn_sigma'] = -1. * (u.kpc)
     master_table['neg_alpha_sigma'] = -1. #* np.ones( N_galaxies)
     master_table['neg_chi_square_rot'] = -1. #* np.ones( N_galaxies)
     master_table['neg_chi_square_ndf'] = -1.
 
 
-    master_table['Mtot'] = -1. #* np.ones( N_galaxies)
-    master_table['Mtot_error'] = -1. #* np.ones( N_galaxies)
-    master_table['Mdark'] = -1. #* np.ones( N_galaxies)
-    master_table['Mdark_error'] = -1. #* np.ones( N_galaxies)
-    master_table['Mstar'] = -1. #* np.ones( N_galaxies)
+    master_table['Mtot'] = -1. * u.M_sun
+    master_table['Mtot_error'] = -1. * u.M_sun
+    master_table['Mdark'] = -1. * u.M_sun
+    master_table['Mdark_error'] = -1. * u.M_sun
+    master_table['Mstar'] = -1. * u.M_sun
     master_table['Mdark_Mstar_ratio'] = -1. #* np.ones( N_galaxies)
     master_table['Mdark_Mstar_ratio_error'] = -1. #* np.ones( N_galaxies)
 
     master_table['curve_used'] = '    '
     master_table['points_cut'] = 0 #np.zeros( N_galaxies)
     ###########################################################################
+    
+    
+    ###########################################################################
+    # Assign units to master array columns
+    #--------------------------------------------------------------------------
+    master_table['center_flux'].unit = 'erg / (cm2 s)'
+    master_table['center_flux_error'].unit = 'erg / (cm2 s)'
+    
+    master_table['avg_v_max'].unit = 'km / s'
+    master_table['avg_r_turn'].unit = 'kpc'
+
+    master_table['avg_v_max_sigma'].unit ='km / s'
+    master_table['avg_r_turn_sigma'].unit = 'kpc'
+
+    master_table['pos_v_max'].unit = 'km / s'
+    master_table['pos_r_turn'].unit = 'kpc'
+
+    master_table['pos_v_max_sigma'].unit = 'km / s'
+    master_table['pos_r_turn_sigma'].unit = 'kpc'
+
+    master_table['neg_v_max'].unit = 'km / s'
+    master_table['neg_r_turn'].unit = 'kpc'
+
+    master_table['neg_v_max_sigma'].unit = 'km / s'
+    master_table['neg_r_turn_sigma'].unit = 'kpc'
+
+    master_table['Mtot'].unit = 'solMass'
+    master_table['Mtot_error'].unit = 'solMass'
+    master_table['Mdark'].unit = 'solMass'
+    master_table['Mdark_error'].unit = 'solMass'
+    master_table['Mstar'].unit = 'solMass'
+    ###########################################################################
 
 
     ###########################################################################
-    # For all of the galaxies in the 'master_table'...
+    # For all of the galaxies in the 'master_table'
     #--------------------------------------------------------------------------
     for i in range( N_galaxies):
         #######################################################################

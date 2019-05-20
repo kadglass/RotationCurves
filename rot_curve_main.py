@@ -32,14 +32,14 @@ IMAGE_FORMAT = 'eps'
 # Boolean variable to specify if the script is being run in Bluehive.
 #------------------------------------------------------------------------------
 WORKING_IN_BLUEHIVE = False
-RUN_ALL_GALAXIES = True
+RUN_ALL_GALAXIES = False
 ###############################################################################
 
 ###############################################################################
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 #    the individual galaxy version of this script.
 #------------------------------------------------------------------------------
-FILE_IDS = ['8158-12704']
+FILE_IDS = ['8566-9102']
 ###############################################################################
 
 
@@ -115,8 +115,8 @@ else:
     files = []
 
     for file_name in FILE_IDS:
-        files.append( MANGA_FOLDER \
-                     + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
+        [plate, fiberID] = file_name.split('-')
+        files.append( MANGA_FOLDER + plate + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
     ###########################################################################
 
 

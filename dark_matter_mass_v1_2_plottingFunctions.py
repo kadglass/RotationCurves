@@ -1,10 +1,13 @@
-from astropy.table import Table
+from astropy.table import QTable
 
 import numpy as np
 
 import matplotlib.pyplot as plt
 
 from dark_matter_mass_v1_2 import rot_fit_func
+
+import os
+file_directory = os.path.dirname(__file__)
 
 
 
@@ -34,9 +37,9 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
     ###########################################################################
     # Read in galaxy's rotation curve data
     #--------------------------------------------------------------------------
-    rot_curve_filename = 'rot_curve_data_files/' + gal_ID + '_rot_curve_data.txt'
+    rot_curve_filename = file_directory + '/rot_curve_data_files/' + gal_ID + '_rot_curve_data.txt'
 
-    rot_curve_table = Table.read(rot_curve_filename, format='ascii.ecsv')
+    rot_curve_table = QTable.read(rot_curve_filename, format='ascii.ecsv')
     #--------------------------------------------------------------------------
 
 
@@ -49,23 +52,23 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
     # Average rotation curve
     rot_vel_data = rot_curve_table['rot_vel_avg']
     rot_vel_data_err = rot_curve_table['rot_vel_avg_error']
-    r_turn_best = fit_parameters['avg_r_turn']
+    r_turn_best = fit_parameters['avg_r_turn'].value
     alpha_best = fit_parameters['avg_alpha']
-    v_max_best = fit_parameters['avg_v_max']
+    v_max_best = fit_parameters['avg_v_max'].value
 
     # Positive rotation curve
     pos_vel_data = rot_curve_table['max_velocity']
     pos_vel_data_err = rot_curve_table['max_velocity_error']
-    r_turn_pos = fit_parameters['pos_r_turn']
+    r_turn_pos = fit_parameters['pos_r_turn'].value
     alpha_pos = fit_parameters['pos_alpha']
-    v_max_pos = fit_parameters['pos_v_max']
+    v_max_pos = fit_parameters['pos_v_max'].value
 
     # Negative rotation curve
     neg_vel_data = rot_curve_table['min_velocity']
     neg_vel_data_err = rot_curve_table['min_velocity_error']
-    r_turn_neg = fit_parameters['neg_r_turn']
+    r_turn_neg = fit_parameters['neg_r_turn'].value
     alpha_neg = fit_parameters['neg_alpha']
-    v_max_neg = fit_parameters['neg_v_max']
+    v_max_neg = fit_parameters['neg_v_max'].value
     #--------------------------------------------------------------------------
 
 
@@ -77,36 +80,46 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
     #--------------------------------------------------------------------------
     if v_max_best != -100 and v_max_best != -999:
 
-        #fig, ax = plt.subplots()
         fig = plt.figure(figsize=(8,5))
         ax = fig.add_axes([0.1, 0.1, 0.65, 0.8]) # [left, bottom, width, height]
         legend_ax = fig.add_axes([0.8, 0.1, 0.2, 0.8])
 
+        # x-axis range
+        r_depro = np.linspace( 0, depro_dist[-1].value, 10000)
+
+        # Plot formating
+        marker_size = 4
+        errorbar_cap_thickness = 1
+        errorbar_cap_size = 3
+
         # Positive rotation curve
-        pos_points,_,_ = ax.errorbar( depro_dist, pos_vel_data, yerr=pos_vel_data_err, fmt='s',
-                      color='red', markersize=4, capthick=1, capsize=3)
-        pos_fit, = ax.plot( np.linspace( 0, depro_dist[-1], 10000),
-                  rot_fit_func( np.linspace( 0, depro_dist[-1], 10000),
-                                v_max_pos, r_turn_pos, alpha_pos),
-                                color='red', linestyle=':', label='Positive')
+        pos_points,_,_ = ax.errorbar( depro_dist.data, pos_vel_data.data, 
+                                      yerr=pos_vel_data_err.data, fmt='s',
+                                      color='red', markersize=marker_size, 
+                                      capthick=errorbar_cap_thickness, 
+                                      capsize=errorbar_cap_size)
+        pos_fit, = ax.plot( r_depro, 
+                            rot_fit_func( r_depro, v_max_pos, r_turn_pos, alpha_pos),
+                            'r:', label='Positive')
 
         # Negative rotation curve
-        neg_points,_,_ = ax.errorbar( depro_dist, np.abs(neg_vel_data), yerr=neg_vel_data_err, fmt='^',
-                      color='blue', markersize=4, capthick=1, capsize=3)
-        neg_fit, = ax.plot( np.linspace( 0, depro_dist[-1], 10000),
-                  rot_fit_func( np.linspace( 0, depro_dist[-1], 10000),
-                                v_max_neg, r_turn_neg, alpha_neg),
-                                color='blue', linestyle=':', label='Negative')
+        neg_points,_,_ = ax.errorbar( depro_dist.data, np.abs(neg_vel_data.data), 
+                                      yerr=neg_vel_data_err.data, fmt='^',
+                                      color='blue', markersize=marker_size, 
+                                      capthick=errorbar_cap_thickness, 
+                                      capsize=errorbar_cap_size)
+        neg_fit, = ax.plot( r_depro, 
+                            rot_fit_func( r_depro, v_max_neg, r_turn_neg, alpha_neg),
+                            'b:', label='Negative')
 
         # Average rotation curve
-        avg_points,_,_ = ax.errorbar( depro_dist, rot_vel_data, yerr=rot_vel_data_err, fmt='p', 
-                      color='green', markersize=4, capthick=1, capsize=3)
-        avg_fit, = ax.plot( np.linspace( 0, depro_dist[-1], 10000),
-             rot_fit_func(np.linspace( 0, depro_dist[-1], 10000),
-                          v_max_best,
-                          r_turn_best,
-                          alpha_best),
-                          color='green', linestyle=':', label='Average')
+        avg_points,_,_ = ax.errorbar( depro_dist.data, rot_vel_data.data, 
+                                      yerr=rot_vel_data_err.data, fmt='p', 
+                                      color='green', markersize=marker_size, 
+                                      capthick=errorbar_cap_thickness, 
+                                      capsize=errorbar_cap_size)
+        avg_fit, = ax.plot( r_depro, rot_fit_func(r_depro, v_max_best, r_turn_best, alpha_best),
+                            'g:', label='Average')
 
         ax.tick_params( axis='both', direction='in')
         ax.yaxis.set_ticks_position('both')
@@ -122,7 +135,8 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
         legend_ax.patch.set_visible(False)
         legend_ax.axis('off')
 
-        legend_ax.legend([(pos_points, pos_fit), (neg_points, neg_fit), (avg_points, avg_fit)], ['Positive', 'Negative', 'Average'], loc=2)
+        legend_ax.legend([(pos_points, pos_fit), (neg_points, neg_fit), (avg_points, avg_fit)], 
+                         ['Positive', 'Negative', 'Average'], loc=2)
 
         if fit_parameters['curve_used'][:3] == 'non':
             textstr = 'No mass estimate'
@@ -132,13 +146,14 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
                     'Points removed: %d' % (fit_parameters['points_cut'], ),
                     r'$\chi^{2}$/ndf: $%.3f$' % ( fit_parameters[ fit_parameters['curve_used'] + '_chi_square_ndf'], ),
                     #r'$\Delta v_{max}$: $%.3f$' % ( v_max_pos - v_max_neg),
-                    r'$M_{DM}$ [$M_{\odot}$]: $%9.2E$' % ( fit_parameters['Mdark'], ),
-                    r'$M_{*}$ [$M_{\odot}$]: $%9.2E$' % ( fit_parameters['Mstar'], ),
+                    r'$\alpha$: $%.2f$' % ( fit_parameters[ fit_parameters['curve_used'] + '_alpha'], ),
+                    r'$M_{DM}$ [$M_{\odot}$]: $%9.2E$' % ( fit_parameters['Mdark'].value, ),
+                    r'$M_{*}$ [$M_{\odot}$]: $%9.2E$' % ( fit_parameters['Mstar'].value, ),
                     r'$\frac{M_{DM}}{M_{*}}$: $%.3f$' % ( fit_parameters['Mdark_Mstar_ratio'], )))
 
         props = dict( boxstyle='round', facecolor='cornsilk', alpha=0.6)
 
-        legend_ax.text( 0, 0.34, textstr,
+        legend_ax.text( 0, 0.4, textstr,
                         verticalalignment='top', horizontalalignment='left',
                         transform=legend_ax.transAxes,
                         color='black', fontsize=10, bbox=props)

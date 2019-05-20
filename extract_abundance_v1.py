@@ -8,7 +8,7 @@ import numpy as np
 
 
 
-def match_abundance( master_table, Z_ref_table):
+def match_abundance( master_table, Z_ref_table, method=None):
     '''
     Matches the Z_ref_table to the master_table via NSA_plate, NSA_MJD, and
     NSA_fiberID, then extracts the metallicity from the Z_ref_table and assigns 
@@ -17,11 +17,14 @@ def match_abundance( master_table, Z_ref_table):
     Parameters:
     ===========
 
-        master_table : astropy QTable
-            Contains all summary information for MaNGA galaxies
+    master_table : astropy QTable
+        Contains all summary information for MaNGA galaxies
 
-        Z_ref_table : astropy table
-            Contains metallicity information
+    Z_ref_table : astropy table
+        Contains metallicity information
+
+    method : string
+        Abundance method used.  Default is None (field name will be 'Z12logOH').
 
 
     Returns:
@@ -34,17 +37,19 @@ def match_abundance( master_table, Z_ref_table):
     ###########################################################################
     # Initialize output columns
     #--------------------------------------------------------------------------
-    master_table['t3'] = np.nan
-    master_table['BPT'] = np.nan
-    master_table['Z12logOH'] = np.nan
-    master_table['logNO'] = np.nan
+    abund_field = 'Z12logOH'
+
+    if method is not None:
+        abund_field = 'Z12logOH_' + method
+
+    master_table[abund_field] = np.nan
     #--------------------------------------------------------------------------
 
 
     ###########################################################################
-    # Build dictionary of tuples for storing galaxies with metallicities
+    # Build dictionary of tuples for storing galaxies with KIAS-VAGC indices
     #--------------------------------------------------------------------------
-    Z_ref_dict = Z_galaxies_dict(Z_ref_table)
+    ref_dict = galaxies_dict(Z_ref_table)
     #--------------------------------------------------------------------------
 
 
@@ -53,17 +58,12 @@ def match_abundance( master_table, Z_ref_table):
     #--------------------------------------------------------------------------
     for i in range( len( master_table)):
         
-        plate = master_table['NSA_plate'][i]
-        MJD = master_table['NSA_MJD'][i]
-        fiberID = master_table['NSA_fiberID'][i]
+        index = master_table['index'][i]
 
-        galaxy_ID = (plate, MJD, fiberID)
+        galaxy_ID = (index)
 
-        if galaxy_ID in Z_ref_dict.keys():
-            master_table['t3'][i] = Z_ref_table['t3'][Z_ref_dict[galaxy_ID]]
-            master_table['BPT'][i] = Z_ref_table['BPTclass'][Z_ref_dict[galaxy_ID]]
-            master_table['Z12logOH'][i] = Z_ref_table['Z12logOH'][Z_ref_dict[galaxy_ID]]
-            master_table['logNO'][i] = Z_ref_table['logNO'][Z_ref_dict[galaxy_ID]]
+        if galaxy_ID in ref_dict.keys():
+            master_table[abund_field][i] = Z_ref_table['Z12logOH'][ref_dict[galaxy_ID]]
         else:
             print("NO MATCHES FOUND FOR GALAXY",
                   str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_fiberID'][i]))
@@ -74,7 +74,6 @@ def match_abundance( master_table, Z_ref_table):
 
 
 
-
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -82,15 +81,15 @@ def match_abundance( master_table, Z_ref_table):
 
 
 
-def Z_galaxies_dict(Z_table):
+def galaxies_dict(ref_table):
     '''
-    Build a dictionary of the galaxies with metallicities
+    Build a dictionary of the galaxies with KIAS-VAGC indices
 
     Parameters:
     ===========
 
-    Z_table : astropy table
-        Galaxies with metallicities
+    ref_table : astropy table
+        Galaxies with KIAS-VAGC indices
 
 
     Returns:
@@ -103,14 +102,13 @@ def Z_galaxies_dict(Z_table):
     # Initialize dictionary of cell IDs with at least one galaxy in them
     ref_dict = {}
 
-    for idx in range(len(Z_table)):
+    for idx in range(len(ref_table)):
 
-        plate = Z_table['plate'][idx]
-        MJD = Z_table['MJD'][idx]
-        fiberID = Z_table['fiberID'][idx]
-
-        galaxy_ID = (plate, MJD, fiberID)
+        galaxy_ID = (ref_table['index'][idx])
 
         ref_dict[galaxy_ID] = idx
 
     return ref_dict
+
+
+

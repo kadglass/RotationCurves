@@ -19,6 +19,7 @@ lwidth = 2 # Line width used in plots
 
 
 def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60), 
+                y_max=0.05, y_err=False, 
                 plot_title='$M_{DM}$ / $M_*$ distribution', 
                 save_fig=False, FILE_SUFFIX='', IMAGE_DIR='', 
                 IMAGE_FORMAT='eps'):
@@ -40,6 +41,13 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
 
     hist_range : tuple
         Minimum and maximum of histogram
+
+    y_max : float
+        Upper limit of y-axis; default value is 0.05.
+
+    y_err : boolean
+        Determines whether or not to plot sqrt(N) error bars on histogram.  
+        Default value is False (no error bars).
 
     plot_title : string
         Title of plot; default is '$M_{DM}$ / $M_*$ distribution'
@@ -72,12 +80,30 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
     ###########################################################################
     # Plot histograms in first figure
     #--------------------------------------------------------------------------
-    ax1.hist( void_ratios, bins, color='r', range=hist_range, density=True, 
-             histtype='step', linewidth=lwidth, 
-             label='Void: ' + str( sum( void_ratios > 0)))
-    ax1.hist( wall_ratios, bins, color='k', range=hist_range, density=True, 
-             histtype='step', linewidth=lwidth, linestyle=':', 
-             label='Wall: ' + str( sum( wall_ratios > 0)))
+    Ntot_void = sum(void_ratios > 0)
+    Ntot_wall = sum(wall_ratios > 0)
+
+    Nv,_ = np.histogram(void_ratios, bins=bins)
+    Nw,_ = np.histogram(wall_ratios, bins=bins)
+
+    nv = Nv/Ntot_void
+    nw = Nw/Ntot_wall
+
+    ax1.step(bins[:-1], nv, 'r', where='post', linewidth=lwidth, 
+             label='Void: ' + str( Ntot_void))
+    ax1.step(bins[:-1], nw, 'k', where='post', linewidth=lwidth, linestyle=':', 
+             label='Wall: ' + str( Ntot_wall))
+
+    if y_err:
+        Nv = Nv.astype('float')
+        Nw = Nw.astype('float')
+
+        # Set all 0-counts to infinity
+        Nv[Nv==0] = np.infty
+        Nw[Nw==0] = np.infty
+
+        ax1.errorbar(0.5*(bins[1:] + bins[:-1]), nv, yerr=Nv**-0.5/Ntot_void, ecolor='r', fmt='none')
+        ax1.errorbar(0.5*(bins[1:] + bins[:-1]), nw, yerr=Nw**-0.5/Ntot_wall, ecolor='k', fmt='none')
     #--------------------------------------------------------------------------
     # Histogram plot formatting
     #--------------------------------------------------------------------------
@@ -89,8 +115,8 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
     ax1.yaxis.set_ticks_position('both')
     ax1.xaxis.set_ticks_position('both')
     ax1.set_xlim( hist_range)
-    ax1.set_ylim( (0, 0.15))
-    #ax1.set_xticks( BINS)
+    ax1.set_ylim( (0, y_max))
+    #ax1.set_yscale('log')
 
     ax1.legend()
     ###########################################################################

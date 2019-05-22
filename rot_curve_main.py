@@ -14,7 +14,10 @@ import numpy as np
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 import astropy.units as u
+
 '''
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import pickle, psutil
 process = psutil.Process(os.getpid())
@@ -32,14 +35,14 @@ IMAGE_FORMAT = 'eps'
 # Boolean variable to specify if the script is being run in Bluehive.
 #------------------------------------------------------------------------------
 WORKING_IN_BLUEHIVE = False
-RUN_ALL_GALAXIES = False
+RUN_ALL_GALAXIES = True
 ###############################################################################
 
 ###############################################################################
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 #    the individual galaxy version of this script.
 #------------------------------------------------------------------------------
-FILE_IDS = ['8566-9102']
+FILE_IDS = ['7443-12705']
 ###############################################################################
 
 
@@ -62,9 +65,6 @@ FILE_IDS = ['8566-9102']
 #       being ran.
 #------------------------------------------------------------------------------
 if WORKING_IN_BLUEHIVE:
-    import matplotlib
-    matplotlib.use('Agg')
-
     LOCAL_PATH = '/home/jsm171'
     SCRATCH_PATH = '/scratch/jsm171'
 
@@ -127,16 +127,9 @@ else:
 N_files = len( files)
 ###############################################################################
 
-'''
-###############################################################################
-# Print the list of file names.
-#------------------------------------------------------------------------------
-print("files:", files)
-###############################################################################
-'''
 
 ###############################################################################
-# Open NASA-Sloan-Atlas (NSA) master catalog and extract the data structurers
+# Open NASA-Sloan-Atlas (NSA) master catalog and extract the data structures
 #    for RA; DEC; the axes ratio of b/a (obtained via sersic fit); phi, the
 #    angle of rotation in the two-dimensional, observational plane (obtained
 #    via sersic fit); and the redshift distance calculated from the shift in
@@ -175,28 +168,28 @@ nsa_catalog.close()
 catalog_coords = SkyCoord( ra=nsa_ra_all*u.degree, dec=nsa_dec_all*u.degree)
 ###############################################################################
 
-'''
+
 ###############################################################################
 # # Initialize the master arrays that create the structure of the master file.
 #------------------------------------------------------------------------------
 manga_plate_master = -1 * np.ones( N_files)
 manga_fiberID_master = -1 * np.ones( N_files)
 
-nsa_axes_ratio_master = -1 * np.ones( N_files)
-nsa_phi_master = -1 * np.ones( N_files)
-nsa_z_master = -1 * np.ones( N_files)
-#nsa_zdist_master = -1 * np.ones( N_files)
-#nsa_zdist_err_master = -1 * np.ones( N_files)
-nsa_mStar_master = -1 * np.ones( N_files)
+nsa_axes_ratio_master = -1. * np.ones( N_files)
+nsa_phi_master = -1. * np.ones( N_files)
+nsa_z_master = -1. * np.ones( N_files)
+#nsa_zdist_master = -1. * np.ones( N_files)
+#nsa_zdist_err_master = -1. * np.ones( N_files)
+nsa_mStar_master = -1. * np.ones( N_files)
 
-nsa_ra_master = -1 * np.ones( N_files)
-nsa_dec_master = -1 * np.ones( N_files)
+nsa_ra_master = -1. * np.ones( N_files)
+nsa_dec_master = -1. * np.ones( N_files)
 nsa_plate_master = -1 * np.ones( N_files)
 nsa_fiberID_master = -1 * np.ones( N_files)
 nsa_mjd_master = -1 * np.ones( N_files)
 nsaID_master = -1 * np.ones( N_files)
 ###############################################################################
-'''
+
 '''
 ###############################################################################
 # Create an array to store the time spent on each iteration of the fot-loop.
@@ -215,14 +208,13 @@ num_masked_gal = 0 # Number of completely masked galaxies
 for i in range( len( files)):
     #iteration_start = datetime.datetime.now()
     file_name = files[i]
-
+    #print( file_name)
+    
     ###########################################################################
     # file_id is a simplified string that identifies each file that is run
     #    through the algorithm. The file_id name scheme is [PLATE]-[FIBER ID].
     #--------------------------------------------------------------------------
     gal_ID = file_name[ file_name.find('manga-') + 6 : file_name.find('.Pipe3D')]
-
-    #print( gal_ID)
     ###########################################################################
 
 
@@ -233,15 +225,15 @@ for i in range( len( files)):
     manga_plate, manga_fiberID, gal_ra, gal_dec = extract_data( file_name)
     print( gal_ID, " EXTRACTED")
     ###########################################################################
-
-    '''
+    
+    
     ###########################################################################
     # Add the MaNGA catalog information to the master arrays.
     #--------------------------------------------------------------------------
     manga_plate_master[i] = manga_plate
     manga_fiberID_master[i] = manga_fiberID
     ###########################################################################
-    '''
+    
 
     ###########################################################################
     # Match the galaxy's RA and DEC from the to the NSA catalog index, and pull
@@ -265,7 +257,7 @@ for i in range( len( files)):
     nsaID = nsaID_all[ nsa_gal_idx]
     ###########################################################################
 
-    '''
+    
     ###########################################################################
     # Add the NSA catalog information to the master arrays.
     #--------------------------------------------------------------------------
@@ -283,8 +275,8 @@ for i in range( len( files)):
     nsa_mjd_master[i] = nsa_mjd
     nsaID_master[i] = nsaID
     ###########################################################################
+    
     '''
-
     ###########################################################################
     # Extract rotation curve data for the .fits file in question and create an
     #    astropy Table containing said data.
@@ -297,13 +289,13 @@ for i in range( len( files)):
                                                                      axes_ratio, 
                                                                      phi_EofN_deg, 
                                                                      z, gal_ID, 
-                                                                     IMAGE_DIR, 
-                                                                     IMAGE_FORMAT, 
-                                                                     num_masked_gal)
+                                                                     #IMAGE_DIR, 
+                                                                     #IMAGE_FORMAT, 
+                                                                     num_masked_gal=num_masked_gal)
     print(gal_ID, " ROT CURVE CALCULATED")
     ###########################################################################
-
-
+    '''
+    '''
     ###########################################################################
     # Write the rotation curve data to a text file in ascii format.
     #
@@ -315,7 +307,7 @@ for i in range( len( files)):
 
     print(gal_ID, " WRITTEN")
     ###########################################################################
-
+    '''
     '''
     ###########################################################################
     # Clock the current iteration and append the time to 'iteration_times'
@@ -371,7 +363,7 @@ plt.close()
 del iteration_clock_fig
 ###############################################################################
 '''
-'''
+
 ###############################################################################
 # Build master file that contains identifying information for each galaxy
 #   as well as scientific information as taken from the NSA catalog.
@@ -384,7 +376,7 @@ write_master_file( manga_plate_master, manga_fiberID_master,
                   LOCAL_PATH)
 print("MASTER FILE WRITTEN")
 ###############################################################################
-'''
+
 
 ###############################################################################
 # Print number of galaxies that were completely masked

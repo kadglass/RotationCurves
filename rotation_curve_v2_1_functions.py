@@ -9,19 +9,19 @@ import math
 
 
 
-###############################################################################
+################################################################################
 # Declare constants
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 H_0 = 100 * (u.km / ( u.s * u.Mpc))  # Hubble's Constant in units of km /s /Mpc
 
 MANGA_FIBER_DIAMETER = 9.69627362219072E-06   # angular fiber diameter (2") in radians
-###############################################################################
+################################################################################
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -88,9 +88,9 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
     '''
 
 
-    ###########################################################################
+    ############################################################################
     # Extract the flux from the center of the galaxy.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     x_center = optical_center[0][1]
     y_center = optical_center[0][0]
 
@@ -101,23 +101,23 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
     print("flux_center:", flux_center)
     print("flux_center_error:", flux_center_error)
     '''
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Find the first data point along the galaxy's semi-major axis where
     #    'v_band' equals zero, therefore finding the point to signal to 
     #    stop collecting data for the rotation curve. Set this point to 
     #    -999 as a flag.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     v_band = flag_data_ends( v_band, phi_EofN_deg, optical_center)
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Convert pixel distance to physical distances in units of both
     #    kiloparsecs and centimeters.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     dist_to_galaxy_kpc = ( z * const.c.to('km/s') / H_0).to('kpc')
     #dist_to_galaxy_kpc_err = np.sqrt( (const.c.to('km/s') / H_0)**2 * zdist_err**2 )
 
@@ -133,27 +133,27 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
     print("pix_scale_factor:", pix_scale_factor)
     print("pix_scale_factor_err:", pix_scale_factor_err)
     '''
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Create a meshgrid for all coordinate points based on the dimensions of
     # the H-alpha velocity numpy array.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     array_length = masked_Ha_vel.shape[0]  # y-coordinate distance
     array_width = masked_Ha_vel.shape[1]  # x-coordinate distance
 
     X_RANGE = np.arange(0, array_width, 1)
     Y_RANGE = np.arange(0, array_length, 1)
     X_COORD, Y_COORD = np.meshgrid( X_RANGE, Y_RANGE)
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Initialization code to draw the elliptical annuli and to normalize the
     #    2D-arrays for the max and min velocity so as to check for anomalous
     #    data.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     phi_elip = math.radians( 90 - ( phi_EofN_deg / u.deg)) * u.rad
 
     x_diff = X_COORD - x_center
@@ -162,13 +162,13 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
     ellipse = ( x_diff*np.cos( phi_elip) - y_diff*np.sin( phi_elip))**2 + \
               ( x_diff*np.sin( phi_elip) + y_diff*np.cos( phi_elip))**2 / \
               ( axis_ratio)**2
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Initialize the rotation curve lists that will store the rotation curve
     #    data.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     rot_curve_dist = []
     #rot_curve_dist_err = []
 
@@ -192,12 +192,12 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
     dmMass_interior_curve_err = []
     dmVel_rot_curve = []
     dmVel_rot_curve_err = []
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Put all lists inside a dictionary for cleaner function calls.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     list_dict = {'radius':rot_curve_dist, 
                  'max_vel':rot_curve_max_vel, 'max_vel_err':rot_curve_max_vel_err,
                  'min_vel':rot_curve_min_vel, 'min_vel_err':rot_curve_min_vel_err,
@@ -208,19 +208,19 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
                  'star_vel':sVel_rot_curve, 'star_vel_err':sVel_rot_curve_err,
                  'DM':dmMass_interior_curve, 'DM_err':dmMass_interior_curve_err,
                  'DM_vel':dmVel_rot_curve, 'DM_vel_err':dmVel_rot_curve_err}
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Initialize the stellar mass surface density interior to an annulus to
     #    be 0 solar masses.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     sMass_interior = 0 * ( u.M_sun)
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
-    #--------------------------------------------------------------------------
+    ############################################################################
+    #---------------------------------------------------------------------------
     dR = 2
     R = 2
 
@@ -231,62 +231,57 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
         deproj_dist_kpc = R * pix_scale_factor
         #deproj_dist_kpc_err = R * pix_scale_factor_err
 
-        #######################################################################
+        ########################################################################
         # Define an eliptical annulus and check if either of the edge points 
         # are within that annulus.
         #
         # NOTE: Although if the edge point is within 'pix_between_annuli' and 
         #       thus 'valid_data' is set to False, the current iteration of the 
         #       loop still completes as intended.
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         pix_between_annuli = np.logical_and( (R - dR)**2 <= ellipse, ellipse < R**2)
 
         if np.any( v_band[ pix_between_annuli] == -999):
             valid_data = False
-        #######################################################################
+        ########################################################################
 
 
-        #######################################################################
-        # While the data point signaling to stop data collection is not within
-        #    'pix_between_annuli', extract the maximum and minimum velocity at
-        #    an annulus and the stellar mass interior to that annulus.
-        #----------------------------------------------------------------------
-        list_dict = find_velocity_extrema( pix_between_annuli, 
-                                           deproj_dist_kpc, 
-                                           masked_Ha_vel, 
-                                           masked_Ha_vel_err, 
-                                           masked_sMass_density, 
-                                           sMass_interior, 
+        ########################################################################
+        # Extract the maximum and minimum velocity at an annulus and the stellar 
+        # mass interior to that annulus.
+        #-----------------------------------------------------------------------
+        list_dict = find_velocity_extrema( pix_between_annuli, deproj_dist_kpc, 
+                                           masked_Ha_vel, masked_Ha_vel_err, 
+                                           masked_sMass_density, sMass_interior, 
                                            list_dict)
-        #######################################################################
+        ########################################################################
 
 
-        #######################################################################
+        ########################################################################
         # Increment the radius of the annulus R by dR
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         R += dR
-        #######################################################################
+        ########################################################################
 
 
-    ###############################################################
-    # The line below adds the pixels of the H-alpha velocity field
-    #    analyzed in the current iteration of the algorithm to an
-    #    image that plots all the pixels analyzed for a given
-    #    galaxy.
-    #--------------------------------------------------------------
+    ############################################################################
+    # Add the pixels of the H-alpha velocity field analyzed in the current 
+    # iteration of the algorithm to an image that plots all the pixels analyzed 
+    # for a given galaxy.
+    #---------------------------------------------------------------------------
     contour_boolean = ellipse >= R**2
     contour_mask = np.logical_or( mask_data, contour_boolean)
 
     masked_vel_contour_plot = ma.masked_where( contour_mask, Ha_vel)
-    ###############################################################
+    ############################################################################
 
     return list_dict, flux_center, flux_center_err, masked_vel_contour_plot
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -322,7 +317,7 @@ def flag_data_ends( v_band, phi, center):
     slope = -1 * (np.cos( phi_edge) / np.sin( phi_edge))
     y_intercept = y_center - slope * x_center
 
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     x_edge_pos = x_center
     y_edge_pos = y_center
 
@@ -338,8 +333,8 @@ def flag_data_ends( v_band, phi, center):
         else:
             x_edge_pos = x_temp_pos
             y_edge_pos = y_temp_pos
-    #--------------------------------------------------------------------------
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     x_edge_neg = x_center
     y_edge_neg = y_center
 
@@ -355,7 +350,7 @@ def flag_data_ends( v_band, phi, center):
         else:
             x_edge_neg = x_temp_neg
             y_edge_neg = y_temp_neg
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
 
     v_band[ y_edge_pos, x_edge_pos] = -999
     v_band[ y_edge_neg, x_edge_neg] = -999
@@ -365,9 +360,9 @@ def flag_data_ends( v_band, phi, center):
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -414,40 +409,37 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
     #deproj_dist_m_err = deproj_dist_kpc_err.to('m')
 
 
-    #######################################################################
+    ############################################################################
     # Find the coordinates of the max/min velocity for a given annulus.
     #
-    # If there is no max/min velocity point (i.e. all eligible data points 
-    # are masked), then skip to the next annulus.
+    # If there is no max/min velocity point (i.e. all eligible data points are 
+    # masked), then skip to the next annulus.
     #
-    # If there is more than one max or more than one min velocity at the 
-    # given annulus, then use the first one found.  The first spaxel is 
-    # used because the point at which it comes from is not relavent.  
-    # Rather, it is only the velocity itself that is relavent to this 
-    # project.
-    #----------------------------------------------------------------------
+    # If there is more than one max or more than one min velocity at the given 
+    # annulus, then use the one closest to the semi-major axis.
+    #---------------------------------------------------------------------------
     max_vel_point = np.argwhere( masked_Ha_vel[ pix_between_annuli].max() == masked_Ha_vel)
     min_vel_point = np.argwhere( masked_Ha_vel[ pix_between_annuli].min() == masked_Ha_vel)
-    #######################################################################
+    ############################################################################
 
 
-    #######################################################################
-    # Only the length of 'max_vel_point' is tested because if the maximum 
-    # of 'masked_Ha_vel' returns nothing, the minimum will also return 
-    # nothing because there are only masked values.
-    #----------------------------------------------------------------------
+    ############################################################################
+    # Only the length of 'max_vel_point' is tested because if the maximum of 
+    # 'masked_Ha_vel' returns nothing, the minimum will also return nothing 
+    # because there are only masked values.
+    #---------------------------------------------------------------------------
     if len( max_vel_point) == 0:
 
         print('ALL DATA POINTS IN', deproj_dist, 'ANNULUS ARE MASKED!!!')
 
     else:
-        ###################################################################
-        # NOTE: The max/min velocity coordinates are extracted in the 
-        #       [0][i] fashion because sometimes there can be more than one 
-        #       point that contains the max/min velocity at that annulus.  
-        #       Thus, the first point with the maximum velocity is 
-        #       extracted and separated into its x- and y-coordinates.
-        #------------------------------------------------------------------
+        ########################################################################
+        # NOTE: The max/min velocity coordinates are extracted in the [0][j] 
+        #       fashion because sometimes there can be more than one point that 
+        #       contains the max/min velocity at that annulus.  Thus, the first 
+        #       point with the maximum velocity is extracted and separated into 
+        #       its x- and y-coordinates.
+        #-----------------------------------------------------------------------
         max_vel_point_x = max_vel_point[0][1]
         max_vel_point_y = max_vel_point[0][0]
 
@@ -460,14 +452,14 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
 
         min_vel_at_annulus = masked_Ha_vel[min_vel_point_y, min_vel_point_x] * ( u.km / u.s)
         min_vel_at_annulus_err = masked_Ha_vel_err[min_vel_point_y, min_vel_point_x] * ( u.km / u.s)
-        ###################################################################
+        ########################################################################
 
 
-        ###################################################################
-        # Calculate the average rotational velocity at an annulus, its 
-        # error, difference in the rotational velocities, its error, and 
-        # the total mass interior to that annulus along with its error.
-        #------------------------------------------------------------------
+        ########################################################################
+        # Calculate the average rotational velocity at an annulus, its error, 
+        # difference in the rotational velocities, its error, and the total mass 
+        # interior to that annulus along with its error.
+        #-----------------------------------------------------------------------
         avg_vel_at_annulus, avg_vel_at_annulus_err, rot_vel_diff, rot_vel_diff_err = calc_avg_vel( max_vel_at_annulus, 
                                                                                                    min_vel_at_annulus, 
                                                                                                    max_vel_at_annulus_err, 
@@ -476,27 +468,27 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
         mass_interior, mass_interior_err = calc_mass_interior( avg_vel_at_annulus, 
                                                                avg_vel_at_annulus_err,
                                                                deproj_dist_m, 0*u.m)
-        ###################################################################
+        ########################################################################
 
 
-        ###################################################################
-        # Calculate the stellar rotational velocity at a radius, its error, 
-        # and the stellar mass interior to that radius.
-        #------------------------------------------------------------------
+        ########################################################################
+        # Calculate the stellar rotational velocity at a radius, its error, and 
+        # the stellar mass interior to that radius.
+        #-----------------------------------------------------------------------
         sMass_interior = calc_stellar_mass( sMass_interior, 
                                             masked_sMass_density, 
                                             pix_between_annuli)
 
         sVel_rot, sVel_rot_err = calc_velocity( sMass_interior, 0*u.M_sun, 
                                                 deproj_dist_m, 0*u.m)
-        ###################################################################
+        ########################################################################
 
 
-        ###################################################################
-        # Calculate the rotational velocities at a radius and the dark 
-        # matter mass interior to that radius along with the errors 
-        # associated with them.
-        #------------------------------------------------------------------
+        ########################################################################
+        # Calculate the rotational velocities at a radius and the dark matter 
+        # mass interior to that radius along with the errors associated with 
+        # them.
+        #-----------------------------------------------------------------------
         dmMass_interior, dmMass_interior_err = calc_dark_matter( mass_interior, 
                                                                  mass_interior_err, 
                                                                  sMass_interior)
@@ -504,17 +496,17 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
         dmVel_rot, dmVel_rot_err = calc_velocity( dmMass_interior, 
                                                   dmMass_interior_err, 
                                                   deproj_dist_m, 0*u.m)
-        ###################################################################
+        ########################################################################
 
         
-        ###################################################################
-        # Append the corresponding values to their respective arrays to
-        # write to the roatation curve file.  The quantities are stripped 
-        # of their units at this stage in the algorithm because astropy 
-        # Column objects cannot be created with quantities that have 
-        # dimensions.  The respective dimensions are added back when the 
-        # Column objects are added to the astropy QTable.
-        #------------------------------------------------------------------
+        ########################################################################
+        # Append the corresponding values to their respective arrays to write to 
+        # the roatation curve file.  The quantities are stripped of their units 
+        # at this stage in the algorithm because astropy Column objects cannot 
+        # be created with quantities that have dimensions.  The respective 
+        # dimensions are added back when the Column objects are added to the 
+        # astropy QTable.
+        #-----------------------------------------------------------------------
         list_dict['radius'].append( deproj_dist.value)
         #list_dict['radius_err'].append( deproj_dist_kpc_err.value)
 
@@ -538,18 +530,18 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
         list_dict['DM_err'].append( dmMass_interior_err.value)
         list_dict['DM_vel'].append( dmVel_rot.value)
         list_dict['DM_vel_err'].append( dmVel_rot_err.value)
-        ###################################################################
+        ########################################################################
         
         '''
-        ###################################################################
+        ########################################################################
         # DIAGNOSTICS:
         #
-        # Below are print statements that give information about the 
-        # max/min and average velocities at an annulus, stellar mass, dark 
-        # matter mass, and total mass along with the rotational velocities 
-        # due to them.  Errors are given for all quantites except 
-        # 'sMass_interior' for which there exists no error.
-        #------------------------------------------------------------------
+        # Below are print statements that give information about the max/min and 
+        # average velocities at an annulus, stellar mass, dark matter mass, and 
+        # total mass along with the rotational velocities due to them.  Errors 
+        # are given for all quantites except 'sMass_interior' for which there 
+        # exists no error.
+        #-----------------------------------------------------------------------
         print("-----------------------------------------------------")
         print("R = ", R)
         print("deproj_dist_kpc:", deproj_dist)
@@ -572,11 +564,11 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
         print("dmVel_rot:", dmVel_rot)
         print("dmVel_rot_err:", dmVel_rot_err)
         print("-----------------------------------------------------")
-        #------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         
-        ###################################################################
+        ########################################################################
         # Plot the pixels at the current annulus.
-        #------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         current_pix_fig = plt.figure(4)
         plt.title('Pixels at ' + str(R - dR) + ' < R < ' + str(R))
         plt.imshow( pix_between_annuli, origin='lower')
@@ -592,16 +584,16 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, masked_Ha_vel,
 
         plt.show()
         plt.close()
-        ###################################################################
+        ########################################################################
         '''
     
     return list_dict
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -643,29 +635,29 @@ def calc_avg_vel( max_vel, min_vel, max_vel_err, min_vel_err):
 
     '''
 
-    ###########################################################################
+    ############################################################################
     # Average velocity at annulus
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     avg_vel = ( max_vel + abs( min_vel)) / 2
     avg_vel_err = np.sqrt( max_vel_err**2 + min_vel_err**2 )
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Difference between the magnitudes of the minimum and maximum velocities
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     rot_vel_diff = abs( max_vel - abs( min_vel))
     rot_vel_diff_err = np.sqrt( max_vel_err**2 + min_vel_err**2)
-    ###########################################################################
+    ############################################################################
 
 
     return avg_vel, avg_vel_err, rot_vel_diff, rot_vel_diff_err
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -714,9 +706,9 @@ def calc_mass_interior(velocity, velocity_err, radius, radius_err):
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -754,24 +746,24 @@ def calc_stellar_mass( mass, sMass_density_array, annulus_spaxels):
 
     '''
 
-    ###########################################################################
+    ############################################################################
     # Calculate stellar mass interior to current annulus
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     for spaxel in sMass_density_array[ annulus_spaxels]:
         try:
             mass += spaxel.physical
 
         except AttributeError:
             pass
-    ###########################################################################
+    ############################################################################
 
     return mass
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -811,30 +803,30 @@ def calc_velocity( mass, mass_err, radius, radius_err):
 
     '''
 
-    ###########################################################################
+    ############################################################################
     # Calculate velocity corresponding to mass within given radius
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     velocity = np.sqrt( const.G * ( mass.to('kg')) / radius)
     velocity = velocity.to('km/s')
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Calculate velocity error
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     velocity_err = 0.5 * velocity * np.sqrt( (const.G.uncertainty * const.G.unit / const.G)**2 \
                                             + (mass_err / mass)**2 \
                                             + (radius_err / radius)**2)
     velocity_err = velocity_err.to('km/s')
-    ###########################################################################
+    ############################################################################
 
     return velocity, velocity_err
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -868,24 +860,29 @@ def calc_dark_matter( tot_mass, tot_mass_err, stellar_mass):
 
     '''
 
-    ###########################################################################
+    ############################################################################
     # Calculate dark matter mass interior to current annulus
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     DM_mass = tot_mass - stellar_mass
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Calculate the uncertainty in the dark matter mass
     #
     # NOTE: There is no error given for sMass_density_interior, so the error in 
     #       the dark matter mass is the same as the error in the total mass.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     DM_mass_err = tot_mass_err
-    ###########################################################################
+    ############################################################################
 
     return DM_mass, DM_mass_err
 
+
+
+################################################################################
+################################################################################
+################################################################################
 
 
 
@@ -921,9 +918,9 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err, frac_masked_
 
     '''
 
-    ###########################################################################
+    ############################################################################
     # Convert lists in dictionary to Astropy table column objects
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     dist_col = Column( lists['radius'])
     #dist_err_col = Column( lists['radius_err'])
     max_vel_col = Column( lists['max_vel'])
@@ -952,12 +949,12 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err, frac_masked_
     flux_center_col = Column( [center_flux])
     flux_center_err_col = Column( [center_flux_err])
     frac_masked_spaxels_col = Column( [frac_masked_spaxels])
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Create data table
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     data_table = QTable([ dist_col *  u.kpc,
                          #dist_err_col * u.kpc,
                          max_vel_col * ( u.km / u.s),
@@ -996,12 +993,12 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err, frac_masked_
                          'mass_interior_error',
                          'rot_curve_diff',
                          'rot_curve_diff_error'])
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Create table containing general galaxy information
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     gal_stats = QTable([ gal_ID_col,
                         flux_center_col * ( u.erg / ( u.s * u.cgs.cm**2)),
                         flux_center_err_col * ( u.erg / ( u.s * u.cgs.cm**2)),
@@ -1010,6 +1007,6 @@ def put_data_in_QTable(lists, gal_ID, center_flux, center_flux_err, frac_masked_
                         'center_flux',
                         'center_flux_error',
                         'frac_masked_spaxels'])
-    ###########################################################################
+    ############################################################################
 
     return data_table, gal_stats

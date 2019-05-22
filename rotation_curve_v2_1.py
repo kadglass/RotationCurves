@@ -34,6 +34,8 @@ import numpy as np, numpy.ma as ma
 import warnings
 warnings.simplefilter('ignore', np.RankWarning)
 
+import os.path
+
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
@@ -164,85 +166,85 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
 
 
 
-###############################################################################
-###############################################################################
-###############################################################################
+################################################################################
+################################################################################
+################################################################################
 
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                    axis_ratio, phi_EofN_deg, z, gal_ID,
-                   IMAGE_DIR, IMAGE_FORMAT, num_masked_gal):
-    """Calculates the rotation curve (rotational velocity as a funciton of
-    deprojected distance) of the galaxy in question. In addition a galaxy
-    statistics file is created containing information about the galaxy's
-    center luminosity, stellar mass processed in the algorithm, the errors
-    associated with these quantities as available, and a string, gal_ID, that
-    identifies the galaxy by SDSS data release and MaNGA plate and fiber ID.
+                   IMAGE_DIR=None, IMAGE_FORMAT='eps', num_masked_gal=0):
+    '''
+    Calculate the rotation curve (rotational velocity as a funciton of
+    deprojected distance) of the galaxy.  In addition, a galaxy statistics file 
+    is created that contains information about the galaxy's center luminosity, 
+    stellar mass processed in the algorithm, the errors associated with these 
+    quantities as available, and gal_ID, which identifies the galaxy by SDSS 
+    data release and MaNGA plate and fiber ID.
 
-    @param:
-        Ha_vel:
-            an n-D numpy array containing the H-alpha velocity field data
 
-        Ha_vel_err:
-            an n-D numpy array containing the error in the H-alpha velocity
-            field data
+    Parameters:
+    ===========
 
-        v_band : numpy array of shape (n,n)
-            Visual band flux data
+    Ha_vel : numpy array of shape (n,n)
+        H-alpha velocity field data
 
-        v_band_err:
-            an n-D numpy array containing the error in the visual band flux
-            data
+    Ha_vel_err : numpy array of shape (n,n)
+        Error in the H-alpha velocity field data
 
-        sMass_density:
-            an n-D numpy array containing the stellar mass density per square
-            pixel
+    v_band : numpy array of shape (n,n)
+        Visual band flux data
 
-        axis_ratio:
-            float representation of the ratio of the galaxy's minor axis to the
-            major axis as obtained via a sersic fit of the galaxy
+    v_band_err : numpy array of shape (n,n)
+        Error in the visual band flux data
 
-        phi_EofN_deg:
-            float representation of the angle (east of north) of rotation in
-            the 2-D, observational plane
+    sMass_density : numpy array of shape (n,n)
+        Stellar mass density per spaxel
 
-            NOTE: east is 'left' per astronomy convention
+    axis_ratio : float
+        Ratio of the galaxy's minor axis to major axis as obtained via a sersic 
+        fit of the galaxy
 
-        z:
-            float representation of the redshift of the galaxy question as
-            calculated by the shift in H-alpha flux
+    phi_EofN_deg : float
+        Angle (east of north) of rotation in the 2-D, observational plane
 
-        gal_ID:
-            a string representation of the galaxy in question in the
-            following format: [DATA RELEASE]-[PLATE]-[IFUID]
+        NOTE: east is 'left' per astronomy convention
 
-        IMAGE_DIR:
-            string representation of the file path that pictures of the fitted
-            rotation curves are saved to
+    z : float
+        Galaxy redshift as calculated by the shift in H-alpha flux
 
-        IMAGE_FORMAT:
-            string representation of the saved image file format
+    gal_ID : string
+        [DATA RELEASE]-[PLATE]-[IFUID]
 
-        num_masked_gal : float
-            Cumulative number of completely masked galaxies seen so far
+    IMAGE_DIR : string
+        File path to which pictures of the fitted rotation curves are saved.  
+        Default value is None (do not save images).
 
-    @return:
-        data_table:
-            an astropy QTable containing the deprojected distance; maximum,
-            minimum, average, stellar, and dark matter velocities at that
-            radius; difference between the maximum and minimum velocities;
-            and the stellar, dark matter, and total mass interior to that
-            radius as well as the errors associated with each quantity as
-            available
+    IMAGE_FORMAT : string
+        Saved image file format.  Default format is eps.
 
-        gal_stats:
-            an astropy QTable containing single-valued columns of the center
-            luminosity and its error, the stellar mass processed, and the 
-            fraction of spaxels masked
+    num_masked_gal : float
+        Cumulative number of completely masked galaxies seen so far.  Default 
+        value is 0.
 
-        num_masked_gal : float
-            Cumulative number of completely masked galaxies
-    """
+
+    Returns:
+    ========
+
+    data_table : astropy QTable
+        Contains the deprojected distance; maximum, minimum, average, stellar, 
+        and dark matter velocities at that radius; difference between the 
+        maximum and minimum velocities; and the stellar, dark matter, and total 
+        mass interior to that radius as well as the errors associated with each 
+        quantity as available
+
+    gal_stats : astropy QTable
+        Contains single-valued columns of the center luminosity and its error, 
+        the stellar mass processed, and the fraction of spaxels masked
+
+    num_masked_gal : float
+        Cumulative number of completely masked galaxies
+    '''
 
     ###########################################################################
     # Create a mask for the data arrays. Each of the boolean conditions are
@@ -302,19 +304,20 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     print("Center: (%d, %d)" % (x_center, y_center))
     '''
 
-    #--------------------------------------------------------------------------
-    # Plot visual-band image
-    #--------------------------------------------------------------------------
-    plot_vband_image( v_band, gal_ID, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+    if IMAGE_DIR is not None:
+        #----------------------------------------------------------------------
+        # Plot visual-band image
+        #----------------------------------------------------------------------
+        plot_vband_image( v_band, gal_ID, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
 
-    #--------------------------------------------------------------------------
-    # Plot H-alpha velocity field before systemic redshift subtraction. Galaxy 
-    #   velocities vary from file to file, so vmin and vmax will have to be 
-    #   manually adjusted for each galaxy before reshift subtraction.
-    #--------------------------------------------------------------------------
-    plot_Ha_vel( Ha_vel, gal_ID, 
-                 IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/unmasked_Ha_vel/', 
-                 IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_raw.')
+        #--------------------------------------------------------------------------
+        # Plot H-alpha velocity field before systemic redshift subtraction. Galaxy 
+        #   velocities vary from file to file, so vmin and vmax will have to be 
+        #   manually adjusted for each galaxy before reshift subtraction.
+        #--------------------------------------------------------------------------
+        plot_Ha_vel( Ha_vel, gal_ID, 
+                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/unmasked_Ha_vel/', 
+                     IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_raw.')
     ###########################################################################
 
 
@@ -429,22 +432,23 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                                                                                        phi_EofN_deg, 
                                                                                        axis_ratio)
 
-        #######################################################################
-        # Plot the H-alapha velocity field within the annuli
-        #----------------------------------------------------------------------
-        plot_Ha_vel( masked_vel_contour_plot, gal_ID, 
-                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/collected_velocity_fields/', 
-                     IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_collected_vel_field.')
-        #######################################################################
+        if IMAGE_DIR is not None:
+            ###################################################################
+            # Plot the H-alapha velocity field within the annuli
+            #------------------------------------------------------------------
+            plot_Ha_vel( masked_vel_contour_plot, gal_ID, 
+                         IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/collected_velocity_fields/', 
+                         IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_collected_vel_field.')
+            ###################################################################
 
 
-        #######################################################################
-        # Plot H-alpha velocity field with redshift subtracted.
-        #----------------------------------------------------------------------
-        plot_Ha_vel( masked_Ha_vel, gal_ID, 
-                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/masked_Ha_vel/', 
-                     IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_field.')
-        #######################################################################
+            ###################################################################
+            # Plot H-alpha velocity field with redshift subtracted.
+            #------------------------------------------------------------------
+            plot_Ha_vel( masked_Ha_vel, gal_ID, 
+                         IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/masked_Ha_vel/', 
+                         IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_field.')
+            ###################################################################
     ###########################################################################
 
 
@@ -481,7 +485,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     '''
 
 
-    if unmasked_data:
+    if unmasked_data and (IMAGE_DIR is not None):
 
         #######################################################################
         # Rotational velocity as a function of deprojected radius.
@@ -520,42 +524,41 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
 
 def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
-    """Write data_table with an ascii-commented header to a .txt file
+    '''
+    Write tables with an ascii-commented header to a .txt file in ecsv format,
     specified by the LOCAL_PATH, ROT_CURVE_MASTER_FOLDER, output_data_folder,
     and the output_data_name variables.
 
-    @param:
-        data_table:
-            an astropy QTable containing the deprojected distance, maximum and
-            minimum velocities at that radius, average luminosities for each
-            half of the galaxy at that radius, luminosity interior to the
-            radius, and the stellar mass interior to the radius
 
-        gal_stats:
-            an astropy QTable containing single valued columns of the processed
-            and unprocessed luminosities and corresponding masses, the 
-            luminosity at the center of the galaxy, and the fraction of masked 
-            spaxels
+    Parameters:
+    ===========
+    
+    data_table : astropy QTable of shape (m,p)
+        Contains the deprojected distance, maximum and minimum velocities at 
+        that radius, average luminosities for each half of the galaxy at that 
+        radius, luminosity interior to the radius, and the stellar mass interior 
+        to the radius
 
-        gal_ID:
-            a string representation of the galaxy in question in the
-            following format: [DATA RELEASE]-[PLATE]-[IFUID]
+    gal_stats : astropy QTable of shape (1,n)
+        Contains single valued columns of the processed and unprocessed 
+        luminosities and corresponding masses, the luminosity at the center of 
+        the galaxy, and the fraction of masked spaxels
 
-        LOCAL_PATH: string specifying the path the main script is executed in
+    gal_ID : string
+        [DATA RELEASE]-[PLATE]-[IFUID]
 
-        ROT_CURVE_MASTER_FOLDER:
-            name in which to store the data subfolders into
+    LOCAL_PATH : string 
+        Path of the main script
 
-    """
-    ###########################################################################
-    # Write the astropy QTables to text files in ecsv format.
-    #--------------------------------------------------------------------------
+    ROT_CURVE_MASTER_FOLDER : string
+        Name in which to store the data subfolders into
+    '''
+
     data_table.write( ROT_CURVE_MASTER_FOLDER + gal_ID + '_rot_curve_data.txt',
                       format='ascii.ecsv', overwrite=True)
 
     gal_stats.write( ROT_CURVE_MASTER_FOLDER + gal_ID + '_gal_stat_data.txt',
                      format='ascii.ecsv', overwrite=True)
-    ###########################################################################
 
 
 
@@ -565,65 +568,62 @@ def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
 
 
 def write_master_file( manga_plate_master, manga_fiberID_master,
-                      nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-                      nsa_gal_idx_master, nsa_ra_master, nsa_dec_master,
-                      nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-                      nsa_mStar_master,
-                      LOCAL_PATH):
-    """Create the master file containing identifying information about each
-    galaxy. The output file of this function determines the structure of the
+                       nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
+                       nsa_gal_idx_master, nsa_ra_master, nsa_dec_master,
+                       nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
+                       nsa_mStar_master, LOCAL_PATH):
+    '''
+    Create the master file containing identifying information about each
+    galaxy.  The output file of this function determines the structure of the
     master file that will contain the best fit parameters for the fitted
     rotation curve equations.
 
-    @param:
-        manga_plate_master:
-            master list containing the MaNGA plate information for each galaxy
+    
+    Parameters:
+    ===========
 
-        manga_fiberID_master:
-            master list containing the MaNGA fiber ID information for each
-            galaxy
+    manga_plate_master : numpy array of shape (n,1)
+        master list containing the MaNGA plate information for each galaxy
 
-        nsa_plate_master:
-            master list containing the NSA plate information for each galaxy
+    manga_fiberID_master : numpy array of shape (n,1)
+        master list containing the MaNGA fiber ID information for each galaxy
 
-        nsa_fiberID_master:
-            master list containing the NSA fiber ID information for each galaxy
+    nsa_plate_master : numpy array of shape (n,1)
+        master list containing the NSA plate information for each galaxy
 
-        nsa_mjd_master:
-            master list containing the NSA MJD information for each galaxy
+    nsa_fiberID_master : numpy array of shape (n,1)
+        master list containing the NSA fiber ID information for each galaxy
 
-        nsa_gal_idx_master:
-            master list containing the matched index for each galaxy as
-            calculated through the 'match' function above (LOOKS LIKE THIS 
-            FIELD IS ACTUALLY STORING THE "NSAID" VALUE FROM THE NSA CATALOG)
+    nsa_mjd_master : numpy array of shape (n,1)
+        master list containing the NSA MJD information for each galaxy
 
-        nsa_ra_master:
-            master list containing all of the righthand ascension values for
-            galaxies in the MaNGA survey
+    nsa_gal_idx_master : numpy array of shape (n,1)
+        master list containing the NSA ID information for each galaxy
 
-        nsa_dec_master:
-            master list containing all of the declination values for galaxies
-            in the MaNGA survey
+        NOTE: This is NOT the index number of the galaxy in the NSA catalog.
 
-        nsa_axes_ratio_master:
-            master list containing all the axes ratios used in extracting the
-            rotation curve
+    nsa_ra_master : numpy array of shape (n,1)
+        master list containing the NSA righthand ascension values for each galaxy
 
-        nsa_phi_master:
-            master list containing all the rotation angles of the galaxies used
-            in extracting the rotation curve
+    nsa_dec_master : numpy array of shape (n,1)
+        master list containing the NSA declination values for each galaxy
 
-        nsa_z_master:
-            master list containing all the redshifts of the galaxies used in
-            extracting the rotation curve
+    nsa_axes_ratio_master : numpy array of shape (n,1)
+        master list containing the NSA axis ratio for each galaxy
 
-        nsa_mStar_master:
-            master list containing all the stellar mass estimates of the
-            galaxies matched to the NSA catalog
+    nsa_phi_master : numpy array of shape (n,1)
+        master list containing the NSA rotation angle for each galaxy
 
-        LOCAL_PATH:
-            the directory path of the main script file
-    """
+    nsa_z_master : numpy array of shape (n,1)
+        master list containing the NSA redshift for each galaxy
+
+    nsa_mStar_master : numpy array of shape (n,1)
+        master list containing the NSA stellar mass estimate for each galaxy
+
+    LOCAL_PATH : string
+        the directory path of the main script file
+    '''
+
     ###########################################################################
     # Convert the master data arrays into Column objects to add to the master
     #    data table.
@@ -643,39 +643,76 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     ###########################################################################
 
 
-    ###########################################################################
-    # Add the column objects to an astropy QTable.
-    #--------------------------------------------------------------------------
-    master_table = QTable([ manga_plate_col,
-                            manga_fiberID_col,
-                            nsa_plate_col,
-                            nsa_fiberID_col,
-                            nsa_mjd_col,
-                            nsa_gal_idx_col,
-                            nsa_ra_col * u.degree,
-                            nsa_dec_col * u.degree,
-                            nsa_axes_ratio_col,
-                            nsa_phi_col * u.degree,
-                            nsa_z_col,
-                            nsa_mStar_col],
-                   names = ['MaNGA_plate',
-                            'MaNGA_fiberID',
-                            'NSA_plate',
-                            'NSA_fiberID',
-                            'NSA_MJD',
-                            'NSA_index',
-                            'NSA_RA',
-                            'NSA_DEC',
-                            'NSA_b/a',
-                            'NSA_phi',
-                            'NSA_redshift',
-                            'NSA_mStar'])
-    ###########################################################################
+    if not os.path.isfile( LOCAL_PATH + '/master_file.txt'):
+        ########################################################################
+        # Add the column objects to an astropy QTable.
+        #-----------------------------------------------------------------------
+        master_table = QTable([ manga_plate_col,
+                                manga_fiberID_col,
+                                nsa_plate_col,
+                                nsa_fiberID_col,
+                                nsa_mjd_col,
+                                nsa_gal_idx_col,
+                                nsa_ra_col * u.degree,
+                                nsa_dec_col * u.degree,
+                                nsa_axes_ratio_col,
+                                nsa_phi_col * u.degree,
+                                nsa_z_col,
+                                nsa_mStar_col],
+                       names = ['MaNGA_plate',
+                                'MaNGA_fiberID',
+                                'NSA_plate',
+                                'NSA_fiberID',
+                                'NSA_MJD',
+                                'NSA_index',
+                                'NSA_RA',
+                                'NSA_DEC',
+                                'NSA_ba',
+                                'NSA_phi',
+                                'NSA_redshift',
+                                'NSA_Mstar'])
+        ########################################################################
+    else:
+        ########################################################################
+        # Read in current master_file.txt file
+        #-----------------------------------------------------------------------
+        master_table = QTable.read( LOCAL_PATH + '/master_file_vflag_6.txt', 
+                                    format='ascii.ecsv')
+        ########################################################################
+
+
+        ########################################################################
+        # Build reference dictionary of plate, fiberID combinations
+        #-----------------------------------------------------------------------
+        index_dict = {}
+
+        for i in range( len( manga_plate_master)):
+            index_dict[ (manga_plate_master[i], manga_fiberID_master[i])] = i
+        ########################################################################
+
+
+        ########################################################################
+        # Update column values in master_table
+        #-----------------------------------------------------------------------
+        for i in range( len( master_table)):
+            col_idx = index_dict[ (master_table['MaNGA_plate'][i], master_table['MaNGA_fiberID'][i])]
+
+            master_table['NSA_plate'][i] = nsa_plate_col[col_idx]
+            master_table['NSA_fiberID'][i] = nsa_fiberID_col[col_idx]
+            master_table['NSA_MJD'][i] = nsa_mjd_col[col_idx]
+            master_table['NSA_index'][i] = nsa_gal_idx_col[col_idx]
+            master_table['NSA_RA'][i] = nsa_ra_col[col_idx] * u.degree
+            master_table['NSA_DEC'][i] = nsa_dec_col[col_idx] * u.degree
+            master_table['NSA_ba'][i] = nsa_axes_ratio_col[col_idx]
+            master_table['NSA_phi'][i] = nsa_phi_col[col_idx] * u.degree
+            master_table['NSA_redshift'][i] = nsa_z_col[col_idx]
+            master_table['NSA_Mstar'][i] = nsa_mStar_col[col_idx]
+        ########################################################################
 
 
     ###########################################################################
     # Write the master data file in ecsv format.
     #--------------------------------------------------------------------------
-    master_table.write( LOCAL_PATH + '/master_file.txt',
+    master_table.write( LOCAL_PATH + '/master_file_vflag_6.txt',
                         format='ascii.ecsv', overwrite=True)
     ###########################################################################

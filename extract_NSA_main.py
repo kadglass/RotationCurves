@@ -10,10 +10,12 @@ Extract various data values from the NSA catalog.
 #-------------------------------------------------------------------------------
 
 
-from astropy.table import Table
+from astropy.table import QTable
 from astropy.io import fits
 
 import numpy as np
+
+from extract_NSA_functions import galaxies_dict
 
 
 ################################################################################
@@ -24,10 +26,10 @@ import numpy as np
 
 
 # File name of data to be matched
-data_filename = 'master_file.txt'
+data_filename = 'master_file_vflag_10.txt'
 
 # File name of NSA catalog
-NSA_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.fits'
+NSA_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v1_0_1.fits'
 
 
 ################################################################################
@@ -38,7 +40,7 @@ NSA_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.f
 
 
 # Data table of galaxies to be matched
-data_table = Table.read(data_filename, format='ascii.ecsv')
+data_table = QTable.read(data_filename, format='ascii.ecsv')
 
 N = len(data_table) # Number of galaxies
 
@@ -55,7 +57,20 @@ NSA_data = NSA_table[1].data
 #-------------------------------------------------------------------------------
 
 
-rabsmag_col = np.zeros(N)
+data_table['rabsmag'] = np.zeros(N)
+
+
+
+################################################################################
+#
+#   REFERENCE DICTIONARY
+#
+#-------------------------------------------------------------------------------
+# Build dictionary of tuples for storing galaxies with KIAS-VAGC indices
+
+
+ref_dict = galaxies_dict(NSA_data)
+
 
 
 ################################################################################
@@ -66,15 +81,24 @@ rabsmag_col = np.zeros(N)
 # Match via NSAID (unique ID number in NSA catalog)
 
 
+N_missing = 0
+
 for i in range(len(data_table)):
 
-    # Find galaxy in NSA catalog
-    boolean = NSA_data['NSAID'] == data_table['NSA_index'][i]
+    index = data_table['NSA_index'][i]
+    galaxy_ID = (index)
 
-    # Array of absolute magnitudes for this galaxy (FNugriz)
-    absmag_array = NSA_data['ABSMAG'][boolean]
+    if galaxy_ID in ref_dict.keys():
 
-    rabsmag_col[i] = absmag_array[0][4] # SDSS r-band
+        # Array of absolute magnitudes for this galaxy (FNugriz)
+        '''
+        absmag_array = NSA_data['ABSMAG'][ref_dict[galaxy_ID]]
+        data_table['rabsmag'][i] = absmag_array[0][4] # SDSS r-band
+        '''
+        absmag_array = NSA_data['ELPETRO_ABSMAG'][ref_dict[galaxy_ID]]
+        data_table['rabsmag'][i] = absmag_array[4] # SDSS r-band
+    else:
+        N_missing += 1
 
 
 ################################################################################
@@ -84,7 +108,5 @@ for i in range(len(data_table)):
 #-------------------------------------------------------------------------------
 
 
-# Add new column(s) to table
-data_table['rabsmag'] = rabsmag_col
-
 data_table.write(data_filename, format='ascii.ecsv', overwrite=True)
+

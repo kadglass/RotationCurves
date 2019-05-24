@@ -1,5 +1,5 @@
 '''
-Main script file for extract_index_vX_X.
+Main script file for extract_index_vX.
 '''
 import datetime
 START = datetime.datetime.now()
@@ -7,41 +7,15 @@ START = datetime.datetime.now()
 import os.path
 from astropy.table import Table
 
-###############################################################################
-# Boolean variables to specify if the script is being run in Bluehive.
-#------------------------------------------------------------------------------
-WORKING_IN_BLUEHIVE = False
-###############################################################################
+from extract_index_v1 import match_index
 
 
 ###############################################################################
-# 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
-#    working in bluehive). It is set to 'os.path.dirname(__file__)' when
-#    working on a local system.
-#
-# In addition, 'LOCAL_PATH' is altered and 'SCRATCH_PATH' is added if
-#    'WORKING_IN_BLUEHIVE' is set to True. This is done because of how the data
-#    folders are kept separate from the python script files in bluehive. For
-#    BlueHive to run, images cannot be generated with $DISPLAY keys; therefore,
-#    'matplotlib' is imported and 'Agg' is used. This must be done before
-#    'matplotlib.pyplot' is imported.
-#
-# This block can be altered if desired, but the conditional below is tailored
-#    for use with bluehive.
-#
-# ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
-#       being ran.
+# User inputs
 #------------------------------------------------------------------------------
 INDEX_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
 
 MASTER_FILE_NAME = 'master_file_vflag_10.txt'
-###############################################################################
-
-
-###############################################################################
-# Import functions from 'extract_vflag_vX_X.'
-#------------------------------------------------------------------------------
-from extract_index_v1 import match_index
 ###############################################################################
 
 

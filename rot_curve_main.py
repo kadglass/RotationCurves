@@ -132,17 +132,16 @@ N_files = len( files)
 # Open NASA-Sloan-Atlas (NSA) master catalog and extract the data structures
 #    for RA; DEC; the axes ratio of b/a (obtained via sersic fit); phi, the
 #    angle of rotation in the two-dimensional, observational plane (obtained
-#    via sersic fit); and the redshift distance calculated from the shift in
-#    H-alpha flux.
+#    via sersic fit); the redshift distance calculated from the shift in
+#    H-alpha flux; and the absolute magnitude in the r-band.
 #
-# Note: The NSA RA and DEC are passed to a SkyCoord object to better match
-#       galaxies to the NSA catalog index.
+# Note: The NSA RA and DEC are passed to a SkyCoord object to match galaxies to 
+#       the NSA catalog index.
 #------------------------------------------------------------------------------
 if WORKING_IN_BLUEHIVE:
-    nsa_catalog_filename = SCRATCH_PATH + '/nsa_v0_1_2.fits'
+    nsa_catalog_filename = SCRATCH_PATH + '/nsa_v1_0_1.fits'
 else:
-    #nsa_catalog_filename = LOCAL_PATH + '/nsa_v0_1_2.fits'
-    #nsa_catalog_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v0_1_2.fits'
+    #nsa_catalog_filename = LOCAL_PATH + '/nsa_v1_0_1.fits'
     nsa_catalog_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v1_0_1.fits'
 nsa_catalog = fits.open( nsa_catalog_filename)
 
@@ -151,17 +150,17 @@ nsa_phi_EofN_deg_all = nsa_catalog[1].data['SERSIC_PHI']
 nsa_z_all = nsa_catalog[1].data['Z']
 #nsa_zdist_all = nsa_catalog[1].data['ZDIST']
 #nsa_zdist_all_err = nsa_catalog[1].data['ZDIST_ERR']
-if nsa_catalog_filename[-6] == '1':
-    nsa_mStar_all = nsa_catalog[1].data['SERSIC_MASS']
-else:
-    nsa_mStar_all = nsa_catalog[1].data['MASS']
-
+nsa_absmag_all = nsa_catalog[1].data['ELPETRO_ABSMAG']
 nsa_ra_all = nsa_catalog[1].data['RA']
 nsa_dec_all = nsa_catalog[1].data['DEC']
 nsa_plate_all = nsa_catalog[1].data['PLATE']
 nsa_fiberID_all = nsa_catalog[1].data['FIBERID']
 nsa_mjd_all = nsa_catalog[1].data['MJD']
 nsaID_all = nsa_catalog[1].data['NSAID']
+if nsa_catalog_filename[-6] == '1':
+    nsa_mStar_all = nsa_catalog[1].data['SERSIC_MASS']
+else:
+    nsa_mStar_all = nsa_catalog[1].data['MASS']
 
 nsa_catalog.close()
 
@@ -181,6 +180,7 @@ nsa_z_master = -1. * np.ones( N_files)
 #nsa_zdist_master = -1. * np.ones( N_files)
 #nsa_zdist_err_master = -1. * np.ones( N_files)
 nsa_mStar_master = -1. * np.ones( N_files)
+nsa_rabsmag_master = np.zeroes( N_files)
 
 nsa_ra_master = -1. * np.ones( N_files)
 nsa_dec_master = -1. * np.ones( N_files)
@@ -248,6 +248,7 @@ for i in range( len( files)):
     #zdist = nsa_zdist_all[ nsa_gal_idx]
     #zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
     mStar = nsa_mStar_all[ nsa_gal_idx] * u.M_sun
+    rabsmag = nsa_absmag_all[ nsa_gal_idx][4] # SDSS r-band
 
     nsa_ra = nsa_ra_all[ nsa_gal_idx]
     nsa_dec = nsa_dec_all[ nsa_gal_idx]
@@ -267,6 +268,7 @@ for i in range( len( files)):
     #nsa_zdist_master[i] = zdist
     #nsa_zdist_err_master[i] = zdist_err
     nsa_mStar_master[i] = mStar / u.M_sun
+    nsa_rabsmag_master[i] = rabsmag
 
     nsa_ra_master[i] = nsa_ra
     nsa_dec_master[i] = nsa_dec
@@ -372,7 +374,7 @@ write_master_file( manga_plate_master, manga_fiberID_master,
                   nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
                   nsaID_master, nsa_ra_master, nsa_dec_master,
                   nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-                  nsa_mStar_master,
+                  nsa_mStar_master, nsa_rabsmag_master, 
                   LOCAL_PATH)
 print("MASTER FILE WRITTEN")
 ###############################################################################

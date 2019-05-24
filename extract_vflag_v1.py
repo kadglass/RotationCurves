@@ -9,6 +9,7 @@ and matches the data to the master file.
 from astropy.table import Table
 import numpy as np
 
+
 def build_ref_table( CROSS_REF_FILE_NAMES):
     """Compile the environmental classifications and identifying data from the
     various 'void_finder' output files.
@@ -77,6 +78,8 @@ def build_ref_table( CROSS_REF_FILE_NAMES):
     ###########################################################################
 
     return vflag_ref_table
+
+
 
 def match_vflag( master_table, vflag_ref_table, criteria):
     """Matches the vflag_ref_table to the master_table via MaNGA_plate and

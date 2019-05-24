@@ -571,7 +571,7 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                        nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
                        nsa_gal_idx_master, nsa_ra_master, nsa_dec_master,
                        nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-                       nsa_mStar_master, LOCAL_PATH):
+                       nsa_mStar_master, nsa_rabsmag_master, LOCAL_PATH):
     '''
     Create the master file containing identifying information about each
     galaxy.  The output file of this function determines the structure of the
@@ -620,6 +620,10 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     nsa_mStar_master : numpy array of shape (n,1)
         master list containing the NSA stellar mass estimate for each galaxy
 
+    nsa_rabsmag_master : numpy array of shape (n,1)
+        master list containing the NSA SDSS r-band absolute magnitude for each 
+        galaxy
+
     LOCAL_PATH : string
         the directory path of the main script file
     '''
@@ -640,6 +644,7 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     nsa_phi_col = Column( nsa_phi_master)
     nsa_z_col = Column( nsa_z_master)
     nsa_mStar_col = Column( nsa_mStar_master)
+    nsa_rabsmag_col = Column( nsa_rabsmag_master)
     ###########################################################################
 
 
@@ -658,7 +663,8 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                                 nsa_axes_ratio_col,
                                 nsa_phi_col * u.degree,
                                 nsa_z_col,
-                                nsa_mStar_col],
+                                nsa_mStar_col,
+                                nsa_rabsmag_col],
                        names = ['MaNGA_plate',
                                 'MaNGA_fiberID',
                                 'NSA_plate',
@@ -670,7 +676,8 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                                 'NSA_ba',
                                 'NSA_phi',
                                 'NSA_redshift',
-                                'NSA_Mstar'])
+                                'NSA_Mstar',
+                                'NSA_rabsmag'])
         ########################################################################
     else:
         ########################################################################
@@ -707,12 +714,13 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
             master_table['NSA_phi'][i] = nsa_phi_col[col_idx] * u.degree
             master_table['NSA_redshift'][i] = nsa_z_col[col_idx]
             master_table['NSA_Mstar'][i] = nsa_mStar_col[col_idx]
+            master_table['NSA_rabsmag'][i] = nsa_rabsmag_col[col_idx]
         ########################################################################
 
 
     ###########################################################################
     # Write the master data file in ecsv format.
     #--------------------------------------------------------------------------
-    master_table.write( LOCAL_PATH + '/master_file_vflag_6.txt',
+    master_table.write( LOCAL_PATH + '/master_file.txt',
                         format='ascii.ecsv', overwrite=True)
     ###########################################################################

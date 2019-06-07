@@ -60,7 +60,7 @@ def match_index( master_table, ref_table):
         if galaxy_ID in ref_dict.keys():
             master_table['index'][i] = ref_table['index'][ref_dict[galaxy_ID]]
         else:
-            print("NO MATCHES FOUND FOR GALAXY",
+            print("NO MATCH FOUND FOR GALAXY",
                   str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_fiberID'][i]))
     #--------------------------------------------------------------------------
 

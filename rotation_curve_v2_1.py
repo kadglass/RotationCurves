@@ -41,7 +41,7 @@ from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 import astropy.units as u
 
-from rotation_curve_v2_1_functions import find_rot_curve, put_data_in_QTable
+from rotation_curve_v2_1_functions import build_mask, find_rot_curve, put_data_in_QTable
 from rotation_curve_v2_1_plottingFunctions import plot_vband_image, plot_Ha_vel, plot_rot_curve, plot_mass_curve, plot_diagnostic_panel
 
 
@@ -114,10 +114,18 @@ def extract_data( file_name):
 
     manga_plate = org_hdr['PLATEID']
     manga_fiberID = org_hdr['IFUDSGN']
+
     gal_ra = org_hdr['OBJRA']
     gal_dec = org_hdr['OBJDEC']
 
-    return Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density, manga_plate, manga_fiberID, gal_ra, gal_dec
+    DRP_3D_quality = org_hdr['DRP3QUAL']
+    if DRP_3D_quality > 10000:
+        data_quality = False
+    else:
+        data_quality = True
+
+    return data_quality, Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density, \
+           manga_plate, manga_fiberID, gal_ra, gal_dec
 
 
 
@@ -247,36 +255,13 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     '''
 
     ###########################################################################
-    # Create a mask for the data arrays. Each of the boolean conditions are
-    #    explained below. The final mask is applied to all data arrays
-    #    extracted from the .fits file.
+    # Create a mask for the data arrays. The final mask is applied to all data 
+    # arrays extracted from the .fits file.
     #--------------------------------------------------------------------------
-    # Locate 0-values in Ha_vel_err array
-    Ha_vel_err_zero_boolean = Ha_vel_err == 0
+    mask_data = build_mask( Ha_vel_err, v_band, v_band_err, sMass_density)
 
-    # Locate np.nan values in Ha_vel_err array
-    Ha_vel_err_nan_boolean = np.isnan( Ha_vel_err)
-
-    # Combine 'Ha_vel_err_zero_boolean' and 'Ha_vel_err_nan_boolean'
-    Ha_vel_err_boolean = np.logical_or( Ha_vel_err_zero_boolean, Ha_vel_err_nan_boolean)
-
-    # Locate 0-values in v_band array
-    v_band_boolean = v_band == 0
-
-    # Locate 0-values in v_band_err array
-    v_band_err_boolean = v_band_err == 0
-
-    # Locate np.nan values in sMass_density array
-    sMass_density_boolean = np.isnan( sMass_density)
-
-
-    # masking condition that combines all the above booleans
-    mask_data_a = np.logical_or( Ha_vel_err_boolean, v_band_boolean)
-    mask_data_b = np.logical_or( v_band_err_boolean, sMass_density_boolean)
-    mask_data = np.logical_or( mask_data_a, mask_data_b)
-
-    num_masked_spaxels = np.sum(mask_data) - np.sum(v_band_boolean)
-    frac_masked_spaxels = num_masked_spaxels/np.sum(np.logical_not(v_band_boolean))
+    num_masked_spaxels = np.sum(mask_data) - np.sum(v_band == 0)
+    frac_masked_spaxels = num_masked_spaxels/np.sum(np.logical_not(v_band == 0))
 
     masked_Ha_vel = ma.masked_where( mask_data, Ha_vel)
     masked_Ha_vel_err = ma.masked_where( mask_data, Ha_vel_err)

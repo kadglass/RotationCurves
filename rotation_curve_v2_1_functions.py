@@ -24,6 +24,88 @@ MANGA_FIBER_DIAMETER = 9.69627362219072E-06   # angular fiber diameter (2") in r
 ################################################################################
 
 
+def build_mask( Ha_vel_err, v_band, v_band_err, sMass_density):
+    '''
+    Build mask for galaxy.
+
+
+    Parameters:
+    ===========
+
+    Ha_vel_err : numpy ndarray of shape (n,n)
+        Errors in the Halpha velocity for each spaxel.
+
+    v_band : numpy ndarray of shape (n,n)
+        v-band flux values for each spaxel.
+
+    v_band_err : numpy ndarray of shape (n,n)
+        Errors in the v-band flux values for each spaxel.
+
+    sMass_density : numpy ndarray of shape (n,n)
+        Stellar mass density estimates for each spaxel.
+
+
+    Returns:
+    ========
+
+    mask : numpy boolean ndarray of shape (n,n)
+        Spaxels with true values are masked.
+    '''
+
+
+    ############################################################################
+    # Mask all spaxels with errors in the Halpha velocity equal to 0 or NaN
+    #---------------------------------------------------------------------------
+    # Locate 0-values in Ha_vel_err array
+    Ha_vel_err_zero_boolean = Ha_vel_err == 0
+
+    # Locate np.nan values in Ha_vel_err array
+    Ha_vel_err_nan_boolean = np.isnan( Ha_vel_err)
+
+    # Combine 'Ha_vel_err_zero_boolean' and 'Ha_vel_err_nan_boolean'
+    Ha_vel_err_boolean = np.logical_or( Ha_vel_err_zero_boolean, Ha_vel_err_nan_boolean)
+    ############################################################################
+
+
+    ############################################################################
+    # Mask all spaxels with 0 flux or flux error in the v-band
+    #---------------------------------------------------------------------------
+    # Locate 0-values in v_band array
+    v_band_zero_boolean = v_band == 0
+
+    # Locate 0-values in v_band_err array
+    v_band_err_boolean = v_band_err == 0
+
+    v_band_boolean = np.logical_or( v_band_zero_boolean, v_band_err_boolean)
+    ############################################################################
+
+
+    ############################################################################
+    # Mask all spaxels with NaN values in the stellar mass density estimate
+    #---------------------------------------------------------------------------
+    # Locate np.nan values in sMass_density array
+    sMass_density_boolean = np.isnan( sMass_density)
+    ############################################################################
+
+
+    ############################################################################
+    # Combine all mask booleans
+    #---------------------------------------------------------------------------
+    mask_a = np.logical_or( Ha_vel_err_boolean, v_band_boolean)
+    mask = np.logical_or( mask_a, sMass_density_boolean)
+    ############################################################################
+
+    return mask
+
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
 
 def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel, 
                     masked_Ha_vel_err, masked_sMass_density, optical_center, 

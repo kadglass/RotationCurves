@@ -158,7 +158,8 @@ nsa_fiberID_all = nsa_catalog[1].data['FIBERID']
 nsa_mjd_all = nsa_catalog[1].data['MJD']
 nsaID_all = nsa_catalog[1].data['NSAID']
 if nsa_catalog_filename[-6] == '1':
-    nsa_mStar_all = nsa_catalog[1].data['SERSIC_MASS']
+    #nsa_mStar_all = nsa_catalog[1].data['SERSIC_MASS']
+    nsa_mStar_all = nsa_catalog[1].data['ELPETRO_LOGMASS']
 else:
     nsa_mStar_all = nsa_catalog[1].data['MASS']
 
@@ -221,7 +222,7 @@ for i in range( len( files)):
     ###########################################################################
     # Extract the necessary data from the .fits file.
     #--------------------------------------------------------------------------
-    Ha_vel, Ha_vel_error, v_band, v_band_err, sMass_density, \
+    good_galaxy, Ha_vel, Ha_vel_error, v_band, v_band_err, sMass_density, 
     manga_plate, manga_fiberID, gal_ra, gal_dec = extract_data( file_name)
     print( gal_ID, " EXTRACTED")
     ###########################################################################
@@ -278,38 +279,39 @@ for i in range( len( files)):
     nsaID_master[i] = nsaID
     ###########################################################################
     
-    '''
-    ###########################################################################
-    # Extract rotation curve data for the .fits file in question and create an
-    #    astropy Table containing said data.
-    #--------------------------------------------------------------------------
-    rot_data_table, gal_stat_table, num_masked_gal = calc_rot_curve( Ha_vel, 
-                                                                     Ha_vel_error, 
-                                                                     v_band, 
-                                                                     v_band_err, 
-                                                                     sMass_density, 
-                                                                     axes_ratio, 
-                                                                     phi_EofN_deg, 
-                                                                     z, gal_ID, 
-                                                                     #IMAGE_DIR, 
-                                                                     #IMAGE_FORMAT, 
-                                                                     num_masked_gal=num_masked_gal)
-    print(gal_ID, " ROT CURVE CALCULATED")
-    ###########################################################################
-    '''
-    '''
-    ###########################################################################
-    # Write the rotation curve data to a text file in ascii format.
-    #
-    # IMPORTANT: rot_curve_main.py writes the data files into the default
-    #            folder 'rot_curve_data_files'. It also saves the file with the
-    #            default extension '_rot_curve_data'.
-    #--------------------------------------------------------------------------
-    write_rot_curve( rot_data_table, gal_stat_table, gal_ID, ROT_CURVE_MASTER_FOLDER)
+    
+    if good_galaxy:
+        ########################################################################
+        # Extract rotation curve data for the .fits file in question and create 
+        # an astropy Table containing said data.
+        #-----------------------------------------------------------------------
+        rot_data_table, gal_stat_table, num_masked_gal = calc_rot_curve( Ha_vel, 
+                                                                         Ha_vel_error, 
+                                                                         v_band, 
+                                                                         v_band_err, 
+                                                                         sMass_density, 
+                                                                         axes_ratio, 
+                                                                         phi_EofN_deg, 
+                                                                         z, gal_ID, 
+                                                                         #IMAGE_DIR, 
+                                                                         #IMAGE_FORMAT, 
+                                                                         num_masked_gal=num_masked_gal)
+        print(gal_ID, " ROT CURVE CALCULATED")
+        ########################################################################
+    
+    
+        ########################################################################
+        # Write the rotation curve data to a text file in ascii format.
+        #
+        # IMPORTANT: rot_curve_main.py writes the data files into the default
+        #            folder 'rot_curve_data_files'. It also saves the file with 
+        #            the default extension '_rot_curve_data'.
+        #-----------------------------------------------------------------------
+        write_rot_curve( rot_data_table, gal_stat_table, gal_ID, ROT_CURVE_MASTER_FOLDER)
 
-    print(gal_ID, " WRITTEN")
-    ###########################################################################
-    '''
+        print(gal_ID, " WRITTEN")
+        ########################################################################
+    
     '''
     ###########################################################################
     # Clock the current iteration and append the time to 'iteration_times'
@@ -319,8 +321,7 @@ for i in range( len( files)):
     print("ITERATION TIME:", iteration_end)
     iteration_times.append( iteration_end.total_seconds())
     ###########################################################################
-    '''
-    '''
+    
     print('Loop number:', loop_num)
     print('manga_data_release_master length:', len(manga_data_release_master), len(pickle.dumps(manga_data_release_master)))
     print('manga_plate_master length:', len(manga_plate_master), len(pickle.dumps(manga_plate_master)))

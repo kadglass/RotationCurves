@@ -13,10 +13,10 @@ from extract_abundance_v1 import match_abundance
 ###############################################################################
 # User inputs
 #------------------------------------------------------------------------------
-method = 'O3N2'
+method = None
 
-#ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
-ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Programs/MartiniMethods/comp_Z_Martini_' + method + '_kias1033_5_Martini_MPAJHU_flux_oii_dustCorr.txt'
+ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
+#ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Programs/MartiniMethods/comp_Z_Martini_' + method + '_kias1033_5_Martini_MPAJHU_flux_oii_dustCorr.txt'
 
 MASTER_FILE_NAME = 'master_file_vflag_10.txt'
 ###############################################################################

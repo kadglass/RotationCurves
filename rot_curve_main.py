@@ -222,8 +222,8 @@ for i in range( len( files)):
     ###########################################################################
     # Extract the necessary data from the .fits file.
     #--------------------------------------------------------------------------
-    good_galaxy, Ha_vel, Ha_vel_error, v_band, v_band_err, sMass_density, 
-    manga_plate, manga_fiberID, gal_ra, gal_dec = extract_data( file_name)
+    galaxy_target, good_galaxy, Ha_vel, Ha_vel_error, v_band, v_band_err, 
+    sMass_density, manga_plate, manga_fiberID, gal_ra, gal_dec = extract_data( file_name)
     print( gal_ID, " EXTRACTED")
     ###########################################################################
     
@@ -280,7 +280,7 @@ for i in range( len( files)):
     ###########################################################################
     
     
-    if good_galaxy:
+    if galaxy_target and good_galaxy:
         ########################################################################
         # Extract rotation curve data for the .fits file in question and create 
         # an astropy Table containing said data.

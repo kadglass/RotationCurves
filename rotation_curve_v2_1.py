@@ -118,14 +118,17 @@ def extract_data( file_name):
     gal_ra = org_hdr['OBJRA']
     gal_dec = org_hdr['OBJDEC']
 
+    target_galaxy = True
+    MaNGA_galaxy_target = org_hdr['MNGTARG1']
+    if MaNGA_galaxy_target == 0:
+        target_galaxy = False
+
+    data_quality = True
     DRP_3D_quality = org_hdr['DRP3QUAL']
     if DRP_3D_quality > 10000:
-        data_quality = False
-    else:
-        data_quality = True
 
-    return data_quality, Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density, \
-           manga_plate, manga_fiberID, gal_ra, gal_dec
+    return target_galaxy, data_quality, Ha_vel, Ha_vel_err, v_band, v_band_err, \
+           sMass_density, manga_plate, manga_fiberID, gal_ra, gal_dec
 
 
 

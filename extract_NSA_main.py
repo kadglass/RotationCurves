@@ -26,10 +26,11 @@ from extract_NSA_functions import galaxies_dict
 
 
 # File name of data to be matched
-data_filename = 'master_file_vflag_10.txt'
+#data_filename = 'master_file_vflag_10.txt'
+data_filename = 'master_file_vflag_10_smooth2-27.txt'
 
 # File name of NSA catalog
-NSA_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/nsa_v1_0_1.fits'
+NSA_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
 
 
 ################################################################################
@@ -58,6 +59,7 @@ NSA_data = NSA_table[1].data
 
 
 data_table['rabsmag'] = np.zeros(N)
+data_table['u_r'] = -99.*np.ones(N)
 
 
 
@@ -97,6 +99,10 @@ for i in range(len(data_table)):
         '''
         absmag_array = NSA_data['ELPETRO_ABSMAG'][ref_dict[galaxy_ID]]
         data_table['rabsmag'][i] = absmag_array[4] # SDSS r-band
+
+        # Array of petrosian flux values for this galaxy (FNugriz)
+        flux_array = NSA_data['ELPETRO_FLUX'][ref_dict[galaxy_ID]]
+        data_table['u_r'][i] = -2.5*np.log10(flux_array[2]/flux_array[4])
     else:
         N_missing += 1
 

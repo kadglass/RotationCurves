@@ -15,6 +15,7 @@ import math
 H_0 = 100 * (u.km / ( u.s * u.Mpc))  # Hubble's Constant in units of km /s /Mpc
 
 MANGA_FIBER_DIAMETER = 9.69627362219072E-06   # angular fiber diameter (2") in radians
+MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180) # spaxel size (0.5") in radians
 ################################################################################
 
 
@@ -188,9 +189,8 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
 
     ############################################################################
     # Find the first data point along the galaxy's semi-major axis where
-    #    'v_band' equals zero, therefore finding the point to signal to 
-    #    stop collecting data for the rotation curve. Set this point to 
-    #    -999 as a flag.
+    # 'v_band' equals zero, therefore finding the point to signal to stop
+    # collecting data for the rotation curve. Set this point to -999 as a flag.
     #---------------------------------------------------------------------------
     v_band = flag_data_ends( v_band, phi_EofN_deg, optical_center)
     ############################################################################
@@ -198,12 +198,13 @@ def find_rot_curve( z, mask_data, v_band, v_band_err, Ha_vel, masked_Ha_vel,
 
     ############################################################################
     # Convert pixel distance to physical distances in units of both
-    #    kiloparsecs and centimeters.
+    # kiloparsecs and centimeters.
     #---------------------------------------------------------------------------
     dist_to_galaxy_kpc = ( z * const.c.to('km/s') / H_0).to('kpc')
     #dist_to_galaxy_kpc_err = np.sqrt( (const.c.to('km/s') / H_0)**2 * zdist_err**2 )
 
-    pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_FIBER_DIAMETER)
+    pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_SPAXEL_SIZE)
+    #pix_scale_factor = dist_to_galaxy_kpc * np.tan( MANGA_FIBER_DIAMETER)
     #pix_scale_factor_err = np.sqrt( ( np.tan( MANGA_FIBER_DIAMETER))**2 * dist_to_galaxy_kpc_err)
 
     '''

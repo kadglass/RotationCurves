@@ -9,7 +9,7 @@ Estimate the mass of elliptical galaxies
 #
 #-------------------------------------------------------------------------------
 
-from read_data import read_master_file
+from elliptical_mass_function import elliptical_masses
 
 ################################################################################
 

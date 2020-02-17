@@ -2,11 +2,61 @@
 ################################################################################
 # Import modules
 #-------------------------------------------------------------------------------
-from read_data import read_master_file
+import numpy as np
+
+from IO_data import read_master_file
 ################################################################################
 
 
 
+################################################################################
+#-------------------------------------------------------------------------------
+def build_galaxy_IDs(galaxy_ID, master_filename):
+    '''
+    Build a list of galaxy ID tuples to be analayzed.
+
+
+    PARAMETERS
+    ==========
+
+    galaxy_ID : string
+        Identifies what is to be analyzed.  If 'all', then analyze all 
+        elliptical galaxies.  If not 'all', then is a single 'plate-fiberID' 
+        galaxy combination.
+
+    master_filename : string
+        File name of master data table containing all MaNGA galaxies, their 
+        NSA data, and additional calculated parameters.
+
+
+    RETURNS
+    =======
+
+    galaxy_ID_list : length-N list of tuples
+        List of (plate, fiberID) combinations for the galaxies to be analyzed. 
+    '''
+
+
+    if galaxy_ID is 'all':
+        # Analyze all the elliptical galaxies in MaNGA
+
+        elliptical_IDs = find_ellipticals(master_filename)
+
+    else:
+        # Analyze the single elliptical galaxy identified in galaxy_ID
+
+        plate, fiberID = galaxy_ID.split('-')
+
+        elliptical_IDs = [(plate, fiberID)]
+
+
+    return elliptical_IDs
+################################################################################
+
+
+
+################################################################################
+#-------------------------------------------------------------------------------
 def find_ellipticals(master_filename):
     '''
     Find the elliptical galaxies in the master data table.  Elliptical galaxies 
@@ -63,4 +113,83 @@ def find_ellipticals(master_filename):
     ############################################################################
 
     return elliptical_IDs
+################################################################################
 
+
+
+################################################################################
+#-------------------------------------------------------------------------------
+def build_galaxy_dict(data_table):
+    '''
+    Create dictionary of galaxy IDs and their indices in the data table.
+
+
+    PARAMETERS
+    ==========
+
+    data_table : length-N astropy table
+        Table of galaxies.  Required columns are 'MaNGA_plate' and 
+        'MaNGA_fiberID'
+
+
+    RETURNS
+    =======
+
+    galaxy_dict : length-N dictionary
+        Dictionary of (plate, fiberID) keys with a value of the row index 
+        for indexing into data_table.
+    '''
+
+
+    galaxy_dict = {}
+
+    for idx, (plate, fiberID) in enumerate(zip(data_table['MaNGA_plate'], data_table['MaNGA_fiberID'])):
+
+        galaxy_dict[(plate, fiberID)] = idx
+
+    return galaxy_dict
+################################################################################
+
+
+
+
+################################################################################
+#-------------------------------------------------------------------------------
+def find_Mstar(data_table, ID):
+    '''
+    Find stellar mass value in data table
+
+
+    PARAMETERS
+    ==========
+
+    data_table : fits table
+        Data table with stellar mass values, plate-ifu IDs
+
+    ID : length-2 tuple
+        (plate, fiberID) of querying galaxy
+
+
+    RETURNS
+    =======
+
+    Mstar : float
+        Stellar mass of galaxy
+    '''
+
+
+    ############################################################################
+    # Find galaxy in table
+    #---------------------------------------------------------------------------
+    idx_boolean = data_table['plateifu'] == '-'.join(ID)
+    ############################################################################
+
+
+    ############################################################################
+    # Extract stellar mass from table
+    #---------------------------------------------------------------------------
+    Mstar = data_table['nsa_elpetro_mass'][idx_boolean]
+    ############################################################################
+
+    return Mstar
+################################################################################

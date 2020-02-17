@@ -4,21 +4,18 @@ Estimate the mass of elliptical galaxies
 
 
 ################################################################################
-#
 # IMPORT MODULES
-#
 #-------------------------------------------------------------------------------
 
-from elliptical_mass_function import elliptical_masses
+from elliptical_functions import FaberJackson
+#from elliptical_functions import elliptical_masses
 
 ################################################################################
 
 
 
 ################################################################################
-#
 # DATA FILENAMES
-#
 #-------------------------------------------------------------------------------
 
 filename_master = 'master_file_vflag_10_smooth2-27_N2O2_noWords.txt'
@@ -30,7 +27,6 @@ data_directory = '/Users/kellydouglass/Documents/Research/Rotation_Curves/Rotati
 
 
 ################################################################################
-#
 # GALAXIES TO ANALYZE
 #
 # Select the individual galaxy to analyze.  If the galaxy ID number is set to 
@@ -44,9 +40,10 @@ galaxy_ID = 'all'
 
 
 ################################################################################
-#
 # ANALYZE GALAXIES
-#
 #-------------------------------------------------------------------------------
 
-elliptical_masses(filename_master, data_directory, galaxy_ID)
+FaberJackson(galaxy_ID, data_directory, filename_master)
+#elliptical_masses(galaxy_ID, data_directory, filename_master)
+
+################################################################################

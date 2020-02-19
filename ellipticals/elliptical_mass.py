@@ -18,9 +18,9 @@ from elliptical_functions import FaberJackson
 # DATA FILENAMES
 #-------------------------------------------------------------------------------
 
-filename_master = 'master_file_vflag_10_smooth2-27_N2O2_noWords.txt'
+filename_master = '../master_file_vflag_10_smooth2-27_N2O2_noWords.txt'
 
-data_directory = '/Users/kellydouglass/Documents/Research/Rotation_Curves/RotationCurves/manga_files/MaNGA_DR16/HYB10-GAU-MILESHC/'
+data_directory = '/Users/kellydouglass/Documents/Research/Rotation_Curves/RotationCurves/data/MaNGA/MaNGA_DR16/HYB10-GAU-MILESHC/'
 
 ################################################################################
 

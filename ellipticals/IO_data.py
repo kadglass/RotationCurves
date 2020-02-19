@@ -11,8 +11,6 @@ from astropy.table import Table
 
 import numpy as np
 import numpy.ma as ma
-
-from parse_data import build_galaxy_dict
 ################################################################################
 
 
@@ -41,7 +39,7 @@ def read_master_file(filename):
         Astropy table of the master file
     '''
 
-    master_table = Table.read(filename)
+    master_table = Table.read(filename, format='ascii.commented_header')
 
     return master_table
 ################################################################################
@@ -78,12 +76,47 @@ def construct_filename(galaxy_ID, data_directory):
 
     plate, fiberID = galaxy_ID
 
-    cube_filename = data_directory + plate + '/manga-' + plate + '-' + fiberID 
-                    + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+    cube_filename = data_directory + plate + '/manga-' + plate + '-' + fiberID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
 
     return cube_filename
 ################################################################################
 
+
+
+
+
+################################################################################
+#-------------------------------------------------------------------------------
+def build_galaxy_dict(data_table):
+    '''
+    Create dictionary of galaxy IDs and their indices in the data table.
+
+
+    PARAMETERS
+    ==========
+
+    data_table : length-N astropy table
+        Table of galaxies.  Required columns are 'MaNGA_plate' and 
+        'MaNGA_fiberID'
+
+
+    RETURNS
+    =======
+
+    galaxy_dict : length-N dictionary
+        Dictionary of (plate, fiberID) keys with a value of the row index 
+        for indexing into data_table.
+    '''
+
+
+    galaxy_dict = {}
+
+    for idx, (plate, fiberID) in enumerate(zip(data_table['MaNGA_plate'], data_table['MaNGA_fiberID'])):
+
+        galaxy_dict[(plate, fiberID)] = idx
+
+    return galaxy_dict
+################################################################################
 
 
 
@@ -99,10 +132,10 @@ def write_masses(masses, IDs, master_filename):
     PARAMETERS
     ==========
 
-    masses : numpy array of shape (N,)
-        Array of galaxy masses, mass ratios, and associated errors.
+    masses : astropy table of length N
+        Table of galaxy masses, ratios, and associated errors.
 
-    IDs : list of length-2 tuples
+    IDs : length-N list of length-2 tuples
         List of (plate, IFU) galaxy IDs.  Length is the same as N, such that 
         masses[i] is the mass of galaxy IDs[i].
 

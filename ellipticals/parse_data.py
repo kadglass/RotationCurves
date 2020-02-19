@@ -117,47 +117,13 @@ def find_ellipticals(master_filename):
 
 
 
-################################################################################
-#-------------------------------------------------------------------------------
-def build_galaxy_dict(data_table):
-    '''
-    Create dictionary of galaxy IDs and their indices in the data table.
-
-
-    PARAMETERS
-    ==========
-
-    data_table : length-N astropy table
-        Table of galaxies.  Required columns are 'MaNGA_plate' and 
-        'MaNGA_fiberID'
-
-
-    RETURNS
-    =======
-
-    galaxy_dict : length-N dictionary
-        Dictionary of (plate, fiberID) keys with a value of the row index 
-        for indexing into data_table.
-    '''
-
-
-    galaxy_dict = {}
-
-    for idx, (plate, fiberID) in enumerate(zip(data_table['MaNGA_plate'], data_table['MaNGA_fiberID'])):
-
-        galaxy_dict[(plate, fiberID)] = idx
-
-    return galaxy_dict
-################################################################################
-
-
 
 
 ################################################################################
 #-------------------------------------------------------------------------------
-def find_Mstar(data_table, ID):
+def find_data_DRPall(data_table, ID, field_name):
     '''
-    Find stellar mass value in data table
+    Find field_name value in data table
 
 
     PARAMETERS
@@ -169,12 +135,15 @@ def find_Mstar(data_table, ID):
     ID : length-2 tuple
         (plate, fiberID) of querying galaxy
 
+    field_name : string
+        Data field from which to extract value
+
 
     RETURNS
     =======
 
-    Mstar : float
-        Stellar mass of galaxy
+    data_value : float
+        field_name value of galaxy
     '''
 
 
@@ -186,10 +155,10 @@ def find_Mstar(data_table, ID):
 
 
     ############################################################################
-    # Extract stellar mass from table
+    # Extract field_name value from table
     #---------------------------------------------------------------------------
-    Mstar = data_table['nsa_elpetro_mass'][idx_boolean]
+    data_value = data_table[field_name][idx_boolean]
     ############################################################################
 
-    return Mstar
+    return data_value
 ################################################################################

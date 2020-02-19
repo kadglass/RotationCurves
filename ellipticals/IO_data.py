@@ -9,6 +9,9 @@ Functions to read in data
 from astropy.io import fits
 from astropy.table import Table
 
+import numpy as np
+import numpy.ma as ma
+
 from parse_data import build_galaxy_dict
 ################################################################################
 
@@ -202,3 +205,16 @@ def open_map(cube_filename, map_name):
         mStar_sigma = ma.array(star_sigma, mask=cube[star_sigma_mask_extension].data>0)
 
         masked_map = ma.masked_invalid(mStar_sigma)
+    #---------------------------------------------------------------------------
+    # Extract average r-band image
+    #---------------------------------------------------------------------------
+    elif map_name is 'SPX_MFLUX':
+
+        # Data
+        r_band = cube['SPX_MFLUX']
+
+        # Mask
+        masked_map = ma.masked_equal(r_band, 0)
+    ############################################################################
+
+    return masked_map

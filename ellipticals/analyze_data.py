@@ -2,10 +2,12 @@
 # IMPORT MODULES
 #-------------------------------------------------------------------------------
 import numpy as np
+import numpy.ma as ma
 
 from astropy.io import fits
 
 from IO_data import construct_filename, open_map
+from plot_data import FJ_plot
 ################################################################################
 
 
@@ -55,7 +57,15 @@ def plot_FaberJackson(IDs, directory):
 
 		Mstar[i] = find_Mstar(DRPall_table, galaxy)
 
-		vel_disp[i] = find_veldisp(galaxy, directory)
+		vel_disp[i] = find_veldisp(galaxy, directory, 'median')
+	############################################################################
+
+
+	############################################################################
+	# Plot Faber-Jackson relation
+	#---------------------------------------------------------------------------
+	FJ_plot(Mstar, vel_disp, 'median')
+	############################################################################
 ################################################################################
 
 
@@ -64,7 +74,7 @@ def plot_FaberJackson(IDs, directory):
 
 ################################################################################
 #-------------------------------------------------------------------------------
-def find_veldisp(ID, directory):
+def find_veldisp(ID, directory, disp):
 	'''
 	Extract galaxy velocity dispersion from stellar velocity dispersion map.
 
@@ -77,6 +87,11 @@ def find_veldisp(ID, directory):
 
 	directory : string
 		Path to where data lives on local machine
+
+	disp : string
+		Location / type of velocity dispersion.  Options include:
+		- 'median'  : returns the median value of the velocity dispersion map
+		- 'central' : returns the central value of the velocity dispersion map
 
 
 	RETURNS
@@ -95,20 +110,40 @@ def find_veldisp(ID, directory):
 
 
 	############################################################################
-	# Import the masked velocity dispersion map
+	# Import the masked velocity dispersion map, masked r-band image
 	#---------------------------------------------------------------------------
 	vel_disp_map = open_map(cube_filename, 'STELLAR_SIGMA')
+
+	r_band_image = open_map(cube_filename, 'SPX_MFLUX')
 	############################################################################
 
 
+	if disp is 'median':
+		########################################################################
+		# Find the median velocity dispersion of the stellar velocity dispersion 
+		# map.
+		#-----------------------------------------------------------------------
+		vel_disp = ma.median(vel_disp_map)
+		########################################################################
+
+	else:
+		########################################################################
+		# Find the central velocity dispersion of the galaxy
+		#
+		# Center of galaxy is defined as the spaxel with the maximum luminosity
+		#-----------------------------------------------------------------------
+		center_spaxel = np.unravel_index(ma.argmax(r_band_image, axis=None), 
+										 r_band_image.shape)
+
+		vel_disp = vel_disp_map[center_spaxel]
+		########################################################################
+
+	'''
 	############################################################################
-	# Find the median velocity dispersion of the stellar velocity dispersion 
-	# map.
+	# Convert from km/s to m/s
 	#---------------------------------------------------------------------------
+	vel_disp_mpers = vel_disp*1000
 	############################################################################
+	'''
 
-
-	############################################################################
-	# Find the central velocity dispersion of the galaxy
-	#---------------------------------------------------------------------------
-	############################################################################
+	return vel_disp

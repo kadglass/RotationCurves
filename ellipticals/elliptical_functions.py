@@ -12,7 +12,11 @@ from IO_data import write_masses
 
 ################################################################################
 #-------------------------------------------------------------------------------
-def FaberJackson(galaxy_ID, data_directory, master_filename):
+def FaberJackson(galaxy_ID, 
+                 data_directory, 
+                 master_filename, 
+                 sigma_type, 
+                 save_fig=False):
     '''
     Plot the Faber-Jackson relation for the galaxies in galaxy_ID.
 
@@ -32,6 +36,15 @@ def FaberJackson(galaxy_ID, data_directory, master_filename):
         File name of the master table.  This table is a list of all the MaNGA
         galaxies, along with their associated NSA data and other parameters 
         previously calculated by us.
+
+    sigma_type : string
+        Location / type of velocity dispersion.  Options include:
+        - 'median'  : returns the median value of the velocity dispersion map
+        - 'central' : returns the central value of the velocity dispersion map
+
+    save_fig : boolean
+        Determines wether or not to save the figure.  Default is False (do not 
+        save).
     '''
 
 
@@ -45,7 +58,7 @@ def FaberJackson(galaxy_ID, data_directory, master_filename):
     ############################################################################
     # Plot the Faber-Jackson relation
     #---------------------------------------------------------------------------
-    plot_FaberJackson(elliptical_IDs, data_directory)
+    plot_FaberJackson(elliptical_IDs, data_directory, sigma_type, save_fig)
     ############################################################################
 ################################################################################
 
@@ -79,7 +92,7 @@ def elliptical_masses(galaxy_ID, data_directory, master_filename):
     ############################################################################
     # Create list of tuples of elliptical galaxy ID(s) to be analyzed
     #---------------------------------------------------------------------------
-    elliptical_IDs = build_galaxY_IDs(galaxy_ID, master_filename)
+    elliptical_IDs = build_galaxy_IDs(galaxy_ID, master_filename)
     ############################################################################
 
 

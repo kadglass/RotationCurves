@@ -55,6 +55,103 @@ def build_galaxy_IDs(galaxy_ID, master_filename):
 
 
 
+
+
+
+################################################################################
+#-------------------------------------------------------------------------------
+def remove_plate(master_table, master_boolean, plate, IFU_keep=-1, IFU_remove=-1):
+    '''
+    Remove objects from plate
+    
+    These objects were not analyzed with the DRP pipeline, but were analyzed in 
+    the pipe3d pipeline.
+
+
+    PARAMETERS
+    ==========
+
+    master_table : astropy table of length N
+        Table of galaxy data
+
+    master_boolean : numpy boolean array of shape (N,)
+        Array of boolean values marking galaxies to be analayzed.  True values
+        correspond to galaxies that will eventually be analyzed.
+
+    plate : integer
+        MaNGA plate number to remove from sample
+
+    IFU_keep : integer
+        MaNGA IFU number of plate to keep.  If IFU_keep == -1 (default), then 
+        remove all objects on that plate.
+
+    IFU_remove : integer
+        MaNGA IFU number of plate to remove.  If IFU_remove == -1 (default), 
+        then remove all objects on that plate.
+
+
+    RETURNS
+    =======
+
+    analyze_boolean : numpy boolean array of shape (N,)
+        master_boolean with those galaxies matching plate but NOT IFU_keep set 
+        to False (so that they will not be analyzed).
+    '''
+
+
+    ############################################################################
+    # Only remove one galaxy
+    #---------------------------------------------------------------------------
+    if IFU_remove > 0:
+
+        plate_boolean = master_table['MaNGA_plate'] == plate
+        IFU_boolean = master_table['MaNGA_fiberID'] == IFU_remove
+
+        remove_boolean = np.logical_and(plate_boolean, IFU_boolean)
+        remove_boolean = np.logical_not(remove_boolean)
+    ############################################################################
+
+    else:
+
+        ########################################################################
+        # Remove entire plate
+        #-----------------------------------------------------------------------
+        remove_boolean = master_table['MaNGA_plate'] != plate
+        ########################################################################
+
+
+        ########################################################################
+        # Keep one of the objects in the plate
+        #-----------------------------------------------------------------------
+        if IFU_keep > 0:
+
+            # Invert plate_boolean array
+            plate_boolean = np.logical_not(remove_boolean)
+
+            IFU_boolean = master_table['MaNGA_fiberID'] == IFU_keep
+
+            # Locate which galaxy (plate-IFU_keep) to keep
+            keep_plate_boolean = np.logical_and(plate_boolean, IFU_boolean)
+
+            # switch plate-IFU_keep galaxy to True (so that it will be analyzed)
+            remove_boolean[keep_plate_boolean] = True
+        ########################################################################
+
+
+    ############################################################################
+    # Update master boolean
+    #---------------------------------------------------------------------------
+    analyze_boolean = np.logical_and(master_boolean, remove_boolean)
+    ############################################################################
+
+    return analyze_boolean
+################################################################################
+
+
+
+
+
+
 ################################################################################
 #-------------------------------------------------------------------------------
 def find_ellipticals(master_filename):
@@ -99,6 +196,22 @@ def find_ellipticals(master_filename):
                                           avg_chi2_boolean])
 
     elliptical_boolean = np.logical_and(smooth_boolean, chi2_boolean)
+    ############################################################################
+
+
+    ############################################################################
+    # Remove objects that were not analyzed with the DRP pipeline, but were 
+    # analyzed in the pipe3d pipeline.
+    #---------------------------------------------------------------------------
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 7443, IFU_remove=3703)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 7444)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 8140, IFU_remove=6101)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 8479, IFU_keep=3703)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 8480, IFU_keep=3701)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 8953, IFU_keep=3702)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 8993, IFU_remove=1901)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 9051, IFU_keep=6103)
+    elliptical_boolean = remove_plate(master_table, elliptical_boolean, 9888, IFU_remove=9102)
     ############################################################################
 
 

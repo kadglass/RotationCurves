@@ -244,7 +244,7 @@ def open_map(cube_filename, map_name):
     elif map_name is 'SPX_MFLUX':
 
         # Data
-        r_band = cube['SPX_MFLUX']
+        r_band = cube['SPX_MFLUX'].data
 
         # Mask
         masked_map = ma.masked_equal(r_band, 0)

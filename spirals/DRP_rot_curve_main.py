@@ -77,8 +77,8 @@ else:
     if LOCAL_PATH == '':
         LOCAL_PATH = '.'
 
-    IMAGE_DIR = LOCAL_PATH + '/images/'
-    MANGA_FOLDER = LOCAL_PATH + '/manga_files/MaNGA_DR15/'
+    IMAGE_DIR = LOCAL_PATH + '/Images/'
+    MANGA_FOLDER = LOCAL_PATH + '../data/MaNGA/MaNGA_DR16/HYB10-GAU-MILESHC/'
     ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files/'
 
 # Create output directories if they do not already exist
@@ -92,18 +92,19 @@ if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
 ###############################################################################
 # Import functions from 'rotation_curve_vX_X.'
 #------------------------------------------------------------------------------
-from rotation_curve_v2_1 import extract_data, \
-                                match_to_NSA, \
-                                calc_rot_curve, \
-                                write_rot_curve, \
-                                write_master_file
+from rotation_curve import extract_data, \
+                           match_to_NSA, \
+                           calc_rot_curve, \
+                           write_rot_curve, \
+                           write_master_file
 ###############################################################################
 
 if RUN_ALL_GALAXIES:
     ###########################################################################
     # Create list of .fits file names to extract a rotation curve from.
     #--------------------------------------------------------------------------
-    files = glob.glob( MANGA_FOLDER + '*/manga-*.Pipe3D.cube.fits.gz')
+    #files = glob.glob( MANGA_FOLDER + '*/manga-*.Pipe3D.cube.fits.gz')
+    files = glob.glob( MANGA_FOLDER + '*/manga-*-MAPS-HYB10-GAU-MILESHC.fits.gz')
     ###########################################################################
 
 
@@ -116,7 +117,7 @@ else:
 
     for file_name in FILE_IDS:
         [plate, fiberID] = file_name.split('-')
-        files.append( MANGA_FOLDER + plate + '/manga-' + file_name + '.Pipe3D.cube.fits.gz')
+        files.append( MANGA_FOLDER + plate + '/manga-' + file_name + '-MAPS-HYB10-GAU-MILESHC.fits.gz')
     ###########################################################################
 
 
@@ -128,6 +129,7 @@ N_files = len( files)
 ###############################################################################
 
 
+'''
 ###############################################################################
 # Open NASA-Sloan-Atlas (NSA) master catalog and extract the data structures
 #    for RA; DEC; the axes ratio of b/a (obtained via sersic fit); phi, the
@@ -167,6 +169,32 @@ nsa_catalog.close()
 
 catalog_coords = SkyCoord( ra=nsa_ra_all*u.degree, dec=nsa_dec_all*u.degree)
 ###############################################################################
+'''
+
+
+###############################################################################
+# Open DRPall master catalog and extract the data structures for RA; DEC; the 
+# axes ratio of b/a (obtained via elliptical sersic fit); phi, the angle of 
+# rotation in the two-dimensional, observational plane (obtained via elliptical 
+# sersic fit); the redshift; and the absolute magnitude in the r-band.
+#------------------------------------------------------------------------------
+if WORKING_IN_BLUEHIVE:
+    DRPall_filename = SCRATCH_PATH + '/drpall-v2_4_3.fits'
+else:
+    DRPall_filename = LOCAL_PATH + '../data/MaNGA/drpall-v2_4_3.fits'
+general_data = fits.open( DRPall_filename)
+
+plateIFU_all = general_data[1].data['plateifu']
+ra_all = general_data[1].data['objra']
+dec_all = general_data[1].data['objdec']
+z_all = general_data[1].data['nsa_z']
+axes_ratio_all = general_data[1].data['nsa_elpetro_ba']
+phi_EofN_deg_all = general_data[1].data['nsa_elpetro_phi']
+rabsmag_all = general_data[1].data['nsa_elpetro_absmag'][4] # SDSS r-band
+mStar_all = general_data[1].data['nsa_elpetro_mass']
+
+nsa_catalog.close()
+###############################################################################
 
 
 ###############################################################################
@@ -175,20 +203,20 @@ catalog_coords = SkyCoord( ra=nsa_ra_all*u.degree, dec=nsa_dec_all*u.degree)
 manga_plate_master = -1 * np.ones( N_files)
 manga_fiberID_master = -1 * np.ones( N_files)
 
-nsa_axes_ratio_master = -1. * np.ones( N_files)
-nsa_phi_master = -1. * np.ones( N_files)
-nsa_z_master = -1. * np.ones( N_files)
-#nsa_zdist_master = -1. * np.ones( N_files)
-#nsa_zdist_err_master = -1. * np.ones( N_files)
-nsa_mStar_master = -1. * np.ones( N_files)
-nsa_rabsmag_master = np.zeroes( N_files)
+axes_ratio_master = -1. * np.ones( N_files)
+phi_master = -1. * np.ones( N_files)
+z_master = -1. * np.ones( N_files)
+#zdist_master = -1. * np.ones( N_files)
+#zdist_err_master = -1. * np.ones( N_files)
+mStar_master = -1. * np.ones( N_files)
+rabsmag_master = np.zeroes( N_files)
 
-nsa_ra_master = -1. * np.ones( N_files)
-nsa_dec_master = -1. * np.ones( N_files)
-nsa_plate_master = -1 * np.ones( N_files)
-nsa_fiberID_master = -1 * np.ones( N_files)
-nsa_mjd_master = -1 * np.ones( N_files)
-nsaID_master = -1 * np.ones( N_files)
+ra_master = -1. * np.ones( N_files)
+dec_master = -1. * np.ones( N_files)
+#plate_master = -1 * np.ones( N_files)
+#fiberID_master = -1 * np.ones( N_files)
+#mjd_master = -1 * np.ones( N_files)
+#nsaID_master = -1 * np.ones( N_files)
 ###############################################################################
 
 '''
@@ -215,7 +243,7 @@ for i in range( len( files)):
     # file_id is a simplified string that identifies each file that is run
     #    through the algorithm. The file_id name scheme is [PLATE]-[FIBER ID].
     #--------------------------------------------------------------------------
-    gal_ID = file_name[ file_name.find('manga-') + 6 : file_name.find('.Pipe3D')]
+    gal_ID = file_name[ file_name.find('manga-') + 6 : file_name.find('-MAPS')]
     ###########################################################################
 
 
@@ -237,46 +265,45 @@ for i in range( len( files)):
     
 
     ###########################################################################
-    # Match the galaxy's RA and DEC from the to the NSA catalog index, and pull
-    # out the matched data from the NSA catalog.
+    # Find the galaxy in the DRPall file, and extract necessary information
     #--------------------------------------------------------------------------
-    nsa_gal_idx = match_to_NSA( gal_ra, gal_dec, catalog_coords)
+    DRPall_gal_idx = match_to_DRPall( gal_ID, plateIFU_all)
     print(gal_ID, " MATCHED")
 
-    axes_ratio = nsa_axes_ratio_all[ nsa_gal_idx]
-    phi_EofN_deg = nsa_phi_EofN_deg_all[ nsa_gal_idx] * u.degree
-    z = nsa_z_all[ nsa_gal_idx]
-    #zdist = nsa_zdist_all[ nsa_gal_idx]
-    #zdist_err = nsa_zdist_all_err[ nsa_gal_idx]
-    mStar = nsa_mStar_all[ nsa_gal_idx] * u.M_sun
-    rabsmag = nsa_absmag_all[ nsa_gal_idx][4] # SDSS r-band
+    axes_ratio = axes_ratio_all[ DRPall_gal_idx]
+    phi_EofN_deg = phi_EofN_deg_all[ DRPall_gal_idx] * u.degree
+    z = z_all[ DRPall_gal_idx]
+    #zdist = zdist_all[ DRPall_gal_idx]
+    #zdist_err = zdist_all_err[ DRPall_gal_idx]
+    mStar = mStar_all[ DRPall_gal_idx] * u.M_sun
+    rabsmag = rabsmag_all[ DPRall_gal_idx]
 
-    nsa_ra = nsa_ra_all[ nsa_gal_idx]
-    nsa_dec = nsa_dec_all[ nsa_gal_idx]
-    nsa_plate = nsa_plate_all[ nsa_gal_idx]
-    nsa_fiberID = nsa_fiberID_all[ nsa_gal_idx]
-    nsa_mjd = nsa_mjd_all[ nsa_gal_idx]
-    nsaID = nsaID_all[ nsa_gal_idx]
+    ra = ra_all[ DRPall_gal_idx]
+    dec = dec_all[ DRPall_gal_idx]
+    #nsa_plate = nsa_plate_all[ DRPall_gal_idx]
+    #nsa_fiberID = nsa_fiberID_all[ DRPall_gal_idx]
+    #nsa_mjd = nsa_mjd_all[ DRPall_gal_idx]
+    #nsaID = nsaID_all[ DRPall_gal_idx]
     ###########################################################################
 
     
     ###########################################################################
-    # Add the NSA catalog information to the master arrays.
+    # Add the DRPall catalog information to the master arrays.
     #--------------------------------------------------------------------------
-    nsa_axes_ratio_master[i] = axes_ratio
-    nsa_phi_master[i] = phi_EofN_deg / u.degree
-    nsa_z_master[i] = z
-    #nsa_zdist_master[i] = zdist
-    #nsa_zdist_err_master[i] = zdist_err
-    nsa_mStar_master[i] = mStar / u.M_sun
-    nsa_rabsmag_master[i] = rabsmag
+    axes_ratio_master[i] = axes_ratio
+    phi_master[i] = phi_EofN_deg / u.degree
+    z_master[i] = z
+    #zdist_master[i] = zdist
+    #zdist_err_master[i] = zdist_err
+    mStar_master[i] = mStar / u.M_sun
+    rabsmag_master[i] = rabsmag
 
-    nsa_ra_master[i] = nsa_ra
-    nsa_dec_master[i] = nsa_dec
-    nsa_plate_master[i] = nsa_plate
-    nsa_fiberID_master[i] = nsa_fiberID
-    nsa_mjd_master[i] = nsa_mjd
-    nsaID_master[i] = nsaID
+    ra_master[i] = nsa_ra
+    dec_master[i] = nsa_dec
+    #plate_master[i] = nsa_plate
+    #fiberID_master[i] = nsa_fiberID
+    #mjd_master[i] = nsa_mjd
+    #nsaID_master[i] = nsaID
     ###########################################################################
     
     
@@ -369,13 +396,13 @@ del iteration_clock_fig
 
 ###############################################################################
 # Build master file that contains identifying information for each galaxy
-#   as well as scientific information as taken from the NSA catalog.
+# as well as scientific information as taken from the DRPall catalog.
 #------------------------------------------------------------------------------
 write_master_file( manga_plate_master, manga_fiberID_master,
-                  nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
-                  nsaID_master, nsa_ra_master, nsa_dec_master,
-                  nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-                  nsa_mStar_master, nsa_rabsmag_master, 
+                  #nsa_plate_master, nsa_fiberID_master, nsa_mjd_master, nsaID_master, 
+                  ra_master, dec_master, z_master,
+                  axes_ratio_master, phi_master, 
+                  mStar_master, rabsmag_master, 
                   LOCAL_PATH)
 print("MASTER FILE WRITTEN")
 ###############################################################################

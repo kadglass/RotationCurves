@@ -7,8 +7,7 @@ Estimate the mass of elliptical galaxies
 # IMPORT MODULES
 #-------------------------------------------------------------------------------
 
-from elliptical_functions import FaberJackson
-#from elliptical_functions import elliptical_masses
+from elliptical_functions import FaberJackson, elliptical_masses
 
 ################################################################################
 
@@ -43,7 +42,7 @@ galaxy_ID = 'all'
 # ANALYZE GALAXIES
 #-------------------------------------------------------------------------------
 
-FaberJackson(galaxy_ID, data_directory, filename_master)
-#elliptical_masses(galaxy_ID, data_directory, filename_master)
+#FaberJackson(galaxy_ID, data_directory, filename_master, 'median', save=True)
+elliptical_masses(galaxy_ID, data_directory, filename_master)
 
 ################################################################################

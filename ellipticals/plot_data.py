@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 ################################################################################
 #-------------------------------------------------------------------------------
-def FJ_plot(M, sigma, sigma_type, save=False):
+def FJ_plot(M, sigma, sigma_type, save):
 	'''
 	Plot the Faber-Jackson relation.
 
@@ -31,20 +31,19 @@ def FJ_plot(M, sigma, sigma_type, save=False):
 
 	save : boolean
 		Flag to determine whether or not to save the figure.  Value of True 
-		saves the figure, while a value of False (default) only displays the 
-		figure.
+		saves the figure, while a value of False only displays the figure.
 	'''
 
 
 	plt.figure()
 
-	plt.plot(M, sigma)
+	plt.loglog(M, sigma, '.')
 
-	plt.xlabel('$M_*$ [$\log M_\odot$')
-	plt.ylabel(sigma_type + ' $\sigma_*$ [km/s]')
+	plt.xlabel('$M_*$ [$\log M_\odot$]')
+	plt.ylabel(sigma_type + ' $\log \sigma_*$ [km/s]')
 
 	if save:
-		plt.savefig('FJ_' + sigma_type + '.eps', format='eps', dpi=300)
+		plt.savefig('Images/FJ_' + sigma_type + '.eps', format='eps', dpi=300)
 
 	plt.show()
 ################################################################################

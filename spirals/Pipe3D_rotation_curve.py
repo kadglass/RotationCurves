@@ -284,14 +284,6 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     ###########################################################################
     # DIAGNOSTICS:
     #--------------------------------------------------------------------------
-    '''
-    #--------------------------------------------------------------------------
-    # Print the center of the galaxy as calculated from the most luminous
-    #    point.
-    #--------------------------------------------------------------------------
-    print("Center: (%d, %d)" % (x_center, y_center))
-    '''
-
     if IMAGE_DIR is not None:
         #----------------------------------------------------------------------
         # Plot visual-band image

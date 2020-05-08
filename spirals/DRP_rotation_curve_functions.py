@@ -66,7 +66,7 @@ def build_mask( Ha_vel_mask, sMass_density):
     ############################################################################
     # Combine mask arrays
     #---------------------------------------------------------------------------
-    mask = np.logical_and( Ha_vel_mask_boolean, sMass_density_boolean)
+    mask = np.logical_or( Ha_vel_mask_boolean, sMass_density_boolean)
     ############################################################################
 
     return mask
@@ -514,10 +514,10 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, mHa_vel,
         # difference in the rotational velocities, its error, and the total mass 
         # interior to that annulus along with its error.
         #-----------------------------------------------------------------------
-        avg_vel, avg_vel_err, rot_vel_diff, rot_vel_diff_err = calc_avg_vel( max_vel, 
-                                                                             min_vel, 
-                                                                             max_vel_ivar, 
-                                                                             min_vel_ivar)
+        avg_vel, avg_vel_err, vel_diff, vel_diff_err = calc_avg_vel( max_vel, 
+                                                                     min_vel, 
+                                                                     max_vel_ivar, 
+                                                                     min_vel_ivar)
 
         mass_interior, mass_interior_err = calc_mass_interior( avg_vel, 
                                                                avg_vel_err,
@@ -569,8 +569,8 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, mHa_vel,
         list_dict['min_vel_err'].append( 1/np.sqrt(min_vel_ivar.value))
         list_dict['avg_vel'].append( avg_vel.value)
         list_dict['avg_vel_err'].append( avg_vel_err.value)
-        list_dict['vel_diff'].append( rot_vel_diff.value)
-        list_dict['vel_diff_err'].append( rot_vel_diff_err.value)
+        list_dict['vel_diff'].append( vel_diff.value)
+        list_dict['vel_diff_err'].append( vel_diff_err.value)
 
         list_dict['M_tot'].append( mass_interior.value)
         list_dict['M_tot_err'].append( mass_interior_err.value)
@@ -584,61 +584,6 @@ def find_velocity_extrema( pix_between_annuli, deproj_dist, mHa_vel,
         list_dict['DM_vel'].append( dmVel_rot.value)
         list_dict['DM_vel_err'].append( dmVel_rot_err.value)
         ########################################################################
-        
-        '''
-        ########################################################################
-        # DIAGNOSTICS:
-        #
-        # Below are print statements that give information about the max/min and 
-        # average velocities at an annulus, stellar mass, dark matter mass, and 
-        # total mass along with the rotational velocities due to them.  Errors 
-        # are given for all quantites except 'sMass_interior' for which there 
-        # exists no error.
-        #-----------------------------------------------------------------------
-        print("-----------------------------------------------------")
-        print("R = ", R)
-        print("deproj_dist_kpc:", deproj_dist)
-        print("deproj_dist_kpc_err:", deproj_dist_kpc_err)
-        print("max_vel_at_annulus:", max_vel_at_annulus)
-        print("max_vel_at_annulus_err:", max_vel_at_annulus_err)
-        print("min_vel_at_annulus:", min_vel_at_annulus)
-        print("min_vel_at_annulus_err:", min_vel_at_annulus_err)
-        print("avg_vel_at_annulus:", avg_vel_at_annulus)
-        print("avg_vel_at_annulus_err:", avg_vel_at_annulus_err)
-        print("rot_vel_diff:", rot_vel_diff)
-        print("rot_vel_diff_err:", rot_vel_diff_err)
-        print("mass_interior:", mass_interior)
-        print("mass_interior_err:", mass_interior_err)
-        print("sMass_interior:", sMass_interior)
-        print("sVel_rot:", sVel_rot)
-        print("sVel_rot_err:", sVel_rot_err)
-        print("dmMass_interior:", dmMass_interior)
-        print("dmMass_interior_err:", dmMass_interior_err)
-        print("dmVel_rot:", dmVel_rot)
-        print("dmVel_rot_err:", dmVel_rot_err)
-        print("-----------------------------------------------------")
-        #-----------------------------------------------------------------------
-        
-        ########################################################################
-        # Plot the pixels at the current annulus.
-        #-----------------------------------------------------------------------
-        current_pix_fig = plt.figure(4)
-        plt.title('Pixels at ' + str(R - dR) + ' < R < ' + str(R))
-        plt.imshow( pix_between_annuli, origin='lower')
-
-        ax = current_pix_fig.add_subplot(111)
-        plt.xticks( np.arange( 0, array_width, 10))
-        plt.yticks( np.arange( 0, array_length, 10))
-        plt.tick_params( axis='both', direction='in')
-        ax.yaxis.set_ticks_position('both')
-        ax.xaxis.set_ticks_position('both')
-        plt.xlabel(r'$\Delta \alpha$ (arcsec)')
-        plt.ylabel(r'$\Delta \delta$ (arcsec)')
-
-        plt.show()
-        plt.close()
-        ########################################################################
-        '''
     
     return list_dict
 
@@ -680,10 +625,10 @@ def calc_avg_vel( max_vel, min_vel, max_vel_ivar, min_vel_ivar):
     avg_vel_err : float
         Error in the average extreme Halpha velocity
 
-    rot_vel_diff : float
+    vel_diff : float
         Difference between the magnitudes of the minimum and maximum velocities
 
-    rot_vel_diff_err : float
+    vel_diff_err : float
         Error in the velocity difference
 
     '''
@@ -692,19 +637,19 @@ def calc_avg_vel( max_vel, min_vel, max_vel_ivar, min_vel_ivar):
     # Average velocity at annulus
     #---------------------------------------------------------------------------
     avg_vel = 0.5 * ( max_vel + abs( min_vel))
-    avg_vel_err = 1/np.sqrt( max_vel_ivar + min_vel_ivar)
+    avg_vel_err = 0.5*np.sqrt((1/max_vel_ivar) + (1/min_vel_ivar))
     ############################################################################
 
 
     ############################################################################
     # Difference between the magnitudes of the minimum and maximum velocities
     #---------------------------------------------------------------------------
-    rot_vel_diff = abs( max_vel - abs( min_vel))
-    rot_vel_diff_err = 1/np.sqrt( max_vel_ivar + min_vel_ivar)
+    vel_diff = abs( max_vel - abs( min_vel))
+    vel_diff_err = np.sqrt((1/max_vel_ivar) + (1/min_vel_ivar))
     ############################################################################
 
 
-    return avg_vel, avg_vel_err, rot_vel_diff, rot_vel_diff_err
+    return avg_vel, avg_vel_err, vel_diff, vel_diff_err
 
 
 

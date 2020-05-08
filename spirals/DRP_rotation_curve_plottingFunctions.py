@@ -147,7 +147,7 @@ def plot_Ha_vel(Ha_vel,
 
     ax.set_title( gal_ID + r' H$\alpha$ Velocity')
     Ha_vel_im = ax.imshow( Ha_vel, 
-                           cmap='bwr', 
+                           cmap='RdBu_r', 
                            origin='lower', 
                            vmin = vmin_bound, 
                            vmax = vmax_bound)
@@ -449,7 +449,7 @@ def plot_diagnostic_panel( gal_ID,
         plt.cla()
         plt.clf()
         plt.close( panel_fig)
-        del panel_fig, v_band_panel, mHa_vel_panel, contour_panel, rot_curve_panel
+        del panel_fig, r_band_panel, mHa_vel_panel, contour_panel, rot_curve_panel
         gc.collect()
         ########################################################################
 

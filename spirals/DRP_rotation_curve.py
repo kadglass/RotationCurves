@@ -358,21 +358,12 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
 
     unmasked_data = True
 
-    if str( global_max) == '--':
+    if np.isnan( global_max):
         unmasked_data = False
         global_max = 0.1
         global_min = -0.1
     ############################################################################
 
-    '''
-    ############################################################################
-    # Print the angle of rotation in the 2-D observational plane as taken from
-    # the NSA catalog.
-    #---------------------------------------------------------------------------
-    phi_deg = ( 90 - phi_EofN_deg / u.deg) * u.deg
-    print('phi:', phi_deg)
-    ############################################################################
-    '''
 
     ############################################################################
     # Preserve original r-band image for plotting in the 'diagnostic_panel'
@@ -583,7 +574,8 @@ def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
 def write_master_file( manga_plate_master, manga_IFU_master,
                        ra_master, dec_master, z_master,
                        axis_ratio_master, phi_master, 
-                       mStar_master, rabsmag_master, LOCAL_PATH):
+                       mStar_master, rabsmag_master, 
+                       LOCAL_PATH, MASTER_FILENAME):
     '''
     Create the master file containing identifying information about each
     galaxy.  The output file of this function determines the structure of the
@@ -594,36 +586,39 @@ def write_master_file( manga_plate_master, manga_IFU_master,
     Parameters:
     ===========
 
-    manga_plate_master : numpy array of shape (n,1)
+    manga_plate_master : numpy array of shape (n,)
         master list containing the MaNGA plate information for each galaxy
 
-    manga_IFU_master : numpy array of shape (n,1)
+    manga_IFU_master : numpy array of shape (n,)
         master list containing the MaNGA IFU information for each galaxy
 
-    ra_master : numpy array of shape (n,1)
+    ra_master : numpy array of shape (n,)
         master list containing the RA values for each galaxy
 
-    dec_master : numpy array of shape (n,1)
+    dec_master : numpy array of shape (n,)
         master list containing the declination values for each galaxy
 
-    z_master : numpy array of shape (n,1)
+    z_master : numpy array of shape (n,)
         master list containing the redshift for each galaxy
 
-    axis_ratio_master : numpy array of shape (n,1)
+    axis_ratio_master : numpy array of shape (n,)
         master list containing the axis ratio for each galaxy
 
-    phi_master : numpy array of shape (n,1)
+    phi_master : numpy array of shape (n,)
         master list containing the rotation angle for each galaxy
 
-    mStar_master : numpy array of shape (n,1)
+    mStar_master : numpy array of shape (n,)
         master list containing the stellar mass estimate for each galaxy
 
-    rabsmag_master : numpy array of shape (n,1)
+    rabsmag_master : numpy array of shape (n,)
         master list containing the SDSS r-band absolute magnitude for each 
         galaxy
 
     LOCAL_PATH : string
         the directory path of the main script file
+
+    MASTER_FILENAME : string
+        file name for the master file
     '''
 
     ###########################################################################
@@ -632,22 +627,25 @@ def write_master_file( manga_plate_master, manga_IFU_master,
     #--------------------------------------------------------------------------
     manga_plate_col = Column( manga_plate_master)
     manga_IFU_col = Column( manga_IFU_master)
+
     ra_col = Column( ra_master)
     dec_col = Column( dec_master)
     z_col = Column( z_master)
+
     axis_ratio_col = Column( axis_ratio_master)
     phi_col = Column( phi_master)
+
     mStar_col = Column( mStar_master)
     rabsmag_col = Column( rabsmag_master)
     ###########################################################################
 
 
-    if not os.path.isfile( LOCAL_PATH + '/master_file_DRP.txt'):
+    if not os.path.isfile( LOCAL_PATH + MASTER_FILENAME):
         ########################################################################
         # Add the column objects to an astropy QTable.
         #-----------------------------------------------------------------------
         master_table = QTable([ manga_plate_col,
-                                manga_fiberID_col,
+                                manga_IFU_col,
                                 ra_col * u.degree,
                                 dec_col * u.degree,
                                 z_col,
@@ -669,7 +667,7 @@ def write_master_file( manga_plate_master, manga_IFU_master,
         ########################################################################
         # Read in current master_file.txt file
         #-----------------------------------------------------------------------
-        master_table = QTable.read( LOCAL_PATH + '/master_file_DRP.txt', 
+        master_table = QTable.read( LOCAL_PATH + MASTER_FILENAME, 
                                     format='ascii.ecsv')
         ########################################################################
 
@@ -690,19 +688,21 @@ def write_master_file( manga_plate_master, manga_IFU_master,
         for i in range( len( master_table)):
             col_idx = index_dict[ (master_table['MaNGA_plate'][i], master_table['MaNGA_IFU'][i])]
 
-            master_table['ra'][i] = nsa_ra_col[col_idx] * u.degree
-            master_table['dec'][i] = nsa_dec_col[col_idx] * u.degree
-            master_table['redshift'][i] = nsa_z_col[col_idx]
-            master_table['ba'][i] = nsa_axes_ratio_col[col_idx]
-            master_table['phi'][i] = nsa_phi_col[col_idx] * u.degree
-            master_table['Mstar'][i] = nsa_mStar_col[col_idx] * u.M_sun
-            master_table['rabsmag'][i] = nsa_rabsmag_col[col_idx]
+            master_table['ra'][i] = ra_col[col_idx] * u.degree
+            master_table['dec'][i] = dec_col[col_idx] * u.degree
+            master_table['redshift'][i] = z_col[col_idx]
+
+            master_table['ba'][i] = axis_ratio_col[col_idx]
+            master_table['phi'][i] = phi_col[col_idx] * u.degree
+
+            master_table['Mstar'][i] = mStar_col[col_idx] * u.M_sun
+            master_table['rabsmag'][i] = rabsmag_col[col_idx]
         ########################################################################
 
 
     ###########################################################################
     # Write the master data file in ecsv format.
     #--------------------------------------------------------------------------
-    master_table.write( LOCAL_PATH + '/master_file.txt',
+    master_table.write( LOCAL_PATH + MASTER_FILENAME,
                         format='ascii.ecsv', overwrite=True)
     ###########################################################################

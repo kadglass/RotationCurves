@@ -70,8 +70,8 @@ def plot_vband_image(v_band, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps', ax=None
     ax.tick_params( axis='both', direction='in', color='white')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('$\Delta \alpha$ [arcsec]')
-    ax.set_ylabel('$\Delta \delta$ [arcsec]')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
     ###########################################################################
 
 
@@ -175,8 +175,8 @@ def plot_Ha_vel(Ha_vel, gal_ID, IMAGE_DIR=None, FOLDER_NAME=None, IMAGE_FORMAT='
     ax.tick_params( axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('$\Delta \alpha$ [arcsec]')
-    ax.set_ylabel('$\Delta \delta$ [arcsec]')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
     ###########################################################################
 
 
@@ -324,15 +324,8 @@ def plot_mass_curve(IMAGE_DIR, IMAGE_FORMAT, gal_ID, data_table):
 
     '''
 
-    ###########################################################################
-    # Create output directory if it does not already exist
-    #--------------------------------------------------------------------------
-    if not os.path.isdir( IMAGE_DIR + '/mass_curves'):
-        os.makedirs( IMAGE_DIR + '/mass_curves')
-    ###########################################################################
-
-
     plt.figure( figsize=(5, 5))
+
     plt.title( gal_ID + ' Mass Curves')
     plt.plot( data_table['deprojected_distance'], data_table['mass_interior'], 
               'gp', markersize=7, label='Total mass (avg)')
@@ -348,13 +341,29 @@ def plot_mass_curve(IMAGE_DIR, IMAGE_FORMAT, gal_ID, data_table):
     plt.ylabel('Mass Interior [$M_{\odot}$]')
     plt.legend(loc='upper left')
 
-    plt.savefig( IMAGE_DIR + "/mass_curves/" + gal_ID + "_mass_curve." + IMAGE_FORMAT,
-                format=IMAGE_FORMAT)
-    #plt.show()
-    plt.cla()
-    plt.clf()
-    plt.close()
-    gc.collect()
+    if IMAGE_DIR is not None:
+        ########################################################################
+        # Create output directory if it does not already exist
+        #-----------------------------------------------------------------------
+        if not os.path.isdir( IMAGE_DIR + '/mass_curves'):
+            os.makedirs( IMAGE_DIR + '/mass_curves')
+        ########################################################################
+
+        ########################################################################
+        # Save figure
+        #-----------------------------------------------------------------------
+        plt.savefig( IMAGE_DIR + "/mass_curves/" + gal_ID + "_mass_curve." + IMAGE_FORMAT,
+                    format=IMAGE_FORMAT)
+        ########################################################################
+
+        ########################################################################
+        # Clean up figure objects
+        #-----------------------------------------------------------------------
+        plt.cla()
+        plt.clf()
+        plt.close()
+        gc.collect()
+        ########################################################################
 
 
 
@@ -399,13 +408,6 @@ def plot_diagnostic_panel( IMAGE_DIR, IMAGE_FORMAT, gal_ID, v_band, masked_Ha_ve
 
     '''
 
-    ###########################################################################
-    # Create output directory if it does not already exist
-    #--------------------------------------------------------------------------
-    if not os.path.isdir( IMAGE_DIR + '/diagnostic_panels'):
-        os.makedirs( IMAGE_DIR + '/diagnostic_panels')
-    ###########################################################################
-
 
 #    panel_fig, (( Ha_vel_panel, mHa_vel_panel),
 #                ( contour_panel, rot_curve_panel)) = plt.subplots( 2, 2)
@@ -427,22 +429,28 @@ def plot_diagnostic_panel( IMAGE_DIR, IMAGE_FORMAT, gal_ID, v_band, masked_Ha_ve
     panel_fig.tight_layout()
 
 
-    ###########################################################################
-    # Save figure
-    #--------------------------------------------------------------------------
-    plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + "_diagnostic_panel." + IMAGE_FORMAT,
-                format=IMAGE_FORMAT)
-    ###########################################################################
+    if IMAGE_DIR is not None:
+        ########################################################################
+        # Create output directory if it does not already exist
+        #-----------------------------------------------------------------------
+        if not os.path.isdir( IMAGE_DIR + '/diagnostic_panels'):
+            os.makedirs( IMAGE_DIR + '/diagnostic_panels')
+        ########################################################################
 
+        ########################################################################
+        # Save figure
+        #-----------------------------------------------------------------------
+        plt.savefig( IMAGE_DIR + "/diagnostic_panels/" + gal_ID + "_diagnostic_panel." + IMAGE_FORMAT,
+                    format=IMAGE_FORMAT)
+        ########################################################################
 
-    ###########################################################################
-    # Figure cleanup
-    #--------------------------------------------------------------------------
-    #plt.show()
-    plt.cla()
-    plt.clf()
-    plt.close( panel_fig)
-    del panel_fig, v_band_panel, mHa_vel_panel, contour_panel, rot_curve_panel
-    gc.collect()
-    ###########################################################################
+        ########################################################################
+        # Figure cleanup
+        #-----------------------------------------------------------------------
+        plt.cla()
+        plt.clf()
+        plt.close( panel_fig)
+        del panel_fig, v_band_panel, mHa_vel_panel, contour_panel, rot_curve_panel
+        gc.collect()
+        ########################################################################
 

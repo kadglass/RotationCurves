@@ -26,8 +26,9 @@ http://www.sdss.org/dr15/manga/manga-data/data-access/
 '''
 import matplotlib
 matplotlib.use('TKAgg')
-import matplotlib.pyplot as plt
 '''
+import matplotlib.pyplot as plt
+
 
 import numpy as np, numpy.ma as ma
 
@@ -53,43 +54,48 @@ from Pipe3D_rotation_curve_plottingFunctions import plot_vband_image, plot_Ha_ve
 def extract_data( file_name):
     """Open the MaNGA .fits file and extract data.
 
-    @param:
-        file_name:
-            a string representation of the galaxy in question in the
-            following format:
-                [DATA RELEASE]-manga-[PLATE]-[IFUID].Pipe3D.cube.fits.gz
 
-    @return:
-        Ha_vel:
-            an n-D numpy array containing the H-alpha velocity field data
+    PARAMETERS
+    ==========
+    
+    file_name : string
+        [DATA RELEASE]-manga-[PLATE]-[IFUID].Pipe3D.cube.fits.gz
 
-        Ha_vel_err:
-            an n-D numpy array containing the error in the H-alpha velocity
-            field data
+    
+    RETURNS
+    =======
 
-        v_band:
-            an n-D numpy array containing the visual-band flux data
+    target_galaxy : boolean
+        Boolean indicating whether or not this object was a galaxy target in 
+        MaNGA.  True = galaxy target; False = other target
 
-        v_band_err:
-            an n-D numpy array containing the error in the visual band flux
-            data
+    data_quality : boolean
+        Boolean representing the quality bitmask of the MaNGA data.  True = 
+        data is good; False = do not use.
+    
+    Ha_vel : numpy array of shape (N,N)
+        H-alpha velocity field in units of km/s
 
-        sMass_density:
-            an n-D numpy array containing the stellar mass density per square
-            pixel
+    Ha_vel_err : numpy array of shape (N,N)
+        error in the H-alpha velocity field in units of km/s
 
-        manga_plate:
-            int representation of the manga plate number of observation
+    v_band : numpy array of shape (N,N)
+         visual-band flux in units of 10^-17 ers/s/cm^2
 
-        manga_fiberID:
-            int representation of the manga fiber ID of observation
+    v_band_err : numpy array of shape (N,N)
+        error in the visual band flux in units of 10^-17 erg/s/cm^2
 
-        gal_ra:
-            the galaxy in question's righthand ascension
+    sMass_density : numpy array of shape (N,N)
+        stellar mass density per square pixel (units of log(Msun/spaxel^2))
 
-        gal_dec:
-            the galaxy in question's declination
+    gal_ra : float
+        righthand ascension of galaxy in units of degrees
+
+    gal_dec : float
+        declination of galaxy in units of degrees
     """
+
+
     main_file = fits.open( file_name)
 
     ssp = main_file[1].data
@@ -112,9 +118,6 @@ def extract_data( file_name):
     Ha_vel = flux_elines[102]  # in units of km/s
     Ha_vel_err = flux_elines[330]  # in units of km/s
 
-    manga_plate = org_hdr['PLATEID']
-    manga_fiberID = org_hdr['IFUDSGN']
-
     gal_ra = org_hdr['OBJRA']
     gal_dec = org_hdr['OBJDEC']
 
@@ -126,9 +129,10 @@ def extract_data( file_name):
     data_quality = True
     DRP_3D_quality = org_hdr['DRP3QUAL']
     if DRP_3D_quality > 10000:
+        data_quality = False
 
     return target_galaxy, data_quality, Ha_vel, Ha_vel_err, v_band, v_band_err, \
-           sMass_density, manga_plate, manga_fiberID, gal_ra, gal_dec
+           sMass_density, gal_ra, gal_dec
 
 
 
@@ -183,7 +187,7 @@ def match_to_NSA( gal_ra, gal_dec, cat_coords):
 
 
 def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
-                   axis_ratio, phi_EofN_deg, z, gal_ID,
+                   axis_ratio, phi_EofN_deg, z, gal_ID, plot_diagnostics=True, 
                    IMAGE_DIR=None, IMAGE_FORMAT='eps', num_masked_gal=0):
     '''
     Calculate the rotation curve (rotational velocity as a funciton of
@@ -226,6 +230,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
     gal_ID : string
         [DATA RELEASE]-[PLATE]-[IFUID]
+
+    plot_diagnostics : boolean
+        Flag to determine whether or not to plot the various plot diagnostics.  
+        Default is True (plot all figures).
 
     IMAGE_DIR : string
         File path to which pictures of the fitted rotation curves are saved.  
@@ -284,20 +292,26 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     ###########################################################################
     # DIAGNOSTICS:
     #--------------------------------------------------------------------------
-    if IMAGE_DIR is not None:
+    if plot_diagnostics:
         #----------------------------------------------------------------------
         # Plot visual-band image
         #----------------------------------------------------------------------
-        plot_vband_image( v_band, gal_ID, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+        plot_vband_image( v_band, gal_ID, IMAGE_DIR=IMAGE_DIR, 
+                          IMAGE_FORMAT=IMAGE_FORMAT)
 
-        #--------------------------------------------------------------------------
-        # Plot H-alpha velocity field before systemic redshift subtraction. Galaxy 
-        #   velocities vary from file to file, so vmin and vmax will have to be 
-        #   manually adjusted for each galaxy before reshift subtraction.
-        #--------------------------------------------------------------------------
+        if IMAGE_DIR is None:
+            plt.show()
+        #----------------------------------------------------------------------
+        # Plot H-alpha velocity field before systemic redshift subtraction. 
+        # Galaxy velocities vary from file to file, so vmin and vmax will have 
+        # to be manually adjusted for each galaxy before reshift subtraction.
+        #----------------------------------------------------------------------
         plot_Ha_vel( Ha_vel, gal_ID, 
                      IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/unmasked_Ha_vel/', 
                      IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_raw.')
+
+        if IMAGE_DIR is None:
+            plt.show()
     ###########################################################################
 
 
@@ -412,24 +426,33 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
                                                                                        phi_EofN_deg, 
                                                                                        axis_ratio)
 
-        if IMAGE_DIR is not None:
-            ###################################################################
+        if plot_diagnostics:
+            ####################################################################
             # Plot the H-alapha velocity field within the annuli
-            #------------------------------------------------------------------
+            #-------------------------------------------------------------------
             plot_Ha_vel( masked_vel_contour_plot, gal_ID, 
-                         IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/collected_velocity_fields/', 
-                         IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_collected_vel_field.')
-            ###################################################################
+                         IMAGE_DIR=IMAGE_DIR, 
+                         FOLDER_NAME='/collected_velocity_fields/', 
+                         IMAGE_FORMAT=IMAGE_FORMAT, 
+                         FILENAME_SUFFIX='_collected_vel_field.')
+
+            if IMAGE_DIR is None:
+                plt.show()
+            ####################################################################
 
 
-            ###################################################################
+            ####################################################################
             # Plot H-alpha velocity field with redshift subtracted.
-            #------------------------------------------------------------------
+            #-------------------------------------------------------------------
             plot_Ha_vel( masked_Ha_vel, gal_ID, 
                          IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/masked_Ha_vel/', 
-                         IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_field.')
-            ###################################################################
-    ###########################################################################
+                         IMAGE_FORMAT=IMAGE_FORMAT, 
+                         FILENAME_SUFFIX='_Ha_vel_field.')
+
+            if IMAGE_DIR is None:
+                plt.show()
+            ####################################################################
+    ############################################################################
 
 
     ###########################################################################
@@ -465,13 +488,16 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     '''
 
 
-    if unmasked_data and (IMAGE_DIR is not None):
+    if unmasked_data and plot_diagnostics:
 
         #######################################################################
         # Rotational velocity as a function of deprojected radius.
         #----------------------------------------------------------------------
         plot_rot_curve( gal_ID, data_table, 
                         IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+
+        if IMAGE_DIR is None:
+            plt.show()
         #######################################################################
 
 
@@ -479,6 +505,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         # Plot cumulative mass as a function of deprojected radius.
         #----------------------------------------------------------------------
         plot_mass_curve( IMAGE_DIR, IMAGE_FORMAT, gal_ID, data_table)
+
+        if IMAGE_DIR is None:
+            plt.show()
         #######################################################################
 
 
@@ -490,7 +519,11 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         # curves alongside the stellar mass rotation curve.
         #----------------------------------------------------------------------
         plot_diagnostic_panel( IMAGE_DIR, IMAGE_FORMAT, gal_ID, v_band_raw, 
-                               masked_Ha_vel, masked_vel_contour_plot, data_table)
+                               masked_Ha_vel, masked_vel_contour_plot, 
+                               data_table)
+
+        if IMAGE_DIR is None:
+            plt.show()
         #######################################################################
 
 
@@ -551,7 +584,8 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
                        nsa_plate_master, nsa_fiberID_master, nsa_mjd_master,
                        nsa_gal_idx_master, nsa_ra_master, nsa_dec_master,
                        nsa_axes_ratio_master, nsa_phi_master, nsa_z_master,
-                       nsa_mStar_master, nsa_rabsmag_master, LOCAL_PATH):
+                       nsa_mStar_master, nsa_rabsmag_master, LOCAL_PATH, 
+                       MASTER_FILENAME='master_file.txt'):
     '''
     Create the master file containing identifying information about each
     galaxy.  The output file of this function determines the structure of the
@@ -606,6 +640,9 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
 
     LOCAL_PATH : string
         the directory path of the main script file
+
+    MASTER_FILENAME : string
+        File name of master file.  Default is 'master_file.txt'
     '''
 
     ###########################################################################
@@ -628,7 +665,9 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     ###########################################################################
 
 
-    if not os.path.isfile( LOCAL_PATH + '/master_file.txt'):
+    master_filename = LOCAL_PATH + MASTER_FILENAME
+
+    if not os.path.isfile( master_filename):
         ########################################################################
         # Add the column objects to an astropy QTable.
         #-----------------------------------------------------------------------
@@ -663,8 +702,7 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
         ########################################################################
         # Read in current master_file.txt file
         #-----------------------------------------------------------------------
-        master_table = QTable.read( LOCAL_PATH + '/master_file_vflag_6.txt', 
-                                    format='ascii.ecsv')
+        master_table = QTable.read( master_filename, format='ascii.ecsv')
         ########################################################################
 
 
@@ -701,6 +739,5 @@ def write_master_file( manga_plate_master, manga_fiberID_master,
     ###########################################################################
     # Write the master data file in ecsv format.
     #--------------------------------------------------------------------------
-    master_table.write( LOCAL_PATH + '/master_file.txt',
-                        format='ascii.ecsv', overwrite=True)
+    master_table.write( master_filename, format='ascii.ecsv', overwrite=True)
     ###########################################################################

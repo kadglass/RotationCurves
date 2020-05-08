@@ -228,7 +228,7 @@ def open_map(cube_filename, map_name):
     if map_name is 'STELLAR_SIGMA':
 
         # Data
-        star_sigma = np.sqrt(cube['STELLAR_SIGMA'].data**2 
+        star_sigma = np.sqrt(cube[map_name].data**2 
                              - cube['STELLAR_SIGMACORR'].data**2)
 
         # Mask extension
@@ -239,12 +239,24 @@ def open_map(cube_filename, map_name):
 
         masked_map = ma.masked_invalid(mStar_sigma)
     #---------------------------------------------------------------------------
+    # Extract the inverse variance map of the velocity dispersion
+    #---------------------------------------------------------------------------
+    elif map_name is 'STELLAR_SIGMA_IVAR':
+
+        # Data
+        star_sigma_ivar = cube[map_name].data
+
+        # Mask
+        mStar_sigma_ivar = ma.array(star_sigma_ivar, mask=cube['STELLAR_SIGMA_MASK'].data>0)
+
+        masked_map = ma.masked_invalid(mStar_sigma_ivar)
+    #---------------------------------------------------------------------------
     # Extract average r-band image
     #---------------------------------------------------------------------------
     elif map_name is 'SPX_MFLUX':
 
         # Data
-        r_band = cube['SPX_MFLUX'].data
+        r_band = cube[map_name].data
 
         # Mask
         masked_map = ma.masked_equal(r_band, 0)

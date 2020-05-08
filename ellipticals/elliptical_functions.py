@@ -106,6 +106,9 @@ def elliptical_masses(galaxy_ID, data_directory, master_filename):
     ############################################################################
     # Add masses to value-added catalog (master file)
     #---------------------------------------------------------------------------
-    write_masses(elliptical_masses, elliptical_IDs, master_filename)
+    if galaxy_ID == 'all':
+        write_masses(elliptical_masses, elliptical_IDs, master_filename)
+    else:
+        print(elliptical_masses)
     ############################################################################
 ################################################################################

@@ -21,7 +21,7 @@ def build_galaxy_IDs(galaxy_ID, master_filename):
 
     galaxy_ID : string
         Identifies what is to be analyzed.  If 'all', then analyze all 
-        elliptical galaxies.  If not 'all', then is a single 'plate-fiberID' 
+        elliptical galaxies.  If not 'all', then is a single 'plate-IFU' 
         galaxy combination.
 
     master_filename : string
@@ -33,7 +33,7 @@ def build_galaxy_IDs(galaxy_ID, master_filename):
     =======
 
     galaxy_ID_list : length-N list of tuples
-        List of (plate, fiberID) combinations for the galaxies to be analyzed. 
+        List of (plate, IFU) combinations for the galaxies to be analyzed. 
     '''
 
 
@@ -45,9 +45,9 @@ def build_galaxy_IDs(galaxy_ID, master_filename):
     else:
         # Analyze the single elliptical galaxy identified in galaxy_ID
 
-        plate, fiberID = galaxy_ID.split('-')
+        plate, IFU = galaxy_ID.split('-')
 
-        elliptical_IDs = [(plate, fiberID)]
+        elliptical_IDs = [(plate, IFU)]
 
 
     return elliptical_IDs

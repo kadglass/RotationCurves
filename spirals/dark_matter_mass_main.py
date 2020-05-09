@@ -17,6 +17,8 @@ from astropy.table import QTable
 
 import astropy.units as u
 
+from dark_matter_mass import fit_rot_curve, estimate_dark_matter
+
 
 ###############################################################################
 # Number of times to try to fit the data within 'scipy.optimize.curve_fit().'
@@ -39,7 +41,7 @@ RUN_ALL_GALAXIES = False
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 #    the individual galaxy version of this script.
 #------------------------------------------------------------------------------
-FILE_IDS = ['8466-3704']
+FILE_IDS = ['7443-6102']
 ###############################################################################
 
 
@@ -74,13 +76,13 @@ if WORKING_IN_BLUEHIVE:
 else:
     LOCAL_PATH = os.path.dirname(__file__)
     if LOCAL_PATH == '':
-        LOCAL_PATH = '.'
+        LOCAL_PATH = './'
 
-    IMAGE_DIR = LOCAL_PATH + '/images/'
-    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + '/rot_curve_data_files/'
+    IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
+    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + 'DRP-rot_curve_data_files/'
 
 
-MASTER_FILE_NAME = LOCAL_PATH + '/master_file_vflag_10.txt'
+MASTER_FILENAME = LOCAL_PATH + 'DRPall-master_file.txt'
 
 # Create output directories if they do not already exist
 if not os.path.isdir( IMAGE_DIR):
@@ -90,18 +92,12 @@ if not os.path.isdir( ROT_CURVE_MASTER_FOLDER):
 ###############################################################################
 
 
-###############################################################################
-# Import functions from 'dark_matter_mass_vX_X.'
-#------------------------------------------------------------------------------
-from dark_matter_mass_v1_2 import fit_rot_curve, estimate_dark_matter
-###############################################################################
-
 if RUN_ALL_GALAXIES:
     ###########################################################################
     # Read in the 'master_file' and extract its length for use later in the
-    #    program.
+    # program.
     #--------------------------------------------------------------------------
-    master_table = QTable.read( MASTER_FILE_NAME, format='ascii.ecsv')
+    master_table = QTable.read( MASTER_FILENAME, format='ascii.ecsv')
     N_galaxies = len( master_table)
     ###########################################################################
 
@@ -109,8 +105,8 @@ if RUN_ALL_GALAXIES:
     ###########################################################################
     # Master arrays initialized to contain memory-holding values.
     #--------------------------------------------------------------------------
-    master_table['center_flux'] = -1. 
-    master_table['center_flux_error'] = -1.
+    master_table['center_flux'] = -1. * (u.erg / (u.cm * u.cm * u.s))
+    master_table['center_flux_error'] = -1. * (u.erg / (u.cm * u.cm * u.s))
     master_table['frac_masked_spaxels'] = -1.
 
     master_table['avg_v_max'] = -1. * (u.km / u.s)
@@ -156,51 +152,20 @@ if RUN_ALL_GALAXIES:
     master_table['points_cut'] = 0 #np.zeros( N_galaxies)
     ###########################################################################
     
-    
-    ###########################################################################
-    # Assign units to master array columns
-    #--------------------------------------------------------------------------
-    master_table['center_flux'].unit = 'erg / (cm2 s)'
-    master_table['center_flux_error'].unit = 'erg / (cm2 s)'
-    
-    master_table['avg_v_max'].unit = 'km / s'
-    master_table['avg_r_turn'].unit = 'kpc'
-
-    master_table['avg_v_max_sigma'].unit ='km / s'
-    master_table['avg_r_turn_sigma'].unit = 'kpc'
-
-    master_table['pos_v_max'].unit = 'km / s'
-    master_table['pos_r_turn'].unit = 'kpc'
-
-    master_table['pos_v_max_sigma'].unit = 'km / s'
-    master_table['pos_r_turn_sigma'].unit = 'kpc'
-
-    master_table['neg_v_max'].unit = 'km / s'
-    master_table['neg_r_turn'].unit = 'kpc'
-
-    master_table['neg_v_max_sigma'].unit = 'km / s'
-    master_table['neg_r_turn_sigma'].unit = 'kpc'
-
-    master_table['Mtot'].unit = 'solMass'
-    master_table['Mtot_error'].unit = 'solMass'
-    master_table['Mdark'].unit = 'solMass'
-    master_table['Mdark_error'].unit = 'solMass'
-    master_table['Mstar'].unit = 'solMass'
-    ###########################################################################
-
 
     ###########################################################################
     # For all of the galaxies in the 'master_table'
     #--------------------------------------------------------------------------
     for i in range( N_galaxies):
+
         #######################################################################
         # Build the file names for the rotation curve and galaxy statistic data
         #    from the 'MaNGA_plate' and 'MaGNA_fiberID' columns of the
         #    'master_file.'
         #----------------------------------------------------------------------
         plate = master_table['MaNGA_plate'][i]
-        fiberID = master_table['MaNGA_fiberID'][i]
-        gal_ID = str(plate) + '-' + str(fiberID)
+        IFU = master_table['MaNGA_IFU'][i]
+        gal_ID = str(plate) + '-' + str(IFU)
         print("gal_ID MAIN:", gal_ID)
 
         rot_curve_filename = ROT_CURVE_MASTER_FOLDER + gal_ID + '_rot_curve_data.txt'
@@ -210,7 +175,7 @@ if RUN_ALL_GALAXIES:
 
         #######################################################################
         # Set of functions to run the set of rotation curve and of galaxy
-        #    statistic files through.
+        # statistic files through.
         #----------------------------------------------------------------------
         param_outputs = fit_rot_curve( rot_curve_filename, gal_stat_filename,
                                        TRY_N)
@@ -226,7 +191,8 @@ if RUN_ALL_GALAXIES:
     ###########################################################################
     # Save the 'master_table.'
     #--------------------------------------------------------------------------
-    master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
+    master_table.write( MASTER_FILENAME[:-4] + '_30.txt', format='ascii.ecsv', 
+                        overwrite=True)
     ###########################################################################
 
 

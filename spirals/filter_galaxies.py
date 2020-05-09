@@ -8,7 +8,7 @@ from astropy.io import fits
 ################################################################################
 # Import galaxy data
 #-------------------------------------------------------------------------------
-galaxies_filename = 'master_file_vflag_10_smooth.txt'
+galaxies_filename = 'Pipe3D-master_file_vflag_10_smooth.txt'
 
 galaxies = QTable.read(galaxies_filename, format='ascii.ecsv')
 ################################################################################
@@ -18,12 +18,12 @@ galaxies = QTable.read(galaxies_filename, format='ascii.ecsv')
 ################################################################################
 # Filtering tables
 #-------------------------------------------------------------------------------
-remove_more_points_table = Table.read('Not_enough_points_removed.txt', format='ascii.commented_header')
-no_rotation_table = Table.read('No_rotation.txt', format='ascii.commented_header')
-interacting_table = Table.read('Interacting.txt', format='ascii.commented_header')
-bad_center_table = Table.read('Bad_center.txt', format='ascii.commented_header')
-bad_phi_table = Table.read('Bad_angle.txt', format='ascii.commented_header')
-QSO_table = Table.read('QSO.txt', format='ascii.commented_header')
+remove_more_points_table = Table.read('../Not_enough_points_removed.txt', format='ascii.commented_header')
+no_rotation_table = Table.read('../No_rotation.txt', format='ascii.commented_header')
+interacting_table = Table.read('../Interacting.txt', format='ascii.commented_header')
+bad_center_table = Table.read('../Bad_center.txt', format='ascii.commented_header')
+bad_phi_table = Table.read('../Bad_angle.txt', format='ascii.commented_header')
+QSO_table = Table.read('../QSO.txt', format='ascii.commented_header')
 
 bad_galaxies = vstack([no_rotation_table, 
                        remove_more_points_table, 
@@ -54,9 +54,9 @@ for i in range(len(galaxies)):
     if galaxies['curve_used'][:3] is not 'non':
 
         plate = galaxies['MaNGA_plate'][i]
-        fiber = galaxies['MaNGA_fiberID'][i]
+        IFU = galaxies['MaNGA_fiberID'][i]
 
-        galaxy_filename = 'manga_files/MaNGA_DR15/' + str(plate) + '/manga-' + str(plate) + '-' + str(fiber) + '.Pipe3D.cube.fits.gz'
+        galaxy_filename = '../data/MaNGA/MaNGA_DR15/pipe3d/' + str(plate) + '/manga-' + str(plate) + '-' + str(IFU) + '.Pipe3D.cube.fits.gz'
 
         galaxy_file = fits.open(galaxy_filename)
 
@@ -75,7 +75,7 @@ for i in range(len(galaxies)):
         if (MaNGA_galaxy_target == 0) or \
            (DRP_3D_quality > 10000) or \
            (map_smoothness > 2.27) or \
-           ((plate, fiber) in bad_galaxies_dict.keys()):
+           ((plate, IFU) in bad_galaxies_dict.keys()):
             galaxies['curve_used'][i] = 'non'
 ################################################################################
 

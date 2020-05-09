@@ -2,17 +2,20 @@ from astropy.table import QTable
 
 import numpy as np
 
+#import matplotlib
+#matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 
-from dark_matter_mass_v1_2 import rot_fit_func
-
-import os
-file_directory = os.path.dirname(__file__)
+from dark_matter_mass import rot_fit_func
 
 
 
 
-def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
+def plot_fitted_rot_curve( gal_ID, 
+                           fit_parameters, 
+                           ROT_CURVE_FILE_DIRECTORY, 
+                           IMAGE_DIR=None, 
+                           IMAGE_FORMAT='eps'):
     '''
     Plot the rotation curve data along with the fitted rotation curve
 
@@ -27,6 +30,9 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
         Row from 'master_file.txt' containing the fit parameters for this 
         galaxy
 
+    ROT_CURVE_FILE_DIRECTORY : string
+        Location of directory that holds all rotation curve files
+
     IMAGE_DIR : string
         Location to save plot
 
@@ -37,10 +43,10 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
     ###########################################################################
     # Read in galaxy's rotation curve data
     #--------------------------------------------------------------------------
-    rot_curve_filename = file_directory + '/rot_curve_data_files/' + gal_ID + '_rot_curve_data.txt'
+    rot_curve_filename = ROT_CURVE_FILE_DIRECTORY + gal_ID + '_rot_curve_data.txt'
 
     rot_curve_table = QTable.read(rot_curve_filename, format='ascii.ecsv')
-    #--------------------------------------------------------------------------
+    ###########################################################################
 
 
     ###########################################################################
@@ -69,7 +75,7 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
     r_turn_neg = fit_parameters['neg_r_turn'].value
     alpha_neg = fit_parameters['neg_alpha']
     v_max_neg = fit_parameters['neg_v_max'].value
-    #--------------------------------------------------------------------------
+    ###########################################################################
 
 
     ###########################################################################
@@ -161,10 +167,9 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
         if IMAGE_DIR is not None:
             plt.savefig( IMAGE_DIR + 'fitted_rotation_curves/' + gal_ID + '_fitted_rotation_curve.' + IMAGE_FORMAT,
                          format=IMAGE_FORMAT)
+            plt.close()
         else:
             plt.show()
-
-        plt.close()
     ###########################################################################
 
 
@@ -174,10 +179,16 @@ def plot_fitted_rot_curve( gal_ID, fit_parameters, IMAGE_DIR=None, IMAGE_FORMAT=
 
 
 
-def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
+def plot_fitted_rot_curve_mass( gal_ID, 
+                                fit_parameters, 
+                                data_table, 
+                                ROT_CURVE_FILE_DIRECTORY,
+                                DM_plot=True, 
+                                IMAGE_DIR=None, 
+                                IMAGE_FORMAT='eps'):
     '''
     Plot the rotation curve data along with the fitted rotation curve.  Also 
-    includes the stellar mass and dark matter mass curves.
+    includes the stellar mass and (optional) dark matter mass curves.
 
 
     Parameters:
@@ -197,6 +208,13 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
         mass interior to that radius as well as the errors associated with each 
         quantity as available
 
+    ROT_CURVE_FILE_DIRECTORY : string
+        Location of directory that holds all rotation curve files
+
+    DM_plot : boolean
+        Flag of whether or not to include the dark matter rotation curve.  
+        Default value is True (include DM rotation curve).
+
     IMAGE_DIR : string
         Location to save plot
 
@@ -207,10 +225,10 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
     ###########################################################################
     # Read in galaxy's rotation curve data
     #--------------------------------------------------------------------------
-    rot_curve_filename = file_directory + '/rot_curve_data_files/' + gal_ID + '_rot_curve_data.txt'
+    rot_curve_filename = ROT_CURVE_FILE_DIRECTORY + gal_ID + '_rot_curve_data.txt'
 
     rot_curve_table = QTable.read(rot_curve_filename, format='ascii.ecsv')
-    #--------------------------------------------------------------------------
+    ###########################################################################
 
 
     ###########################################################################
@@ -239,7 +257,7 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
     r_turn_neg = fit_parameters['neg_r_turn'].value
     alpha_neg = fit_parameters['neg_alpha']
     v_max_neg = fit_parameters['neg_v_max'].value
-    #--------------------------------------------------------------------------
+    ###########################################################################
 
 
     ###########################################################################
@@ -263,11 +281,14 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
 
         # Stellar mass rotation curve
         Mstar, = plt.plot( data_table['deprojected_distance'], data_table['sVel_rot'], 
-              'cD', markersize=marker_size, label='Stellar mass')
+              'cD', markersize=marker_size)
 
         # Dark matter rotation curve
-        Mdark, = plt.plot( data_table['deprojected_distance'], data_table['dmVel_rot'], 
-              'kX', markersize=marker_size, label='Dark matter')
+        if DM_plot:
+            Mdark, = plt.plot( data_table['deprojected_distance'], 
+                               data_table['dmVel_rot'], 
+                               'kX', 
+                               markersize=marker_size)
 
         # Positive rotation curve
         pos_points,_,_ = plt.errorbar( depro_dist.data, pos_vel_data.data, 
@@ -277,7 +298,7 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
                                       capsize=errorbar_cap_size)
         pos_fit, = plt.plot( r_depro, 
                             rot_fit_func( r_depro, v_max_pos, r_turn_pos, alpha_pos),
-                            'r:', label='Positive')
+                            'r:')
 
         # Negative rotation curve
         neg_points,_,_ = plt.errorbar( depro_dist.data, np.abs(neg_vel_data.data), 
@@ -287,7 +308,7 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
                                       capsize=errorbar_cap_size)
         neg_fit, = plt.plot( r_depro, 
                             rot_fit_func( r_depro, v_max_neg, r_turn_neg, alpha_neg),
-                            'b:', label='Negative')
+                            'b:')
 
         # Average rotation curve
         avg_points,_,_ = plt.errorbar( depro_dist.data, rot_vel_data.data, 
@@ -296,7 +317,7 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
                                       capthick=errorbar_cap_thickness, 
                                       capsize=errorbar_cap_size)
         avg_fit, = plt.plot( r_depro, rot_fit_func(r_depro, v_max_best, r_turn_best, alpha_best),
-                            'g:', label='Average')
+                            'g:')
 
         plt.tick_params( axis='both', direction='in')
 
@@ -305,8 +326,14 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
         plt.title( gal_ID + ' Fitted Rotation Curves')
 
 
-        plt.legend([(pos_points, pos_fit), (neg_points, neg_fit), (avg_points, avg_fit), Mstar, Mdark], 
-                         ['Positive', 'Negative', 'Average', '$M_*$', '$M_{DM}$'], loc=2)
+        if DM_plot:
+            artist_list = [(pos_points, pos_fit), (neg_points, neg_fit), (avg_points, avg_fit), Mstar, Mdark]
+            artist_labels = ['Positive', 'Negative', 'Average', '$M_*$', '$M_{DM}$']
+        else:
+            artist_list = [(pos_points, pos_fit), (neg_points, neg_fit), (avg_points, avg_fit), Mstar]
+            artist_labels = ['Positive', 'Negative', 'Average', '$M_*$']
+        
+        plt.legend( artist_list, artist_labels, loc=2)
 
 
         if IMAGE_DIR is not None:
@@ -315,5 +342,5 @@ def plot_fitted_rot_curve_mass( gal_ID, fit_parameters, data_table, IMAGE_DIR=No
         else:
             plt.show()
 
-        plt.close()
+        #plt.close()
     ###########################################################################

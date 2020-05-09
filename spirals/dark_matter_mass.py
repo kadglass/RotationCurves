@@ -307,30 +307,8 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N, points_to_cut=0):
         rot_vel_avg_err = rot_vel_avg_err[:-points_to_cut]
         rot_vel_pos_err = rot_vel_pos_err[:-points_to_cut]
         rot_vel_neg_err = rot_vel_neg_err[:-points_to_cut]
-
-    '''
-    print("depro_radii:", depro_radii)
-    print("rot_vel_avg:", rot_vel_avg)
-    print("rot_vel_avg_err:", rot_vel_avg_err)
-    print("rot_vel_max:", rot_vel_max)
-    print("rot_vel_max_err:", rot_vel_max_err)
-    print("rot_vel_min:", rot_vel_min)
-    print("rot_vel_min_err:", rot_vel_min_err)
-    '''
     ###########################################################################
 
-    '''
-    ###########################################################################
-    # General information about the data file in question.
-    #--------------------------------------------------------------------------
-    print( rotcurve__file, ":\n\n", rot_data_table, "\n\n")
-    print("DATA TABLE INFORMATION \n",
-          'Columns:', rot_data_table.columns, '\n',
-          'Column Names:', rot_data_table.colnames, '\n',
-          'Meta Data:', rot_data_table.meta, '\n',
-          'Number of Rows:', len( rot_data_table))
-    ###########################################################################
-    '''
 
     ###########################################################################
     # Best fit parameters and errors in those parameters are initialized to be
@@ -670,6 +648,8 @@ def parameter_restrictions(fitted_parameters, points_cut, rot_curve_file, gal_st
         sample to achieve the best fit.
     '''
 
+    chi2_max = 30
+
     ###########################################################################
     # Measure total points available in rotation curve
     #--------------------------------------------------------------------------
@@ -681,17 +661,17 @@ def parameter_restrictions(fitted_parameters, points_cut, rot_curve_file, gal_st
     ###########################################################################
     # Check chi^2 of average curve
     #--------------------------------------------------------------------------
-    if (fitted_parameters['avg_chi_square_ndf'] < 10) and (fitted_parameters['avg_chi_square_rot'] >= 0):
+    if (fitted_parameters['avg_chi_square_ndf'] < chi2_max) and (fitted_parameters['avg_chi_square_rot'] >= 0):
         curve_used = 'avg'
     #--------------------------------------------------------------------------
     # Check chi^2 of positive curve
     #--------------------------------------------------------------------------
-    elif (fitted_parameters['pos_chi_square_ndf'] < 10) and (fitted_parameters['pos_chi_square_rot'] >= 0):
+    elif (fitted_parameters['pos_chi_square_ndf'] < chi2_max) and (fitted_parameters['pos_chi_square_rot'] >= 0):
         curve_used = 'pos'
     #--------------------------------------------------------------------------
     # Check chi^2 of negative curve
     #--------------------------------------------------------------------------
-    elif (fitted_parameters['neg_chi_square_ndf'] < 10) and (fitted_parameters['neg_chi_square_rot'] >= 0):
+    elif (fitted_parameters['neg_chi_square_ndf'] < chi2_max) and (fitted_parameters['neg_chi_square_rot'] >= 0):
         curve_used = 'neg'
     #--------------------------------------------------------------------------
     # Remove one point from curves and refit

@@ -1,6 +1,8 @@
 
 import numpy as np
 
+import astropy.units as u
+
 
 
 ###############################################################################
@@ -37,8 +39,8 @@ def match_SFR( master_table, SFR_ref_table):
     ###########################################################################
     # Initialize output column
     #--------------------------------------------------------------------------
-    master_table['SFR'] = -99*np.ones(len(master_table), dtype=float)
-    master_table['sSFR'] = -99*np.ones(len(master_table), dtype=float)
+    master_table['SFR'] = -99*np.ones(len(master_table), dtype=float) * u.dex( u.M_sun / u.yr)
+    master_table['sSFR'] = -99*np.ones(len(master_table), dtype=float) * u.dex( 1/u.yr)
     #--------------------------------------------------------------------------
 
 
@@ -59,8 +61,8 @@ def match_SFR( master_table, SFR_ref_table):
         galaxy_ID = (index)
 
         if galaxy_ID in ref_dict.keys():
-            master_table['SFR'][i] = SFR_ref_table['SFR'][ref_dict[galaxy_ID]]
-            master_table['sSFR'][i] = SFR_ref_table['sSFR'][ref_dict[galaxy_ID]]
+            master_table['SFR'][i] = SFR_ref_table['SFR'][ref_dict[galaxy_ID]] * u.dex( u.M_sun / u.yr)
+            master_table['sSFR'][i] = SFR_ref_table['sSFR'][ref_dict[galaxy_ID]] * u.dex( 1/u.yr)
         else:
             print("NO MATCHES FOUND FOR GALAXY",
                   str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_IFU'][i]))

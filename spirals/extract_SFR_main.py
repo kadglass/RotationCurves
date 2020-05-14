@@ -2,7 +2,6 @@
 import datetime
 START = datetime.datetime.now()
 
-import os.path
 from astropy.table import Table, QTable
 
 from extract_SFR_v1 import match_SFR

@@ -269,20 +269,21 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     # Create a mask for the data arrays. The final mask is applied to all data 
     # arrays extracted from the .fits file.
     #--------------------------------------------------------------------------
-    mask_data = build_mask( Ha_vel_err, v_band, v_band_err, sMass_density)
+    data_mask = build_mask( Ha_vel_err, v_band, v_band_err, sMass_density)
 
-    num_masked_spaxels = np.sum(mask_data) - np.sum(v_band == 0)
+    num_masked_spaxels = np.sum(data_mask) - np.sum(v_band == 0)
     frac_masked_spaxels = num_masked_spaxels/np.sum(np.logical_not(v_band == 0))
 
-    masked_Ha_vel = ma.masked_where( mask_data, Ha_vel)
-    masked_Ha_vel_err = ma.masked_where( mask_data, Ha_vel_err)
-    masked_sMass_density = ma.masked_where( mask_data, sMass_density)
+    masked_v_band = ma.masked_where( data_mask, v_band)
+    masked_Ha_vel = ma.masked_where( data_mask, Ha_vel)
+    masked_Ha_vel_err = ma.masked_where( data_mask, Ha_vel_err)
+    masked_sMass_density = ma.masked_where( data_mask, sMass_density)
     '''
     #--------------------------------------------------------------------------
     # Show the created mask where yellow points represent masked data points.
     #--------------------------------------------------------------------------
     plt.figure(1)
-    plt.imshow( mask_data)
+    plt.imshow( data_mask)
     plt.show()
     plt.close()
     '''
@@ -318,7 +319,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     ###########################################################################
     # Determine optical center via the max luminosity in the visual band.
     #--------------------------------------------------------------------------
-    optical_center = np.argwhere( v_band.max() == v_band)
+    optical_center = np.argwhere( masked_v_band.max() == masked_v_band)
 
     x_center = optical_center[0][ 1]
     y_center = optical_center[0][ 0]
@@ -415,7 +416,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     #--------------------------------------------------------------------------
     else:
         lists, center_flux, center_flux_err, masked_vel_contour_plot = find_rot_curve( z, 
-                                                                                       mask_data, 
+                                                                                       data_mask, 
                                                                                        v_band, 
                                                                                        v_band_err, 
                                                                                        Ha_vel, 

@@ -119,7 +119,7 @@ for gal_ID in FILE_IDS:
     # gal_id is a simplified string that identifies each file that is run
     # through the algorithm.  The gal_id name scheme is [PLATE]-[IFU].
     #---------------------------------------------------------------------------
-    [manga_plate, manga_IFU] = gal_ID.split('-')
+    manga_plate, manga_IFU = gal_ID.split('-')
 
     file_name = MANGA_FOLDER + manga_plate + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
     ############################################################################

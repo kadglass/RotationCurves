@@ -53,7 +53,7 @@ DATA_PIPELINE = 'Pipe3D'
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 # the individual galaxy version of this script.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['7443-6102']
+FILE_IDS = ['9183-1902']
 ################################################################################
 
 

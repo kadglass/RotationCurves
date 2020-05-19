@@ -156,7 +156,7 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
 
         rot_param_guess = [ v_max_guess, r_turn_guess, alpha_guess]
         rot_param_low = ( 0., 0., np.nextafter(0, 1))
-        rot_param_high = ( np.inf, np.inf, np.inf)
+        rot_param_high = ( 1E6, np.inf, np.inf)
 
         '''
         ########################################################################

@@ -85,7 +85,7 @@ else:
     
     MANGA_FOLDER = LOCAL_PATH + '../data/MaNGA/MaNGA_DR15/pipe3d/'
     ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + 'rot_curve_data_files/'
-    MASTER_FILENAME = 'master_file_vflag_10.txt'
+    MASTER_FILENAME = 'Pipe3D-master_file_vflag_10.txt'
 
 
 # Create output directory if it does not already exist
@@ -107,7 +107,7 @@ master_index = {}
 
 for i in range(len(master_table)):
     plate = master_table['MaNGA_plate'][i]
-    IFU = master_table['MaNGA_fiberID'][i]
+    IFU = master_table['MaNGA_IFU'][i]
 
     master_index[str(plate) + '-' + str(IFU)] = i
 ###############################################################################

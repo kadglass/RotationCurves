@@ -74,7 +74,7 @@ def rot_fit_func( depro_radius, v_max, r_turn, alpha):
 def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
     '''
     Fit the rotation curve data via rot_fit_func() with
-    scipy.optimize,curve_fit().
+    scipy.optimize.curve_fit().
 
 
     Parameters:
@@ -111,65 +111,69 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
             Goodness of fit statistic for the data fitted to rot_fit_func()
     '''
 
-    # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
+    ############################################################################
     # NOTES:
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     # Following from 'rot_fit_func,' the following first guesses of the
-    #    parameters 'v_max,' 'r_turn,' and 'alpha' are described as such:
+    # parameters 'v_max,' 'r_turn,' and 'alpha' are described as such:
     #
-    # v_max_guess / v_min_guess:
-    #    the absolute maximum and absolute minimum (respectively) of the data
-    #    file in question; first guess of the 'v_max' parameter
+    #   v_max_guess / v_min_guess:
+    #       the absolute maximum and absolute minimum (respectively) of the data
+    #       file in question; first guess of the 'v_max' parameter
     #
-    # r_turn_max_guess / r_turn_min_guess:
-    #    the radius at which 'v_max' and 'v_min' are respectively found; first
-    #    guess for 'r_turn' parameter
+    #   r_turn_max_guess / r_turn_min_guess:
+    #       the radius at which 'v_max' and 'v_min' are respectively found; 
+    #       first guess for 'r_turn' parameter
     #
-    # alpha_guess: imperically-estimated, first guess of the 'alpha' parameter
-    # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # ! # !
+    #   alpha_guess: emperically-estimated, first guess of the 'alpha' parameter
+    ############################################################################
 
-    ###########################################################################
-    # Find the array index of the point with the maximum rotational velocity
-    #    and extract the rotational velocity at that point.
-    #--------------------------------------------------------------------------
+    ############################################################################
+    # Find the array index of the point with the maximum rotational velocity and 
+    # extract the rotational velocity at that point.
+    #---------------------------------------------------------------------------
     v_max_index = np.argmax( rot_vel)
     v_max_guess = rot_vel[ v_max_index]
 
     #print("v_max_guess:", v_max_guess)
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
-    # If the initial guesses for the maximum rotational velocity is greater
-    #    than 0, continue with the fitting process.
-    #--------------------------------------------------------------------------
+    ############################################################################
+    # If the initial guesses for the maximum rotational velocity is greater than 
+    # 0, continue with the fitting process.
+    #
+    # Note: The minimum bound on R_turn was originally 0.25*r_turn_guess.  This 
+    #       introduced an artificial correlation between R_max and R_turn, where 
+    #       R_turn = 0.25*R_max (because r_turn_guess is often equal to R_max).  
+    #       Similar effects were seen on the upper bound of R_turn (originally 
+    #       2*r_turn_guess), and on V_max (originally 0.5*v_max_guess -> 
+    #       1.5*v_max_guess).
+    #---------------------------------------------------------------------------
     if v_max_guess > 0:
         r_turn_guess = depro_dist[ v_max_index]
         alpha_guess = 2
 
         rot_param_guess = [ v_max_guess, r_turn_guess, alpha_guess]
+        rot_param_low = ( 0., 0., np.nextafter(0, 1))
+        rot_param_high = ( np.inf, np.inf, np.inf)
 
         '''
-        #######################################################################
+        ########################################################################
         # Print statement to track the first guesses for the 'rot_fit_func'
-        #    parameters.
-        #----------------------------------------------------------------------
+        # parameters.
+        #-----------------------------------------------------------------------
         print("Rot Parameter Guess:", rot_param_guess)
-        #######################################################################
+        ########################################################################
         '''
 
         try:
-            rot_popt, rot_pcov = curve_fit( rot_fit_func,
-                                            depro_dist, rot_vel,
+            rot_popt, rot_pcov = curve_fit( rot_fit_func, depro_dist, rot_vel,
                                             p0=rot_param_guess,
                                             sigma=rot_vel_err,
-                                            bounds=( ( v_max_guess / 2,
-                                                       r_turn_guess / 4,
-                                                       np.nextafter( 0, 1)),
-                                                     ( v_max_guess * 1.5,
-                                                       r_turn_guess * 2,
-                                                       np.inf)),
-                                            max_nfev=TRY_N, loss='cauchy')
+                                            bounds=(rot_param_low, rot_param_high),
+                                            max_nfev=TRY_N, 
+                                            loss='cauchy')
 
             rot_perr = np.sqrt( np.diag( rot_pcov))
 
@@ -205,11 +209,10 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
 
 
-    ###########################################################################
-    # If the maximum velocity of the data file in question is less than or
-    #    equal to zero, the best fit parameters and their errors are set to
-    #    -100.
-    #--------------------------------------------------------------------------
+    ############################################################################
+    # If the maximum velocity of the data file in question is less than or equal 
+    # to zero, the best fit parameters and their errors are set to -100.
+    #---------------------------------------------------------------------------
     else:
         v_max_best = -100
         r_turn_best = -100
@@ -219,7 +222,7 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
         r_turn_sigma = -100
         alpha_sigma = -100
         chi_square_rot = -100
-    ###########################################################################
+    ############################################################################
 
     best_param = ( v_max_best, r_turn_best, alpha_best)
     param_err = ( v_max_sigma, r_turn_sigma, alpha_sigma)
@@ -307,16 +310,16 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N, points_to_cut=0):
         rot_vel_avg_err = rot_vel_avg_err[:-points_to_cut]
         rot_vel_pos_err = rot_vel_pos_err[:-points_to_cut]
         rot_vel_neg_err = rot_vel_neg_err[:-points_to_cut]
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Best fit parameters and errors in those parameters are initialized to be
-    #    -1 to indicate that they start out as 'not found.' A value of -1 in
-    #    the master file therefore indicates that the galaxy was not fitted
-    #    because there was insufficent data to find the best fit parameters and
-    #    their errors.
-    #--------------------------------------------------------------------------
+    # -1 to indicate that they start out as 'not found.' A value of -1 in the 
+    # master file therefore indicates that the galaxy was not fitted because 
+    # there was insufficent data to find the best fit parameters and their 
+    # errors.
+    #---------------------------------------------------------------------------
     avg_v_max = -1.* vel_unit
     pos_v_max = -1.* vel_unit
     neg_v_max = -1.* vel_unit
@@ -473,7 +476,7 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N, points_to_cut=0):
 ###############################################################################
 
 
-def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
+def estimate_dark_matter( parameter_dict, chi2_max, rot_curve_file, gal_stat_file):
     '''
     Estimate the total mass interior to a radius from the fitted v_max
     parameter and the last recorded radius for the galaxy.  Then estimate the
@@ -487,6 +490,9 @@ def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
     parameter_dict : dictionary
         Best fit parameters for each galaxy along with the errors associated 
         with them and the chi-square goodness of fit statistics
+
+    chi2_max : float
+        Maximum allowed normalized chi2 (chi2/DOF) for a successful fit.
 
     rot_curve_file : string
         File name of data file containing rotation curve data
@@ -504,10 +510,11 @@ def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
     '''
 
     
-    ###########################################################################
+    ############################################################################
     # Find the optimal fit parameters to use for estimating the mass
-    #--------------------------------------------------------------------------
-    parameter_dict, curve_used, points_cut = parameter_restrictions(parameter_dict, 
+    #---------------------------------------------------------------------------
+    parameter_dict, curve_used, points_cut = parameter_restrictions(chi2_max, 
+                                                                    parameter_dict, 
                                                                     0, 
                                                                     rot_curve_file,
                                                                     gal_stat_file)
@@ -515,12 +522,12 @@ def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
     curve_used = 'avg'
     points_cut = 0
     '''
-    ###########################################################################
+    ############################################################################
     
     
-    ###########################################################################
-    # Define maximum velocities to use for total matter estimate
-    #--------------------------------------------------------------------------
+    ############################################################################
+    # Define maximum velocities and turn radius to use for mass estimates
+    #---------------------------------------------------------------------------
     if curve_used == 'none':
         v_max = -1. * ( u.km / u.s)
     else:
@@ -529,17 +536,17 @@ def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
     
         v_max = parameter_dict[v_max_field]
         v_max_sigma = parameter_dict[v_max_sigma_field]
-    ###########################################################################
+    ############################################################################
     
 
-    ###########################################################################
-    # For each galaxy in the 'master_file,' calculate the total mass interior
-    #    to the final radius recorded of the galaxy. Then, subtract the stellar
-    #    mass interior to that radius to find the theoretical estimate for
-    #    the dark matter interior to that radius.
+    ############################################################################
+    # For each galaxy in the 'master_file,' calculate the total mass interior to
+    # the final radius recorded of the galaxy.  Then, subtract the stellar mass
+    # interior to that radius to find the theoretical estimate for the dark 
+    # matter interior to that radius.
     #
     # In addition, the errors associated with the total mass and dark matter
-    #    mass interior to a radius are calculated.
+    # mass interior to a radius are calculated.
     #--------------------------------------------------------------------------
     rot_curve_table = QTable.read( rot_curve_file, format='ascii.ecsv')
     depro_dist = rot_curve_table['deprojected_distance']
@@ -590,6 +597,8 @@ def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
     ###########################################################################
     # Add new output fields to parameter_dict
     #--------------------------------------------------------------------------
+    parameter_dict['Rmax'] = depro_dist[-1]
+
     parameter_dict['Mtot'] = gal_mass
     parameter_dict['Mtot_error'] = gal_mass_err
 
@@ -615,13 +624,17 @@ def estimate_dark_matter( parameter_dict, rot_curve_file, gal_stat_file):
 
 
 
-def parameter_restrictions(fitted_parameters, points_cut, rot_curve_file, gal_stat_file):
+def parameter_restrictions(chi2_max, fitted_parameters, points_cut, rot_curve_file, gal_stat_file):
     '''
     Implement desired cuts to 'clean' the galaxy sample
 
 
     Parameters:
     ===========
+
+    chi2_max : float
+        Maximum allowed value of normalized chi2 parameter (chi2/DOF) for a 
+        successful fit.
 
     fitted_parameters : dictionary
         Contains all fit parameters and statistics
@@ -648,58 +661,57 @@ def parameter_restrictions(fitted_parameters, points_cut, rot_curve_file, gal_st
         sample to achieve the best fit.
     '''
 
-    chi2_max = 30
-
-    ###########################################################################
+    ############################################################################
     # Measure total points available in rotation curve
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     rot_data_table = Table.read(rot_curve_file, format='ascii.ecsv')
     total_points = len(rot_data_table)
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Check chi^2 of average curve
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     if (fitted_parameters['avg_chi_square_ndf'] < chi2_max) and (fitted_parameters['avg_chi_square_rot'] >= 0):
         curve_used = 'avg'
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     # Check chi^2 of positive curve
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     elif (fitted_parameters['pos_chi_square_ndf'] < chi2_max) and (fitted_parameters['pos_chi_square_rot'] >= 0):
         curve_used = 'pos'
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     # Check chi^2 of negative curve
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     elif (fitted_parameters['neg_chi_square_ndf'] < chi2_max) and (fitted_parameters['neg_chi_square_rot'] >= 0):
         curve_used = 'neg'
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     # Remove one point from curves and refit
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     elif points_cut < 0.5*total_points:
         points_cut += 1
 
-        #######################################################################
+        ########################################################################
         # Refit galaxy
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         fitted_parameters = fit_rot_curve( rot_curve_file, gal_stat_file, 100000, points_cut)
-        #######################################################################
+        ########################################################################
 
 
-        #######################################################################
+        ########################################################################
         # Check new fitted parameters
-        #----------------------------------------------------------------------
-        fitted_parameters, curve_used, points_cut = parameter_restrictions(fitted_parameters, 
-                                                                           points_cut,
-                                                                           rot_curve_file,
-                                                                           gal_stat_file)
-        #######################################################################
-    #--------------------------------------------------------------------------
+        #-----------------------------------------------------------------------
+        fitted_parameters, curve_used, points_cut = parameter_restrictions( chi2_max, 
+                                                                            fitted_parameters, 
+                                                                            points_cut,
+                                                                            rot_curve_file,
+                                                                            gal_stat_file)
+        ########################################################################
+    #---------------------------------------------------------------------------
     # Galaxy fit is not good
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     else:
         curve_used = 'none'
-    ###########################################################################
+    ############################################################################
 
 
     return fitted_parameters, curve_used, points_cut

@@ -265,10 +265,10 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         Cumulative number of completely masked galaxies
     '''
 
-    ###########################################################################
+    ############################################################################
     # Create a mask for the data arrays. The final mask is applied to all data 
     # arrays extracted from the .fits file.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     data_mask = build_mask( Ha_vel_err, v_band, v_band_err, sMass_density)
 
     num_masked_spaxels = np.sum(data_mask) - np.sum(v_band == 0)
@@ -279,116 +279,123 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     masked_Ha_vel_err = ma.masked_where( data_mask, Ha_vel_err)
     masked_sMass_density = ma.masked_where( data_mask, sMass_density)
     '''
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     # Show the created mask where yellow points represent masked data points.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     plt.figure(1)
     plt.imshow( data_mask)
     plt.show()
     plt.close()
     '''
-    ###########################################################################
+    ############################################################################
+
+
+    ############################################################################
+    # Check if all of the array is masked.
+    #---------------------------------------------------------------------------
+    unmasked_data = False
+
+    if frac_masked_spaxels < 1:
+        unmasked_data = True
+    ############################################################################
     
 
-    ###########################################################################
+    ############################################################################
     # DIAGNOSTICS:
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     if plot_diagnostics:
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         # Plot visual-band image
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         plot_vband_image( v_band, gal_ID, IMAGE_DIR=IMAGE_DIR, 
                           IMAGE_FORMAT=IMAGE_FORMAT)
 
         if IMAGE_DIR is None:
             plt.show()
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         # Plot H-alpha velocity field before systemic redshift subtraction. 
         # Galaxy velocities vary from file to file, so vmin and vmax will have 
         # to be manually adjusted for each galaxy before reshift subtraction.
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         plot_Ha_vel( Ha_vel, gal_ID, 
                      IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/unmasked_Ha_vel/', 
                      IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_raw.')
 
         if IMAGE_DIR is None:
             plt.show()
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Determine optical center via the max luminosity in the visual band.
-    #--------------------------------------------------------------------------
-    optical_center = np.argwhere( masked_v_band.max() == masked_v_band)
+    #---------------------------------------------------------------------------
+    if unmasked_data:
+        optical_center = np.argwhere( masked_v_band.max() == masked_v_band)
 
-    x_center = optical_center[0][ 1]
-    y_center = optical_center[0][ 0]
-    ###########################################################################
+        x_center = optical_center[0][ 1]
+        y_center = optical_center[0][ 0]
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Subtract the systemic velocity from data points without the mask and then
-    #    multiply the velocities by sin( inclination angle) to account for the
-    #    galaxy's inclination affecting the rotational velocity.
+    # multiply the velocities by sin( inclination angle) to account for the
+    # galaxy's inclination affecting the rotational velocity.
     #
-    # In addition, repeat the same calculations for the unmasked 'Ha_vel'
-    #    array. This is for plotting purposes only within 'panel_fig.'
-    #--------------------------------------------------------------------------
-    sys_vel = masked_Ha_vel[ y_center, x_center]
-    inclination_angle = np.arccos( axis_ratio)
+    # In addition, repeat the same calculations for the unmasked 'Ha_vel' array.
+    # This is for plotting purposes only within 'panel_fig.'
+    #---------------------------------------------------------------------------
+    if unmasked_data:
+        sys_vel = masked_Ha_vel[ y_center, x_center]
+        inclination_angle = np.arccos( axis_ratio)
 
-    masked_Ha_vel -= sys_vel
-    masked_Ha_vel /= np.sin( inclination_angle)
+        masked_Ha_vel -= sys_vel
+        Ha_vel -= sys_vel
 
-    Ha_vel[ ~masked_Ha_vel.mask] -= sys_vel
-    Ha_vel[ ~masked_Ha_vel.mask] /= np.sin( inclination_angle)
-    ###########################################################################
+        if inclination_angle != 0:
+            masked_Ha_vel /= np.sin( inclination_angle)
+            Ha_vel /= np.sin( inclination_angle)
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Find the global max and global min of 'masked_Ha_vel' to use in graphical
-    #    analysis.
+    # analysis.
     #
     # NOTE: If the entire data array is masked, 'global_max' and 'global_min'
-    #       cannot be calculated. It has been found that if the
-    #       'inclination_angle' is 0 degrees, the entire 'Ha_vel' array is
-    #       masked. An if-statement tests this case, and sets 'unmasked_data'
-    #       to False if there is no max/min in the array.
-    #--------------------------------------------------------------------------
-    global_max = np.max( masked_Ha_vel)
-    global_min = np.min( masked_Ha_vel)
-
-    unmasked_data = True
-
-    if str( global_max) == '--':
-        unmasked_data = False
+    #       cannot be calculated.
+    #---------------------------------------------------------------------------
+    if unmasked_data:
+        global_max = np.max( masked_Ha_vel)
+        global_min = np.min( masked_Ha_vel)
+    else:
         global_max = 0.1
         global_min = -0.1
-    ###########################################################################
+    ############################################################################
 
     '''
-    ###########################################################################
+    ############################################################################
     # Print the angle of rotation in the 2-D observational plane as taken from
-    #    the NSA catalog.
-    #--------------------------------------------------------------------------
+    # the NSA catalog.
+    #---------------------------------------------------------------------------
     phi_deg = ( 90 - phi_EofN_deg / u.deg) * u.deg
     print('phi:', phi_deg)
-    ###########################################################################
+    ############################################################################
     '''
 
-    ###########################################################################
+    ############################################################################
     # Preserve original v_band image for plotting in the 'diagnostic_panel'
-    #    image.
-    #--------------------------------------------------------------------------
+    # image.
+    #---------------------------------------------------------------------------
     v_band_raw = v_band.copy()
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # If 'unmasked_data' was set to False by all of the 'Ha_vel' data being
     #    masked after correcting for the angle of inclination, set all of the 
     #    data arrays to be -1.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     if not unmasked_data:
         lists = {'radius':[-1], #'radius_err':[-1],
                  'max_vel':[-1], 'max_vel_err':[-1],
@@ -407,13 +414,13 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
         num_masked_gal += 1
 
         print("ALL DATA POINTS FOR THE GALAXY ARE MASKED!!!")
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # If there is unmasked data in the data array, execute the function as
     #    normal.
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     else:
         lists, center_flux, center_flux_err, masked_vel_contour_plot = find_rot_curve( z, 
                                                                                        data_mask, 
@@ -456,27 +463,27 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
     ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # Convert the data arrays into astropy Column objects and then add those
-    #    Column objects to an astropy QTable.
+    # Column objects to an astropy QTable.
     #
-    # NOTE: 'gal_stats' contains general statistics about luminosity and
-    #       stellar mass for the entire galaxy
-    #--------------------------------------------------------------------------
+    # NOTE: 'gal_stats' contains general statistics about luminosity and stellar 
+    #       mass for the entire galaxy
+    #---------------------------------------------------------------------------
     data_table, gal_stats = put_data_in_QTable(lists, gal_ID, center_flux, 
                                                center_flux_err, frac_masked_spaxels)
-    ###########################################################################
+    ############################################################################
 
 
-    ###########################################################################
+    ############################################################################
     # NOTE: All further statements with the exception of the return statement
     #       are used to give information on the terminating loop for data
-    #       collection. Figures are generated that show the phi from the NSA
+    #       collection.  Figures are generated that show the phi from the NSA
     #       Catalog, as well as the pixels used from the H-alpha velocity field
     #       to generate the min and max rotation curves. The caught, anomalous
     #       max and min for the while loop are also printed to verify the
     #       algorithm is working correctly.
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     '''
     # Print the systemic velocity (taken from the most luminous point in the 
     # galaxy), and absolute maximum and minimum velocities in the entire numpy 
@@ -491,41 +498,41 @@ def calc_rot_curve( Ha_vel, Ha_vel_err, v_band, v_band_err, sMass_density,
 
     if unmasked_data and plot_diagnostics:
 
-        #######################################################################
+        ########################################################################
         # Rotational velocity as a function of deprojected radius.
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         plot_rot_curve( gal_ID, data_table, 
                         IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
 
         if IMAGE_DIR is None:
             plt.show()
-        #######################################################################
+        ########################################################################
 
 
-        #######################################################################
+        ########################################################################
         # Plot cumulative mass as a function of deprojected radius.
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         plot_mass_curve( IMAGE_DIR, IMAGE_FORMAT, gal_ID, data_table)
 
         if IMAGE_DIR is None:
             plt.show()
-        #######################################################################
+        ########################################################################
 
 
-        #######################################################################
+        ########################################################################
         # Plot a two by two paneled image containging the entire 'Ha_vel' 
         # array, the masked version of this array, 'masked_Ha_vel,' the masked
         # 'vel_contour_plot' array containing ovals of the data points 
         # processed in the algorithm, and the averaged max and min rotation 
         # curves alongside the stellar mass rotation curve.
-        #----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         plot_diagnostic_panel( IMAGE_DIR, IMAGE_FORMAT, gal_ID, v_band_raw, 
                                masked_Ha_vel, masked_vel_contour_plot, 
                                data_table)
 
         if IMAGE_DIR is None:
             plt.show()
-        #######################################################################
+        ########################################################################
 
 
     return data_table, gal_stats, num_masked_gal

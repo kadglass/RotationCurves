@@ -1,5 +1,7 @@
-import datetime
-START = datetime.datetime.now()
+'''
+DEPRECATED - Incorporated into main analysis pipeline (in dark_matter_mass_main.py)
+'''
+
 
 from astropy.table import QTable
 
@@ -34,13 +36,4 @@ master_table = match_Rmax( master_table, DATA_PIPELINE)
 # Write the 'master_table.'
 #------------------------------------------------------------------------------
 master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
-###############################################################################
-
-
-
-###############################################################################
-# Clock the program's run time to check performance.
-#------------------------------------------------------------------------------
-FINISH = datetime.datetime.now()
-print("Runtime (COMPLETED):", FINISH - START)
 ###############################################################################

@@ -54,7 +54,7 @@ for i in range(len(galaxies)):
     if galaxies['curve_used'][:3] is not 'non':
 
         plate = galaxies['MaNGA_plate'][i]
-        IFU = galaxies['MaNGA_fiberID'][i]
+        IFU = galaxies['MaNGA_IFU'][i]
 
         galaxy_filename = '../data/MaNGA/MaNGA_DR15/pipe3d/' + str(plate) + '/manga-' + str(plate) + '-' + str(IFU) + '.Pipe3D.cube.fits.gz'
 
@@ -84,7 +84,7 @@ for i in range(len(galaxies)):
 ################################################################################
 # Save results
 #-------------------------------------------------------------------------------
-galaxies.write(galaxies_filename[:-4] + '2-27.txt', format='ascii.ecsv', overwrite=True)
+galaxies.write(galaxies_filename[:-4] + '2p27.txt', format='ascii.ecsv', overwrite=True)
 ################################################################################
 
 

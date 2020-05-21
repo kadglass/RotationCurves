@@ -1,8 +1,4 @@
 
-import datetime
-START = datetime.datetime.now()
-
-import os.path
 from astropy.table import Table, QTable
 
 from extract_CMD_v1 import match_CMD
@@ -42,13 +38,4 @@ master_table = match_CMD( master_table, CMD_table)
 # Write the 'master_table.'
 #------------------------------------------------------------------------------
 master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
-###############################################################################
-
-
-
-###############################################################################
-# Clock the program's run time to check performance.
-#------------------------------------------------------------------------------
-FINISH = datetime.datetime.now()
-print("Runtime (COMPLETED):", FINISH - START)
 ###############################################################################

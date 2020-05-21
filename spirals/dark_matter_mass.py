@@ -155,8 +155,8 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, TRY_N):
         alpha_guess = 2
 
         rot_param_guess = [ v_max_guess, r_turn_guess, alpha_guess]
-        rot_param_low = ( 0., 0., np.nextafter(0, 1))
-        rot_param_high = ( 1E6, np.inf, np.inf)
+        rot_param_low = ( 1., 0.001, np.nextafter(0, 1))
+        rot_param_high = ( 1E4, 1000., np.inf)
 
         '''
         ########################################################################
@@ -565,6 +565,9 @@ def estimate_dark_matter( parameter_dict, chi2_max, rot_curve_file, gal_stat_fil
         Mdark_Mstar_ratio = -1.
         Mdark_Mstar_ratio_err = -1.
 
+        Mtot_Mstar_ratio = -1.
+        Mtot_Mstar_ratio_err = -1.
+
     else:
         depro_dist_end = np.abs( depro_dist[-1])
         depro_dist_end_m = depro_dist_end.to('m')
@@ -584,6 +587,9 @@ def estimate_dark_matter( parameter_dict, chi2_max, rot_curve_file, gal_stat_fil
 
         Mdark_Mstar_ratio = theorized_Mdark / Mstar_processed
         Mdark_Mstar_ratio_err = theorized_Mdark_err / Mstar_processed
+
+        Mtot_Mstar_ratio = gal_mass / Mstar_processed
+        Mtot_Mstar_ratio_err = gal_mass_err / Mstar_processed
         '''
         print('Total mass:', gal_mass)
         print('Stellar mass:', Mstar_processed)
@@ -609,6 +615,9 @@ def estimate_dark_matter( parameter_dict, chi2_max, rot_curve_file, gal_stat_fil
 
     parameter_dict['Mdark_Mstar_ratio'] = Mdark_Mstar_ratio
     parameter_dict['Mdark_Mstar_ratio_error'] = Mdark_Mstar_ratio_err
+
+    parameter_dict['Mtot_Mstar_ratio'] = Mtot_Mstar_ratio
+    parameter_dict['Mtot_Mstar_ratio_error'] = Mtot_Mstar_ratio_err
 
     parameter_dict['curve_used'] = curve_used
     parameter_dict['points_cut'] = points_cut

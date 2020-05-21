@@ -161,6 +161,8 @@ if RUN_ALL_GALAXIES:
     master_table['Mstar'] = -1. * u.M_sun
     master_table['Mdark_Mstar_ratio'] = -1.
     master_table['Mdark_Mstar_ratio_error'] = -1.
+    master_table['Mtot_Mstar_ratio'] = -1.
+    master_table['Mtot_Mstar_ratio_error'] = -1.
 
     master_table['curve_used'] = '    '
     master_table['points_cut'] = 0

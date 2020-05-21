@@ -52,7 +52,7 @@ for i in range(len(master_table)):
     ############################################################################
     # Construct galaxy ID
     #---------------------------------------------------------------------------
-    gal_ID = str(master_table['MaNGA_plate'][i]) + '-' + str(master_table['MaNGA_fiberID'][i])
+    gal_ID = str(master_table['MaNGA_plate'][i]) + '-' + str(master_table['MaNGA_IFU'][i])
     #---------------------------------------------------------------------------
 
 

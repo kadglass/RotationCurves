@@ -11,7 +11,7 @@ from extract_Mturn_v1 import extract_Mturn
 DATA_PIPELINE = 'Pipe3D'
 #DATA_PIPELINE = 'DRP'
 
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_10_smooth2p27.txt'
+MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_10_smooth2p27.txt'
 ################################################################################
 
 

@@ -105,7 +105,7 @@ def remove_plate(master_table, master_boolean, plate, IFU_keep=-1, IFU_remove=-1
     if IFU_remove > 0:
 
         plate_boolean = master_table['MaNGA_plate'] == plate
-        IFU_boolean = master_table['MaNGA_fiberID'] == IFU_remove
+        IFU_boolean = master_table['MaNGA_IFU'] == IFU_remove
 
         remove_boolean = np.logical_and(plate_boolean, IFU_boolean)
         remove_boolean = np.logical_not(remove_boolean)
@@ -128,7 +128,7 @@ def remove_plate(master_table, master_boolean, plate, IFU_keep=-1, IFU_remove=-1
             # Invert plate_boolean array
             plate_boolean = np.logical_not(remove_boolean)
 
-            IFU_boolean = master_table['MaNGA_fiberID'] == IFU_keep
+            IFU_boolean = master_table['MaNGA_IFU'] == IFU_keep
 
             # Locate which galaxy (plate-IFU_keep) to keep
             keep_plate_boolean = np.logical_and(plate_boolean, IFU_boolean)
@@ -188,6 +188,7 @@ def find_ellipticals(master_filename):
     #---------------------------------------------------------------------------
     smooth_boolean = master_table['smoothness_score'] > 2.27
 
+    '''
     pos_chi2_boolean = master_table['avg_chi_square_rot'] > 10
     neg_chi2_boolean = master_table['neg_chi_square_rot'] > 10
     avg_chi2_boolean = master_table['avg_chi_square_rot'] > 10
@@ -196,6 +197,8 @@ def find_ellipticals(master_filename):
                                           avg_chi2_boolean])
 
     elliptical_boolean = np.logical_and(smooth_boolean, chi2_boolean)
+    '''
+    elliptical_boolean = smooth_boolean
     ############################################################################
 
 
@@ -219,7 +222,7 @@ def find_ellipticals(master_filename):
     # Build elliptical IDs
     #---------------------------------------------------------------------------
     elliptical_plates = master_table['MaNGA_plate'][elliptical_boolean]
-    elliptical_fiberIDs = master_table['MaNGA_fiberID'][elliptical_boolean]
+    elliptical_fiberIDs = master_table['MaNGA_IFU'][elliptical_boolean]
 
     elliptical_IDs = list(zip(elliptical_plates.astype('str'), 
                               elliptical_fiberIDs.astype('str')))
@@ -234,9 +237,9 @@ def find_ellipticals(master_filename):
 
 ################################################################################
 #-------------------------------------------------------------------------------
-def find_data_DRPall(data_table, ID, field_name):
+def find_data_DRPall(data_table, ID, field_names):
     '''
-    Find field_name value in data table
+    Find field_name values in data table
 
 
     PARAMETERS
@@ -248,15 +251,15 @@ def find_data_DRPall(data_table, ID, field_name):
     ID : length-2 tuple
         (plate, fiberID) of querying galaxy
 
-    field_name : string
-        Data field from which to extract value
+    field_names : list of strings
+        Data fields from which to extract value
 
 
     RETURNS
     =======
 
-    data_value : float
-        field_name value of galaxy
+    data_values : float
+        field_name values of galaxy
     '''
 
 
@@ -270,8 +273,14 @@ def find_data_DRPall(data_table, ID, field_name):
     ############################################################################
     # Extract field_name value from table
     #---------------------------------------------------------------------------
-    data_value = data_table[field_name][idx_boolean]
+    data_values = np.zeros(len(field_names))
+
+    for i in range(len(field_names)):
+        if field_names[i] != 'nsa_elpetro_absmag':
+            data_values[i] = data_table[field_names[i]][idx_boolean]
+        else:
+            data_values[i] = data_table[field_names[i]][idx_boolean][4]
     ############################################################################
 
-    return data_value
+    return data_values
 ################################################################################

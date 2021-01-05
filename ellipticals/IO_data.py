@@ -7,7 +7,7 @@ Functions to read in data
 # IMPORT MODULES
 #-------------------------------------------------------------------------------
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 import numpy as np
 import numpy.ma as ma
@@ -39,7 +39,7 @@ def read_master_file(filename):
         Astropy table of the master file
     '''
 
-    master_table = Table.read(filename, format='ascii.commented_header')
+    master_table = QTable.read(filename, format='ascii.ecsv')
 
     return master_table
 ################################################################################
@@ -76,7 +76,7 @@ def construct_filename(galaxy_ID, data_directory):
 
     plate, fiberID = galaxy_ID
 
-    cube_filename = data_directory + plate + '/manga-' + plate + '-' + fiberID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+    cube_filename = data_directory + plate + '/' + fiberID + '/manga-' + plate + '-' + fiberID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
 
     return cube_filename
 ################################################################################

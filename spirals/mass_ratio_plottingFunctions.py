@@ -19,7 +19,8 @@ label_dict = {'Mdark_Mstar_ratio':'$M_{DM}/M_*$',
               'rabsmag': '$M_r$',
               'Z12logOH': '12 + log(O/H)',
               'Rmax': '$R_{max}$ [kpc]',
-              'avg_r_turn': '$R_{turn}$ [kpc]'}
+              'avg_r_turn': '$R_{turn}$ [kpc]',
+              'Rmax_Rturn_ratio': '$R_{max}$/$R_{turn}$'}
 ###############################################################################
 
 

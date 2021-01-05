@@ -9,7 +9,7 @@ from astropy.table import Table
 
 from IO_data import construct_filename, open_map
 from parse_data import find_data_DRPall
-from plot_data import FJ_plot
+from plot_data import FP_plot, FJ_plot
 ################################################################################
 
 
@@ -157,6 +157,79 @@ def find_veldisp(ID, directory, disp):
 
 ################################################################################
 #-------------------------------------------------------------------------------
+def plot_FundamentalPlane(IDs, directory, sigma_type, save_fig):
+    '''
+    Extract data and plot the Fundamental Plane (stellar mass v. velocity 
+    dispersion v. radius).
+
+
+    PARAMETERS
+    ==========
+
+    IDs : list of length-2 tuples
+        List of galaxy (plate, fiberID) combinations to include in Faber-Jackson 
+        plot.
+
+    directory : string
+        Path to where data lives on local machine
+
+    sigma_type : string
+        Location / type of velocity dispersion.  Options include:
+        - 'median'  : returns the median value of the velocity dispersion map
+        - 'central' : returns the central value of the velocity dispersion map
+
+    save_fig : boolean
+        Determines wether or not to save the figure.
+    '''
+
+
+    ############################################################################
+    # Read in DRPall table
+    #---------------------------------------------------------------------------
+    drp_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/redux/v2_4_3/drpall-v2_4_3.fits'
+
+    DRPall_table = Table.read(drp_filename, format='fits')
+    ############################################################################
+
+
+    ############################################################################
+    # Extract stellar mass, velocity dispersion, and radius for each galaxy
+    #
+    # Stellar masses and Petrosian radii come from the NSA catalog via the 
+    # DRPall file
+    # Velocity dispersions are taken from the stellar velocity dispersion map.
+    #---------------------------------------------------------------------------
+    Mstar = np.zeros(len(IDs))
+
+    vel_disp = np.zeros(len(IDs))
+    vel_disp_err = np.zeros(len(IDs))
+
+    Radius = np.zeros(len(IDs))
+
+
+    for i,galaxy in enumerate(IDs):
+
+        Mstar[i], Radius[i] = find_data_DRPall(DRPall_table, 
+                                               galaxy, 
+                                               ['nsa_elpetro_mass', 'nsa_elpetro_th50_r'])
+
+        vel_disp[i], vel_disp_err[i] = find_veldisp(galaxy, directory, sigma_type)
+    ############################################################################
+
+
+    ############################################################################
+    # Plot Fundamental Plane
+    #---------------------------------------------------------------------------
+    FP_plot(Mstar, Radius, vel_disp, sigma_type, save_fig)
+    ############################################################################
+################################################################################
+
+
+
+
+
+################################################################################
+#-------------------------------------------------------------------------------
 def plot_FaberJackson(IDs, directory, sigma_type, save_fig):
     '''
     Extract data and plot Faber-Jackson relation (stellar mass v. velocity 
@@ -186,11 +259,9 @@ def plot_FaberJackson(IDs, directory, sigma_type, save_fig):
     ############################################################################
     # Read in DRPall table
     #---------------------------------------------------------------------------
-    drp_filename = '../data/MaNGA/drpall-v2_4_3.fits'
+    drp_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/redux/v2_4_3/drpall-v2_4_3.fits'
 
-    DRPall = fits.open(drp_filename)
-
-    DRPall_table = DRPall[1].data
+    DRPall_table = Table.read(drp_filename, format='fits')
     ############################################################################
 
 
@@ -201,6 +272,7 @@ def plot_FaberJackson(IDs, directory, sigma_type, save_fig):
     # Velocity dispersions are taken from the stellar velocity dispersion map.
     #---------------------------------------------------------------------------
     Mstar = np.zeros(len(IDs))
+    rabsmag = np.zeros(len(IDs))
 
     vel_disp = np.zeros(len(IDs))
     vel_disp_err = np.zeros(len(IDs))
@@ -208,7 +280,7 @@ def plot_FaberJackson(IDs, directory, sigma_type, save_fig):
 
     for i,galaxy in enumerate(IDs):
 
-        Mstar[i] = find_data_DRPall(DRPall_table, galaxy, 'nsa_elpetro_mass')
+        Mstar[i], rabsmag[i] = find_data_DRPall(DRPall_table, galaxy, ['nsa_elpetro_mass', 'nsa_elpetro_absmag'])
 
         vel_disp[i], vel_disp_err[i] = find_veldisp(galaxy, directory, sigma_type)
     ############################################################################
@@ -217,7 +289,8 @@ def plot_FaberJackson(IDs, directory, sigma_type, save_fig):
     ############################################################################
     # Plot Faber-Jackson relation
     #---------------------------------------------------------------------------
-    FJ_plot(Mstar, vel_disp, sigma_type, save_fig)
+    #FJ_plot(Mstar, vel_disp, sigma_type, save_fig)
+    FJ_plot(rabsmag, vel_disp, sigma_type, save_fig)
     ############################################################################
 ################################################################################
 

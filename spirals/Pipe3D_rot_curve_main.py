@@ -84,8 +84,8 @@ else:
         IMAGE_DIR = None
     
     MANGA_FOLDER = LOCAL_PATH + '../data/MaNGA/MaNGA_DR15/pipe3d/'
-    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + 'rot_curve_data_files/'
-    MASTER_FILENAME = 'Pipe3D-master_file_vflag_10.txt'
+    ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + 'Pipe3D-rot_curve_data_files/'
+    MASTER_FILENAME = 'Pipe3D-master_file_vflag_10_smooth.txt'
 
 
 # Create output directory if it does not already exist

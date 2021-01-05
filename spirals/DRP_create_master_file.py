@@ -6,11 +6,11 @@ Create (or overwrite) master file.
 ################################################################################
 # Import modules
 #-------------------------------------------------------------------------------
-import os.path
+import os
 
 import glob
 
-from astropy.io import fits
+from astropy.table import Table
 
 import numpy as np
 
@@ -27,11 +27,9 @@ from DRP_rotation_curve import match_to_DRPall, write_master_file
 # ATTN: 'MANGA_FOLDER' must be manually altered according to the data release
 #       being ran.
 #-------------------------------------------------------------------------------
-LOCAL_PATH = os.path.dirname(__file__)
-if LOCAL_PATH == '':
-    LOCAL_PATH = './'
+LOCAL_PATH = os.getcwd() + '/'
 
-MANGA_FOLDER = LOCAL_PATH + '../data/MaNGA/MaNGA_DR16/HYB10-GAU-MILESHC/'
+MANGA_FOLDER = LOCAL_PATH + '../../../data/SDSS/MaNGA/MaNGA_DR16/HYB10-GAU-MILESHC/'
 ################################################################################
 
 
@@ -61,25 +59,25 @@ N_files = len( files)
 # rotation in the two-dimensional, observational plane (obtained via elliptical 
 # sersic fit); the redshift; and the absolute magnitude in the r-band.
 #-------------------------------------------------------------------------------
-DRPall_filename = LOCAL_PATH + '../data/MaNGA/drpall-v2_4_3.fits'
-general_data = fits.open( DRPall_filename)
+DRPall_filename = LOCAL_PATH + '../../../data/SDSS/MaNGA/drpall-v2_4_3.fits'
+general_data = Table.read( DRPall_filename, format='fits')
 
-plateIFU_all = general_data[1].data['plateifu']
+plateIFU_all = general_data['plateifu']
 
-ra_all = general_data[1].data['objra']
-dec_all = general_data[1].data['objdec']
-z_all = general_data[1].data['nsa_z']
+NSAid_all = general_data['nsa_nsaid']
 
-axis_ratio_all = general_data[1].data['nsa_elpetro_ba']
-phi_all = general_data[1].data['nsa_elpetro_phi']
+ra_all = general_data['objra']
+dec_all = general_data['objdec']
+z_all = general_data['nsa_z']
 
-rabsmag_all = general_data[1].data['nsa_elpetro_absmag'][:,4] # SDSS r-band
-mStar_all = general_data[1].data['nsa_elpetro_mass']
+axis_ratio_all = general_data['nsa_elpetro_ba']
+phi_all = general_data['nsa_elpetro_phi']
 
-manga_target_galaxy_all = general_data[1].data['mngtarg1'] != 0
-data_quality_all = general_data[1].data['drp3qual'] < 10000
+rabsmag_all = general_data['nsa_elpetro_absmag'][:,4] # SDSS r-band
+mStar_all = general_data['nsa_elpetro_mass']
 
-general_data.close()
+manga_target_galaxy_all = general_data['mngtarg1'] != 0
+data_quality_all = general_data['drp3qual'] < 10000
 ################################################################################
 
 
@@ -90,6 +88,8 @@ general_data.close()
 #-------------------------------------------------------------------------------
 manga_plate_master = -1 * np.ones( N_files, dtype=int)
 manga_IFU_master = -1 * np.ones( N_files, dtype=int)
+
+NSAid_master = -1 * np.ones( N_files, dtype=int)
 
 ra_master = -1. * np.ones( N_files)
 dec_master = -1. * np.ones( N_files)
@@ -137,6 +137,8 @@ for i in range(N_files):
     #---------------------------------------------------------------------------
     DRPall_gal_idx = match_to_DRPall( gal_ID, plateIFU_all)
 
+    NSAid_master[i] = NSAid_all[ DRPall_gal_idx]
+
     ra_master[i] = ra_all[ DRPall_gal_idx]
     dec_master[i] = dec_all[ DRPall_gal_idx]
     z_master[i] = z_all[ DRPall_gal_idx]
@@ -161,6 +163,8 @@ for i in range(N_files):
 #------------------------------------------------------------------------------
 keep_obj = np.logical_and(manga_target_galaxy_master, manga_dq_master)
 
+NSAid_good = NSAid_master[keep_obj]
+
 manga_plate_good = manga_plate_master[keep_obj]
 manga_IFU_good = manga_IFU_master[keep_obj]
 
@@ -183,7 +187,7 @@ mStar_good = mStar_master[keep_obj]
 # Build master file that contains identifying information for each galaxy as 
 # well as scientific information as taken from the DRPall catalog.
 #-------------------------------------------------------------------------------
-write_master_file( manga_plate_good, manga_IFU_good,
+write_master_file( manga_plate_good, manga_IFU_good, NSAid_good, 
                    ra_good, dec_good, z_good,
                    axis_ratio_good, phi_good, 
                    mStar_good, rabsmag_good, 

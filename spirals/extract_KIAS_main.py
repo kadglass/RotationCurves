@@ -1,21 +1,23 @@
 '''
-Main script file for extract_index_vX.
+Matches galaxies to the KIAS-VAGC by their P-MJD-F.
 '''
+
 import datetime
 START = datetime.datetime.now()
 
 #import os.path
 from astropy.table import Table,QTable
 
-from extract_index_v1 import match_index
+from extract_KIAS_functions import PMJDF_match
 
 
 ###############################################################################
 # User inputs
 #------------------------------------------------------------------------------
-INDEX_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
+INDEX_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/SDSS/kias1033_5_MPAJHU_ZdustOS.txt'
 
-MASTER_FILE_NAME = 'master_file_vflag_10.txt'
+#MASTER_FILE_NAME = 'master_file_vflag_10.txt'
+MASTER_FILE_NAME = 'DRPall-master_file.txt'
 master_file_format = 'ascii.ecsv'
 ###############################################################################
 
@@ -41,7 +43,9 @@ index_table = Table.read( INDEX_FILE_NAME, format='ascii.commented_header')
 # Match to the 'master_table' according to 'NSA_plate', 'NSA_MJD', and 
 # 'NSA_fiberID'
 #------------------------------------------------------------------------------
-master_table = match_index( master_table, index_table)
+columns_to_add = ['imc', 'aimc']
+
+master_table = PMJDF_match( master_table, index_table, columns_to_add)
 ###############################################################################
 
 

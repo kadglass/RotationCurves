@@ -1,18 +1,25 @@
+'''
+Extract additional data values to add to master data file.
+'''
 
-import datetime
-START = datetime.datetime.now()
 
-from astropy.table import Table, QTable
+from astropy.table import QTable
+import astropy.units as u
 
-from extract_SFR_v1 import match_SFR
+from extract_Vmax_v1 import match_Vmax
+from extract_HI_functions import match_HI
+from extract_DRP_functions import match_DRP
+
 
 
 ###############################################################################
 # User inputs
 #------------------------------------------------------------------------------
-SFR_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag_Voronoi_CMD.txt'
+#DATA_PIPELINE = 'Pipe3D'
+DATA_PIPELINE = 'DRP'
 
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_10_smooth2p27.txt'
+#MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27.txt'
+MASTER_FILE_NAME = 'DRPall-master_file.txt'
 ###############################################################################
 
 
@@ -24,16 +31,11 @@ master_table = QTable.read( MASTER_FILE_NAME, format='ascii.ecsv')
 
 
 ###############################################################################
-# Read in the 'SFR_table.'
+# Match to the 'master_table'
 #------------------------------------------------------------------------------
-SFR_table = Table.read( SFR_FILE_NAME, format='ascii.commented_header')
-###############################################################################
-
-
-###############################################################################
-# Match to the 'master_table' according to 'index'
-#------------------------------------------------------------------------------
-master_table = match_SFR( master_table, SFR_table)
+#master_table = match_Vmax( master_table, DATA_PIPELINE)
+#master_table = match_HI( master_table)
+master_table = match_DRP( master_table, ['nsa_elpetro_th50_r'], [u.arcsec])
 ###############################################################################
 
 
@@ -41,13 +43,4 @@ master_table = match_SFR( master_table, SFR_table)
 # Write the 'master_table.'
 #------------------------------------------------------------------------------
 master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
-###############################################################################
-
-
-
-###############################################################################
-# Clock the program's run time to check performance.
-#------------------------------------------------------------------------------
-FINISH = datetime.datetime.now()
-print("Runtime (COMPLETED):", FINISH - START)
 ###############################################################################

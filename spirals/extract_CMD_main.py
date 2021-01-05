@@ -9,7 +9,7 @@ from extract_CMD_v1 import match_CMD
 #------------------------------------------------------------------------------
 CMD_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag_Voronoi_CMD.txt'
 
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_10_smooth2p27.txt'
+MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_10_smooth2p27.txt'
 ###############################################################################
 
 

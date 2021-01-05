@@ -1,3 +1,5 @@
+
+
 import numpy as np
 
 
@@ -8,10 +10,10 @@ import numpy as np
 
 
 
-def match_index( master_table, ref_table):
+def PMJDF_match( master_table, ref_table, column_names):
     '''
-    Matches the ref_table to the master_table via NSA_plate, NSA_MJD, and
-    NSA_fiberID, then extracts the KIAS-VAGC index from the ref_table and 
+    Match the ref_table to the master_table via plate, MJD, and fiberID, then 
+    extract the KIAS-VAGC index and other given values from the ref_table and 
     assigns it to the corresponding entry in the master_table.
 
     Parameters:
@@ -22,6 +24,9 @@ def match_index( master_table, ref_table):
 
         ref_table : astropy table
             Contains KIAS-VAGC information
+
+        column_names : list
+            Column names to add to master_table
 
 
     Returns:
@@ -36,6 +41,9 @@ def match_index( master_table, ref_table):
     # Initialize output columns
     #--------------------------------------------------------------------------
     master_table['index'] = -1
+
+    for col_name in column_names:
+        master_table[col_name] = -1.
     #--------------------------------------------------------------------------
 
 
@@ -47,21 +55,28 @@ def match_index( master_table, ref_table):
 
 
     ###########################################################################
-    # Match galaxies with metallicities
+    # Match galaxies in KIAS-VAGC
     #--------------------------------------------------------------------------
     for i in range( len( master_table)):
-        
+        '''
         plate = master_table['NSA_plate'][i]
         MJD = master_table['NSA_MJD'][i]
         fiberID = master_table['NSA_fiberID'][i]
+        '''
+        plate = master_table['plate'][i]
+        MJD = master_table['MJD'][i]
+        fiberID = master_table['fiberID'][i]
 
         galaxy_ID = (plate, MJD, fiberID)
 
         if galaxy_ID in ref_dict.keys():
             master_table['index'][i] = ref_table['index'][ref_dict[galaxy_ID]]
+
+            for col_name in column_names:
+                master_table[col_name][i] = ref_table[col_name][ref_dict[galaxy_ID]]
         else:
             print("NO MATCH FOUND FOR GALAXY",
-                  str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_fiberID'][i]))
+                  str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_IFU'][i]))
     #--------------------------------------------------------------------------
 
     return master_table

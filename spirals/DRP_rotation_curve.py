@@ -571,7 +571,7 @@ def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
 ###############################################################################
 
 
-def write_master_file( manga_plate_master, manga_IFU_master,
+def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master, 
                        ra_master, dec_master, z_master,
                        axis_ratio_master, phi_master, 
                        mStar_master, rabsmag_master, 
@@ -591,6 +591,9 @@ def write_master_file( manga_plate_master, manga_IFU_master,
 
     manga_IFU_master : numpy array of shape (n,)
         master list containing the MaNGA IFU information for each galaxy
+
+    NSAid_master : numpy array of shape (n,)
+        master list containing the unique NSA ID number for each galaxy
 
     ra_master : numpy array of shape (n,)
         master list containing the RA values for each galaxy
@@ -628,6 +631,8 @@ def write_master_file( manga_plate_master, manga_IFU_master,
     manga_plate_col = Column( manga_plate_master)
     manga_IFU_col = Column( manga_IFU_master)
 
+    NSAid_col = Column( NSAid_master)
+
     ra_col = Column( ra_master)
     dec_col = Column( dec_master)
     z_col = Column( z_master)
@@ -646,6 +651,7 @@ def write_master_file( manga_plate_master, manga_IFU_master,
         #-----------------------------------------------------------------------
         master_table = QTable([ manga_plate_col,
                                 manga_IFU_col,
+                                NSAid_col, 
                                 ra_col * u.degree,
                                 dec_col * u.degree,
                                 z_col,
@@ -655,6 +661,7 @@ def write_master_file( manga_plate_master, manga_IFU_master,
                                 rabsmag_col],
                        names = ['MaNGA_plate',
                                 'MaNGA_IFU',
+                                'NSAID', 
                                 'ra',
                                 'dec',
                                 'redshift',
@@ -686,17 +693,22 @@ def write_master_file( manga_plate_master, manga_IFU_master,
         # Update column values in master_table
         #-----------------------------------------------------------------------
         for i in range( len( master_table)):
-            col_idx = index_dict[ (master_table['MaNGA_plate'][i], master_table['MaNGA_IFU'][i])]
+            gal_key = (master_table['MaNGA_plate'][i], master_table['MaNGA_IFU'][i])
 
-            master_table['ra'][i] = ra_col[col_idx] * u.degree
-            master_table['dec'][i] = dec_col[col_idx] * u.degree
-            master_table['redshift'][i] = z_col[col_idx]
+            if gal_key in index_dict:
+                col_idx = index_dict[ gal_key]
 
-            master_table['ba'][i] = axis_ratio_col[col_idx]
-            master_table['phi'][i] = phi_col[col_idx] * u.degree
+                master_table['NSAID'][i] = NSAid_col[col_idx]
 
-            master_table['Mstar'][i] = mStar_col[col_idx] * u.M_sun
-            master_table['rabsmag'][i] = rabsmag_col[col_idx]
+                master_table['ra'][i] = ra_col[col_idx] * u.degree
+                master_table['dec'][i] = dec_col[col_idx] * u.degree
+                master_table['redshift'][i] = z_col[col_idx]
+
+                master_table['ba'][i] = axis_ratio_col[col_idx]
+                master_table['phi'][i] = phi_col[col_idx] * u.degree
+
+                master_table['Mstar'][i] = mStar_col[col_idx] * u.M_sun
+                master_table['rabsmag'][i] = rabsmag_col[col_idx]
         ########################################################################
 
 

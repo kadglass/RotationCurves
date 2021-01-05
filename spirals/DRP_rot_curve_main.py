@@ -35,8 +35,9 @@ IMAGE_FORMAT = 'eps'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8713-6101']
-RUN_ALL_GALAXIES = True
+FILE_IDS = ['8939-12704', '9507-12704', '8942-12703', '8940-12702', 
+            '8982-12702', '9493-12702']
+RUN_ALL_GALAXIES = False
 ################################################################################
 
 
@@ -60,10 +61,11 @@ if RUN_ALL_GALAXIES:
     if not os.path.isdir( IMAGE_DIR):
         os.makedirs( IMAGE_DIR)
 else:
-    IMAGE_DIR = None
+    #IMAGE_DIR = None
+    IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-MANGA_FOLDER = LOCAL_PATH + '../data/MaNGA/MaNGA_DR16/HYB10-GAU-MILESHC/'
-PIPE3D_folder = LOCAL_PATH + '../data/MaNGA/MaNGA_DR15/pipe3d/'
+MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
+PIPE3D_folder = '/Users/kellydouglass/Documents/Research/data/SDSS/dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
 ROT_CURVE_MASTER_FOLDER = LOCAL_PATH + 'DRP-rot_curve_data_files/'
 MASTER_FILENAME = 'DRPall-master_file.txt'
 
@@ -121,7 +123,7 @@ for gal_ID in FILE_IDS:
     #---------------------------------------------------------------------------
     manga_plate, manga_IFU = gal_ID.split('-')
 
-    file_name = MANGA_FOLDER + manga_plate + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+    file_name = MANGA_FOLDER + manga_plate + '/' + manga_IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
     ############################################################################
 
 

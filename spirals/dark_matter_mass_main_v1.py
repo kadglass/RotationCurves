@@ -17,7 +17,7 @@ from astropy.table import QTable
 
 import astropy.units as u
 
-from dark_matter_mass import fit_rot_curve, estimate_dark_matter
+from dark_matter_mass_v1 import fit_rot_curve, estimate_dark_matter
 
 
 ################################################################################
@@ -28,6 +28,9 @@ TRY_N = 100000
 
 # Maximum allowed normalized chi2 (chi2/DOF) for a successful fit
 chi2_max = 10
+
+# Fitting function to use (options are 'BB' or 'tanh')
+fit_function = 'BB'
 ################################################################################
 
 
@@ -37,7 +40,7 @@ chi2_max = 10
 # not.
 #-------------------------------------------------------------------------------
 WORKING_IN_BLUEHIVE = False
-RUN_ALL_GALAXIES = True
+RUN_ALL_GALAXIES = False
 ################################################################################
 
 
@@ -53,7 +56,7 @@ DATA_PIPELINE = 'Pipe3D'
 # List of files (in "[MaNGA_plate]-[MaNGA_fiberID]" format) to be ran through
 # the individual galaxy version of this script.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['9183-1902']
+FILE_IDS = ['8939-6102']
 ################################################################################
 
 
@@ -95,7 +98,7 @@ else:
 
 
 #MASTER_FILENAME = LOCAL_PATH + 'DRPall-master_file.txt'
-MASTER_FILENAME = LOCAL_PATH + 'Pipe3D-master_file_vflag_10.txt'
+MASTER_FILENAME = LOCAL_PATH + 'Pipe3D-master_file_vflag_10_smooth.txt'
 
 # Create output directories if they do not already exist
 if not os.path.isdir( IMAGE_DIR):
@@ -125,33 +128,39 @@ if RUN_ALL_GALAXIES:
 
     master_table['avg_v_max'] = -1. * (u.km / u.s)
     master_table['avg_r_turn'] = -1. * (u.kpc)
-    master_table['avg_alpha'] = -1.
 
     master_table['avg_v_max_sigma'] = -1. * (u.km / u.s)
     master_table['avg_r_turn_sigma'] = -1. * (u.kpc)
-    master_table['avg_alpha_sigma'] = -1.
+
     master_table['avg_chi_square_rot'] = -1.
     master_table['avg_chi_square_ndf'] = -1.
 
     master_table['pos_v_max'] = -1. * (u.km / u.s)
     master_table['pos_r_turn'] = -1. * (u.kpc)
-    master_table['pos_alpha'] = -1.
 
     master_table['pos_v_max_sigma'] = -1. * (u.km / u.s)
     master_table['pos_r_turn_sigma'] = -1. * (u.kpc)
-    master_table['pos_alpha_sigma'] = -1.
+    
     master_table['pos_chi_square_rot'] = -1.
     master_table['pos_chi_square_ndf'] = -1.
 
     master_table['neg_v_max'] = -1. * (u.km / u.s)
     master_table['neg_r_turn'] = -1. * (u.kpc)
-    master_table['neg_alpha'] = -1.
 
     master_table['neg_v_max_sigma'] = -1. * (u.km / u.s)
     master_table['neg_r_turn_sigma'] = -1. * (u.kpc)
-    master_table['neg_alpha_sigma'] = -1.
     master_table['neg_chi_square_rot'] = -1.
     master_table['neg_chi_square_ndf'] = -1.
+
+    if fit_function == 'BB':
+        master_table['avg_alpha'] = -1.
+        master_table['avg_alpha_sigma'] = -1.
+
+        master_table['pos_alpha'] = -1.
+        master_table['pos_alpha_sigma'] = -1.
+
+        master_table['neg_alpha'] = -1.
+        master_table['neg_alpha_sigma'] = -1.
 
 
     master_table['Mtot'] = -1. * u.M_sun
@@ -193,10 +202,11 @@ if RUN_ALL_GALAXIES:
         # Set of functions to run the set of rotation curve and of galaxy
         # statistic files through.
         #-----------------------------------------------------------------------
-        param_outputs = fit_rot_curve( rot_curve_filename, gal_stat_filename,
-                                       TRY_N)
+        param_outputs = fit_rot_curve( rot_curve_filename, gal_stat_filename, 
+                                       fit_function, TRY_N)
 
         mass_outputs = estimate_dark_matter( param_outputs, 
+                                             fit_function, 
                                              chi2_max, 
                                              rot_curve_filename, 
                                              gal_stat_filename)
@@ -209,8 +219,8 @@ if RUN_ALL_GALAXIES:
     ############################################################################
     # Save the 'master_table.'
     #---------------------------------------------------------------------------
-    master_table.write( MASTER_FILENAME[:-4] + '_10.txt', format='ascii.ecsv', 
-                        overwrite=True)
+    master_table.write( MASTER_FILENAME[:-4] + '_' + fit_function + '_minimize_chi' + str(chi2_max) + '.txt', 
+                        format='ascii.ecsv', overwrite=True)
     ############################################################################
 
 
@@ -237,9 +247,10 @@ else:
         #    statistic files through.
         #-----------------------------------------------------------------------
         param_outputs = fit_rot_curve( rot_curve_filename, gal_stat_filename,
-                                       TRY_N)
+                                       fit_function, TRY_N)
 
         mass_outputs = estimate_dark_matter( param_outputs, 
+                                             fit_function, 
                                              chi2_max, 
                                              rot_curve_filename, 
                                              gal_stat_filename)

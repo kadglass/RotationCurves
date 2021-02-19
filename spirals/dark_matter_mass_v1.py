@@ -45,7 +45,7 @@ def rot_fit_BB( depro_radius, params):
     PARAMETERS
     ==========
     
-    depro_radius : float
+    depro_radius : float or ndarray of shape (n,)
         Deprojected radius as taken from the [PLATE]-[FIBERID] rotation curve 
         data file (in units of kpc); the "x" data of the rotation curve equation
 
@@ -71,7 +71,11 @@ def rot_fit_BB( depro_radius, params):
 
     v_max, r_turn, alpha = params
 
-    return v_max * (depro_radius / (r_turn**alpha + depro_radius**alpha)**(1/alpha))
+    v = v_max * (np.abs(depro_radius) / (r_turn**alpha + np.abs(depro_radius)**alpha)**(1/alpha))
+
+    v = v*np.sign(depro_radius)
+
+    return v
 
 
 
@@ -745,12 +749,11 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, fit_func, TRY_N, points_to_cut
 ###############################################################################
 
 
-def estimate_dark_matter( parameter_dict, 
-                          fit_func, 
-                          chi2_max, 
-                          rot_curve_file, 
-                          gal_stat_file
-                        ):
+def estimate_dark_matter(parameter_dict, 
+                         fit_func, 
+                         chi2_max, 
+                         rot_curve_file, 
+                         gal_stat_file):
     '''
     Estimate the total mass interior to a radius from the fitted v_max
     parameter and the last recorded radius for the galaxy.  Then estimate the

@@ -378,7 +378,10 @@ def fit_rot_curve( rot_curve_file, gal_stat_file, TRY_N, points_to_cut=0):
 ###############################################################################
 
 
-def estimate_dark_matter( parameter_dict, chi2_max, rot_curve_file, gal_stat_file):
+def estimate_dark_matter(parameter_dict, 
+                         chi2_max, 
+                         rot_curve_file, 
+                         gal_stat_file):
     '''
     Estimate the total mass interior to a radius from the fitted v_max
     parameter and the last recorded radius for the galaxy.  Then estimate the

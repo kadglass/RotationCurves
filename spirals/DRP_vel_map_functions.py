@@ -2,15 +2,13 @@
 import numpy as np
 import numpy.ma as ma
 
+import numdifftools as ndt
+
 from skimage.filters import gaussian
 
 from scipy.optimize import minimize
 
 from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
-
-import dynesty
-from dynesty import plotting as dyplot
-import matplotlib.pyplot as plt
 
 
 
@@ -132,24 +130,6 @@ def deproject_spaxel(coords, center, phi, i_angle):
     # Distance components between center and current location
     delta = np.subtract(coords, center)
 
-    '''
-    # Angle (counterclockwise) between North and current position
-    theta = np.arctan2(-delta[1], delta[0])
-
-    # Distance from current point to center
-    r2_prime = delta[0]**2 + delta[1]**2
-
-    # x-direction distance relative to the semi-major axis
-    dx2_prime = r2_prime*np.sin(theta - phi)**2
-
-    # y-direction distance relative to the semi-major axis
-    dy2_prime = r2_prime*np.cos(theta - phi)**2
-
-    # De-projected radius for the current point
-    r2 = dx2_prime/(np.cos(i_angle)**2) + dy2_prime
-    r = np.sqrt(r2)
-    '''
-
     # x-direction distance relative to the semi-major axis
     dx_prime = (delta[1]*np.cos(phi) + delta[0]*np.sin(phi))/np.cos(i_angle)
 
@@ -160,8 +140,6 @@ def deproject_spaxel(coords, center, phi, i_angle):
     r = np.sqrt(dx_prime**2 + dy_prime**2)
 
     # Angle (counterclockwise) between North and current position
-    #theta = np.arcsin(dx_prime/r)
-    #theta = np.arccos(-dy_prime/r)
     theta = np.arctan2(-dx_prime, dy_prime)
 
     return r, theta
@@ -241,6 +219,9 @@ def model_vel_map(params, map_shape, scale, fit_function):
                 v[i,j] = rot_fit_tanh(r*scale, [v_max, r_turn])
             else:
                 print('Fit function not known.  Please update model_vel_map function.')
+
+    #print([v_max, r_turn, alpha])
+    #print(params)
 
     # Observed velocity at current point
     vel_map = v*np.sin(i_angle)*np.cos(theta) + v_sys
@@ -358,7 +339,10 @@ def chi2_velocity(params,
     # Create fitted velocity map based on the values in params
     #---------------------------------------------------------------------------
     map_params = np.concatenate([pos_params, params])
-    vel_map_model = model_vel_map(map_params, vel_map.shape, pix_scale, fit_function)
+    vel_map_model = model_vel_map(map_params, 
+                                  vel_map.shape, 
+                                  pix_scale, 
+                                  fit_function)
     ############################################################################
 
 
@@ -446,21 +430,6 @@ def chi2_position(params,
 
 
 ################################################################################
-# Function to maximize
-#-------------------------------------------------------------------------------
-def nChi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
-    '''
-    This returns the negative of the chi2 function.  If fitting, this function 
-    should be maximized.
-    '''
-
-    return -calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function)
-################################################################################
-
-
-
-
-################################################################################
 ################################################################################
 ################################################################################
 
@@ -496,6 +465,21 @@ def logL_BB(params, pix_scale, vel_map, vel_map_ivar):
     lambda1[lambda1 <= 0] = np.finfo( dtype=np.float64).tiny
 
     return -0.5*ma.sum( vel_map_ivar*(vel_map - lambda1)**2 - ma.log(vel_map_ivar))
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+def nlogL_BB(params, pix_scale, vel_map, vel_map_ivar):
+    '''
+    Returns the negative log likelihood of the data and the fit values for the 
+    BB fit function.
+    '''
+
+    return -logL_BB(params, pix_scale, vel_map, vel_map_ivar)
 
 
 
@@ -544,6 +528,22 @@ def vel_logL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 
 
 
+################################################################################
+################################################################################
+################################################################################
+
+def vel_nlogL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
+    '''
+    Returns the negative log likelihood of the data and the best fit values for 
+    the BB fit funciton.
+    '''
+
+    params = np.concatenate([pos_params, vel_params])
+
+    return -logL_BB(params, pix_scale, vel_map, vel_map_ivar)
+
+
+
 
 ################################################################################
 # Fit the velocity map
@@ -556,8 +556,7 @@ def find_vel_map(mHa_vel,
                  sys_vel_guess, 
                  inclination_angle_guess, 
                  phi_guess, 
-                 fit_function, 
-                 TRY_N):
+                 fit_function):
     '''
     Fit the H-alpha velocity map to find the best-fit values for the kinematics.
 
@@ -590,9 +589,6 @@ def find_vel_map(mHa_vel,
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
-
-    TRY_N : integer
-        Maximum number of iterations for scipy.optimize.minimize.
 
 
     RETURNS
@@ -678,7 +674,7 @@ def find_vel_map(mHa_vel,
     phi_bounds = (phi_low, phi_high)
 
     # Maximum velocity [km/s]
-    v_max_low = 1
+    v_max_low = 10
     v_max_high = 4100
     v_max_bounds = (v_max_low, v_max_high)
 
@@ -696,9 +692,9 @@ def find_vel_map(mHa_vel,
     if fit_function == 'BB':
 
         # Alpha
-        alpha_guess = 1
-        alpha_low = 0.00001
-        alpha_high = 10
+        alpha_guess = 2
+        alpha_low = 0.001
+        alpha_high = 15
         alpha_bounds = (alpha_low, alpha_high)
 
         # Parameter guesses
@@ -745,7 +741,7 @@ def find_vel_map(mHa_vel,
     ############################################################################
     #---------------------------------------------------------------------------
     try:
-        '''
+        
         ########################################################################
         # Fit velocity map using scipy.optimize.minimize with chi2 minimization
         #
@@ -753,28 +749,47 @@ def find_vel_map(mHa_vel,
         #-----------------------------------------------------------------------
         result = minimize(calculate_chi2,
                           np.concatenate([pos_guesses, vel_guesses]),
-                          method='L-BFGS-B',
+                          method='Powell',#'L-BFGS-B',
                           args=(mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function),
-                          bounds=np.concatenate([pos_bounds, vel_bounds]))
+                          bounds=np.concatenate([pos_bounds, vel_bounds]), 
+                          options={'disp':True}
+                          )
 
         if result.success:
             print('Successful velocity fit!')
 
+            #print(result)
+
+            #-------------------------------------------------------------------
+            # Determine uncertainties in the fitted parameters
+            #-------------------------------------------------------------------
+            # For use with L-BFGS-B method
+            #fit_params_err = np.sqrt(np.diag(result.hess_inv.todense()))
+
+            # Generic errors
+            #fit_params_err = -np.ones(len(result.x))
+
+            # For use when Hessian is not provided by fit method
+            hessian = ndt.Hessian(calculate_chi2)
+            hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
+            hess_inv = np.linalg.inv(hess)
+            fit_params_err = np.sqrt(np.diag(hess_inv))
+            #-------------------------------------------------------------------
+
+
             #-------------------------------------------------------------------
             # Unpack results
             #-------------------------------------------------------------------
-            fit_params_err = np.sqrt(np.diag(result.hess_inv.todense()))
-
             best_fit_values = {'v_sys': result.x[0],
                                'v_sys_err': fit_params_err[0],
-                               'ba': result.x[1],
-                               'ba_err': fit_params_err[1],
+                               'ba': np.cos(result.x[1]),
+                               'ba_err': np.cos(fit_params_err[1]),
                                'x0': result.x[2],
                                'x0_err': fit_params_err[2],
                                'y0': result.x[3],
                                'y0_err': fit_params_err[3],
-                               'phi': result.x[4],
-                               'phi_err': fit_params_err[4],
+                               'phi': result.x[4]*180/np.pi,
+                               'phi_err': fit_params_err[4]*180/np.pi,
                                'v_max': result.x[5],
                                'v_max_err': fit_params_err[5],
                                'r_turn': result.x[6],
@@ -786,80 +801,6 @@ def find_vel_map(mHa_vel,
             #-------------------------------------------------------------------
 
             best_fit_map = model_vel_map(result.x,
-                                         mHa_vel.shape, 
-                                         pix_scale_factor, 
-                                         fit_function)
-        '''
-        ########################################################################
-        # Fit velocity map using scipy.optimize.minimize with chi2 minimization
-        #
-        # Fit just the velocity parameters (assume that the position parameters 
-        # are known)
-        #-----------------------------------------------------------------------
-        '''
-        result1 = None
-
-        for i in range(30):
-            p0 = [np.random.uniform(b[0], b[1]) for b in vel_bounds]
-
-            results = minimize(chi2_velocity, 
-                               p0, 
-                               method='L-BFGS-B', 
-                               args=(pos_guesses, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function), 
-                               bounds=vel_bounds)
-
-            if results.success:
-                if result1 is None:
-                    result1 = results
-                else:
-                    if results.fun < result1.fun:
-                        result1 = results
-        '''
-        result1 = minimize(chi2_velocity, 
-                           vel_guesses, 
-                           method='L-BFGS-B', 
-                           args=(pos_guesses, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function), 
-                           bounds=vel_bounds)
-        '''
-        # Fit just the position parameters (assumes that the velocity parameters are known)
-        result2 = minimize(chi2_position, 
-                           pos_guesses,
-                           method='L-BFGS-B',
-                           args=(vel_guesses, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function),
-                           bounds=pos_bounds)
-        '''
-        if result1.success:
-            print('Successful velocity fit!')
-            #-------------------------------------------------------------------
-            # Unpack results
-            #-------------------------------------------------------------------
-            fit_params1_err = np.sqrt(np.diag(result1.hess_inv.todense()))
-
-            best_fit_values = {'v_max': result1.x[0], 
-                               'v_max_err': fit_params1_err[0], 
-                               'r_turn': result1.x[1], 
-                               'r_turn_err': fit_params1_err[1]}
-
-            #fit_params2_err = np.sqrt(np.diag(result2.hess_inv.todense()))
-
-            best_fit_values['v_sys'] = pos_guesses[0] #result2.x[0]
-            best_fit_values['v_sys_err'] = np.nan #fit_params2_err[0]
-            best_fit_values['ba'] = np.cos(pos_guesses[1]) #np.cos(result2.x[1])
-            best_fit_values['ba_err'] = np.nan #np.cos(fit_params2_err[1])
-            best_fit_values['x0'] = pos_guesses[2] #result2.x[3]
-            best_fit_values['x0_err'] = np.nan #fit_params2_err[3]
-            best_fit_values['y0'] = pos_guesses[3] #result2.x[2]
-            best_fit_values['y0_err'] = np.nan #fit_params2_err[2]
-            best_fit_values['phi'] = pos_guesses[4]*np.pi/180 #result2.x[4]*np.pi/180
-            best_fit_values['phi_err'] = np.nan #fit_params2_err[4]*np.pi/180
-
-            if fit_function == 'BB':
-                best_fit_values['alpha'] = result1.x[2]
-                best_fit_values['alpha_err'] = fit_params1_err[2]
-            #-------------------------------------------------------------------
-
-            #best_fit_map = model_vel_map(np.concatenate([result2.x, result1.x]), 
-            best_fit_map = model_vel_map(np.concatenate([np.array(pos_guesses), result1.x]),
                                          mHa_vel.shape, 
                                          pix_scale_factor, 
                                          fit_function)

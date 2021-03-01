@@ -31,7 +31,10 @@ from DRP_vel_map_functions import find_vel_map, mass_newton
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
                                                  plot_Ha_vel
 
-from DRP_vel_map_plottingFunctions import plot_rot_curve, plot_diagnostic_panel
+from DRP_vel_map_plottingFunctions import plot_rot_curve, \
+                                          plot_diagnostic_panel, \
+                                          plot_residual, \
+                                          plot_chi2
 ################################################################################
 
 
@@ -54,7 +57,6 @@ def fit_vel_map(Ha_vel,
                 z, 
                 gal_ID,
                 fit_function, 
-                TRY_N,
                 IMAGE_DIR=None, 
                 IMAGE_FORMAT='eps', 
                 num_masked_gal=0):
@@ -86,7 +88,8 @@ def fit_vel_map(Ha_vel,
         elliptical sersic fit of the galaxy
 
     phi_EofN_deg : float
-        Angle (east of north) of rotation in the 2-D, observational plane
+        Angle (east of north) of rotation in the 2-D, observational plane.  
+        Units are degrees 
 
         NOTE: east is 'left' per astronomy convention
 
@@ -99,9 +102,6 @@ def fit_vel_map(Ha_vel,
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
-
-    TRY_N : integer
-        Maximum number of iterations for scipy.optimize.minimize.
 
     IMAGE_DIR : string
         File path to which pictures of the fitted rotation curves are saved.  
@@ -218,14 +218,14 @@ def fit_vel_map(Ha_vel,
     #---------------------------------------------------------------------------
     # Find spaxel along semi-major axis
     delta_x = int(j_center_guess*0.5)
-    delta_y = int(delta_x/np.tan(phi_EofN_deg))
+    delta_y = int(delta_x/np.tan(phi_EofN_deg*np.pi/180.))
     semi_major_axis_spaxel = tuple(np.subtract(center_guess, (-delta_y, delta_x)))
 
     # Check value along semi-major axis
     if mHa_vel[semi_major_axis_spaxel] < 0:
-        phi_guess = phi_EofN_deg*180/np.pi + np.pi
+        phi_guess = phi_EofN_deg*np.pi/180. + np.pi
     else:
-        phi_guess = phi_EofN_deg*180/np.pi
+        phi_guess = phi_EofN_deg*np.pi/180.
     ############################################################################
 
 
@@ -288,19 +288,58 @@ def fit_vel_map(Ha_vel,
                                                           sys_vel_guess, 
                                                           inclination_angle_guess, 
                                                           phi_guess, 
-                                                          fit_function, 
-                                                          TRY_N)
+                                                          fit_function)
 
         if param_outputs is not None:
             ####################################################################
+            # Mask best-fit map
+            #-------------------------------------------------------------------
+            mbest_fit_map = ma.array(best_fit_map, mask=mHa_vel.mask)
+            ####################################################################
+
+
+            ####################################################################
             # Plot the best-fit H-alpha velocity field
             #-------------------------------------------------------------------
-            plot_Ha_vel(best_fit_map, 
+            plot_Ha_vel(mbest_fit_map, 
                         gal_ID, 
                         IMAGE_DIR=IMAGE_DIR, 
                         FOLDER_NAME='/fitted_velocity_fields/', 
                         FILENAME_SUFFIX='_fitted_vel_field.', 
                         IMAGE_FORMAT=IMAGE_FORMAT)
+
+            if IMAGE_DIR is None:
+                plt.show()
+            ####################################################################
+
+
+            ####################################################################
+            # Plot the residual velocity map between the best-fit and the data
+            #-------------------------------------------------------------------
+            plot_residual(mbest_fit_map, 
+                          mHa_vel,
+                          gal_ID, 
+                          IMAGE_DIR=IMAGE_DIR, 
+                          FOLDER_NAME='/residuals/', 
+                          FILENAME_SUFFIX='_residual.', 
+                          IMAGE_FORMAT=IMAGE_FORMAT)
+
+            if IMAGE_DIR is None:
+                plt.show()
+            ####################################################################
+
+
+            ####################################################################
+            # Plot the chi2 map of the best-fit model
+            #-------------------------------------------------------------------
+            plot_chi2(mbest_fit_map, 
+                      mHa_vel,
+                      mHa_vel_ivar, 
+                      gal_ID, 
+                      IMAGE_DIR=IMAGE_DIR, 
+                      FOLDER_NAME='/chi2/', 
+                      FILENAME_SUFFIX='_chi2.', 
+                      IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
                 plt.show()
@@ -364,7 +403,7 @@ def fit_vel_map(Ha_vel,
             plot_diagnostic_panel(r_band, 
                                   mHa_vel, 
                                   mHa_vel_ivar, 
-                                  best_fit_map,
+                                  mbest_fit_map,
                                   param_outputs,
                                   scale, 
                                   gal_ID, 
@@ -390,7 +429,7 @@ def fit_vel_map(Ha_vel,
 
 
 
-def estimate_total_mass(v_max, v_max_err, R90, R, z):
+def estimate_total_mass(v_max, v_max_err, R90, z):
     '''
     Estimate the total mass interior to each given radius from the fitted 
     v_max parameter.
@@ -408,9 +447,6 @@ def estimate_total_mass(v_max, v_max_err, R90, R, z):
     R90 : float
         90% light radius [arcsec]
 
-    R : float
-        Galaxy radius [arcsec]
-
     z : float
         Galaxy redshift
 
@@ -421,9 +457,6 @@ def estimate_total_mass(v_max, v_max_err, R90, R, z):
     M90 : float
         Logarithm of the total mass corresponding to the 90% light radius 
         [log(Msun)]
-
-    M : float
-        Logarithm of the total mass for the galaxy [log(Msun)]
     '''
 
 
@@ -431,11 +464,9 @@ def estimate_total_mass(v_max, v_max_err, R90, R, z):
     # Calculate masses
     #---------------------------------------------------------------------------
     M90 = mass_newton(v_max, v_max_err, R90, z)
-
-    M = mass_newton(v_max, v_max_err, R, z)
     ############################################################################
 
-    return {'M90':np.log10(M90), 'M':np.log10(M)}
+    return {'M90':np.log10(M90)}
 
 
 

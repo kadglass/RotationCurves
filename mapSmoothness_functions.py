@@ -88,7 +88,7 @@ def how_smooth(ha_vel, mask):
     ############################################################################
 
 
-    num_unmasked_spaxels = mask.shape[0]*mask.shape[1] - np.sum(mask)
+    num_unmasked_spaxels = np.sum(mask == 0)
 
     return score/num_unmasked_spaxels
 

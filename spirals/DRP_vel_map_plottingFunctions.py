@@ -81,6 +81,13 @@ def plot_rot_curve(mHa_vel,
 
 
     ############################################################################
+    # Convert rotation angle from degrees to radians
+    #---------------------------------------------------------------------------
+    phi = best_fit_values['phi']*np.pi/180
+    ############################################################################
+
+
+    ############################################################################
     # Deproject all data values in the given velocity map
     #---------------------------------------------------------------------------
     vel_array_shape = mHa_vel.shape
@@ -95,7 +102,7 @@ def plot_rot_curve(mHa_vel,
 
             r_deproj[i,j], theta[i,j] = deproject_spaxel((i,j), 
                                                          (best_fit_values['x0'], best_fit_values['y0']), 
-                                                         best_fit_values['phi'], 
+                                                         phi, 
                                                          i_angle)
 
             ####################################################################
@@ -172,6 +179,236 @@ def plot_rot_curve(mHa_vel,
         plt.cla()
         plt.clf()
         plt.close()
+        gc.collect()
+        ########################################################################
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+
+def plot_residual(model_map, 
+                  data_map, 
+                  gal_ID, 
+                  IMAGE_DIR=None,
+                  FOLDER_NAME=None,
+                  IMAGE_FORMAT='eps', 
+                  FILENAME_SUFFIX=None,
+                  ax=None):
+    '''
+    Creates a plot of the residual between the model and the data.
+
+
+    PARAMETERS
+    ==========
+
+    model_map : numpy array of shape (n,n)
+        Model H-alpha velocity map [km/s]
+
+    data_map : numpy array of shape (n,n)
+        Measured H-alpha velocity map [km/s]
+
+    gal_ID : string
+        [MaNGA plate] - [MaNGA IFU]
+
+    IMAGE_DIR : string
+        Path of directory to store images.  Default is None (image will not be 
+        saved).
+
+    FOLDER_NAME : string
+        Name of folder in which to save images.  Default is None (iamge will not 
+        be saved).
+
+    IMAGE_FORMAT : string
+        Format of saved images.  Default is eps.
+
+    FILENAME_SUFFIX : string
+        Suffix to append to gal_ID to create image file name.  Default is None 
+        (image will not be saved).
+
+    ax : matplotlib.pyplot figure axis object
+        Axis handle on which to create plot.
+    '''
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    ############################################################################
+    # Create residual array
+    #---------------------------------------------------------------------------
+    residual_map = model_map - data_map
+    ############################################################################
+
+
+    ############################################################################
+    rmax_bound = ma.max(np.abs(residual_map))
+    rmin_bound = -rmax_bound
+
+    cbar_ticks = np.linspace(rmin_bound, rmax_bound, 11, dtype='int')
+
+    ax.set_title(gal_ID + ' residual')
+
+    residual_im = ax.imshow(residual_map, 
+                            cmap='PiYG_r', 
+                            origin='lower', 
+                            vmin=rmin_bound,
+                            vmax=rmax_bound)
+
+    cbar = plt.colorbar(residual_im, ax=ax, ticks=cbar_ticks)
+    cbar.ax.tick_params(direction='in')
+    cbar.set_label('residual (model - data)')
+
+    ax.tick_params(axis='both', direction='in')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
+    ############################################################################
+
+
+    if IMAGE_DIR is not None:
+        ########################################################################
+        # Create output directory if it does not already exist
+        #-----------------------------------------------------------------------
+        if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
+            os.makedirs(IMAGE_DIR + FOLDER_NAME)
+        ########################################################################
+
+        ########################################################################
+        # Save figure
+        #-----------------------------------------------------------------------
+        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+                    format=IMAGE_FORMAT)
+        ########################################################################
+
+        ########################################################################
+        # Figure cleanup
+        #-----------------------------------------------------------------------
+        plt.cla()
+        plt.clf()
+        plt.close()
+        del cbar, residual_im
+        gc.collect()
+        ########################################################################
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+
+def plot_chi2(model_map, 
+              data_map, 
+              ivar_map, 
+              gal_ID, 
+              IMAGE_DIR=None,
+              FOLDER_NAME=None,
+              IMAGE_FORMAT='eps', 
+              FILENAME_SUFFIX=None,
+              ax=None):
+    '''
+    Creates a plot of the chi2 values of the model.
+
+
+    PARAMETERS
+    ==========
+
+    model_map : numpy array of shape (n,n)
+        Model H-alpha velocity map [km/s]
+
+    data_map : numpy array of shape (n,n)
+        Measured H-alpha velocity map [km/s]
+
+    ivar_map : numpy array of shape (n,n)
+        Measured inverse variances of the H-alpha velocity map [s/km]^2
+
+    gal_ID : string
+        [MaNGA plate] - [MaNGA IFU]
+
+    IMAGE_DIR : string
+        Path of directory to store images.  Default is None (image will not be 
+        saved).
+
+    FOLDER_NAME : string
+        Name of folder in which to save images.  Default is None (iamge will not 
+        be saved).
+
+    IMAGE_FORMAT : string
+        Format of saved images.  Default is eps.
+
+    FILENAME_SUFFIX : string
+        Suffix to append to gal_ID to create image file name.  Default is None 
+        (image will not be saved).
+
+    ax : matplotlib.pyplot figure axis object
+        Axis handle on which to create plot.
+    '''
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    ############################################################################
+    # Create chi2 array
+    #---------------------------------------------------------------------------
+    chi2_map = ivar_map*(model_map - data_map)**2
+    ############################################################################
+
+
+    ############################################################################
+    rmax_bound = ma.max(chi2_map)
+    rmin_bound = 0
+
+    cbar_ticks = np.linspace(rmin_bound, rmax_bound, 11, dtype='int')
+
+    ax.set_title(gal_ID + r' $\chi^2$')
+
+    chi2_im = ax.imshow(chi2_map, 
+                        cmap='PiYG_r', 
+                        origin='lower', 
+                        vmin=rmin_bound,
+                        vmax=rmax_bound)
+
+    cbar = plt.colorbar(chi2_im, ax=ax, ticks=cbar_ticks)
+    cbar.ax.tick_params(direction='in')
+    cbar.set_label(r'$\chi^2$')
+
+    ax.tick_params(axis='both', direction='in')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
+    ############################################################################
+
+
+    if IMAGE_DIR is not None:
+        ########################################################################
+        # Create output directory if it does not already exist
+        #-----------------------------------------------------------------------
+        if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
+            os.makedirs(IMAGE_DIR + FOLDER_NAME)
+        ########################################################################
+
+        ########################################################################
+        # Save figure
+        #-----------------------------------------------------------------------
+        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+                    format=IMAGE_FORMAT)
+        ########################################################################
+
+        ########################################################################
+        # Figure cleanup
+        #-----------------------------------------------------------------------
+        plt.cla()
+        plt.clf()
+        plt.close()
+        del cbar, chi2_im
         gc.collect()
         ########################################################################
 

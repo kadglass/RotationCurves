@@ -17,6 +17,10 @@ from DRP_rotation_curve import extract_data
 
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
+import sys
+sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
+from mapSmoothness_functions import how_smooth
+
 warnings.simplefilter('ignore', np.RankWarning)
 ################################################################################
 
@@ -33,11 +37,8 @@ IMAGE_FORMAT = 'eps'
 ################################################################################
 # Fitting routine restrictions
 #-------------------------------------------------------------------------------
-# Number of times to try to fit the data within 'scipy.optimize.minimize().'
-TRY_N = 100000
-
-# Maximum allowed normalized chi2 (chi2/DOF) for a successful fit
-#chi2_max = 10 <-- No longer needed
+# Maximum allowed map smoothness score
+map_smoothness_max = 1.85
 
 # Velocity function to use (options are 'BB' or 'tanh')
 vel_function = 'BB'
@@ -51,7 +52,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8486-12701']
+FILE_IDS = ['7443-12705']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -144,6 +145,7 @@ else:
 # the 'files' array.
 #-------------------------------------------------------------------------------
 num_masked_gal = 0 # Number of completely masked galaxies
+num_not_smooth = 0 # Number of galaxies which do not have smooth velocity maps
 
 for gal_ID in FILE_IDS:
     
@@ -167,82 +169,98 @@ for gal_ID in FILE_IDS:
 
 
     ############################################################################
-    # Extract the necessary data from the DRP table.
+    # Calculate degree of smoothness of velocity map
     #---------------------------------------------------------------------------
+    map_smoothness = how_smooth( Ha_vel, Ha_vel_mask)
+    ############################################################################
+
+
     i_DRP = DRP_index[gal_ID]
 
-    axis_ratio = DRP_table['nsa_elpetro_ba'][i_DRP]
-    phi_EofN_deg = DRP_table['nsa_elpetro_phi'][i_DRP]
-
-    z = DRP_table['nsa_z'][i_DRP]
-
-    NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
-    ############################################################################
-    
-    
-    ############################################################################
-    # Extract rotation curve data for the .fits file in question and create an 
-    # astropy Table containing said data.
-    #---------------------------------------------------------------------------
-    param_outputs, num_masked_gal = fit_vel_map( Ha_vel, 
-                                                 Ha_vel_ivar, 
-                                                 Ha_vel_mask, 
-                                                 r_band, 
-                                                 r_band_ivar, 
-                                                 axis_ratio, 
-                                                 phi_EofN_deg, 
-                                                 z, gal_ID, 
-                                                 vel_function, 
-                                                 TRY_N, 
-                                                 #IMAGE_DIR=IMAGE_DIR, 
-                                                 #IMAGE_FORMAT=IMAGE_FORMAT, 
-                                                 num_masked_gal=num_masked_gal)
-    print(gal_ID, "velocity map fit")
-    ############################################################################
-
-
-    ############################################################################
-    # Extract the necessary data from the NSA table.
-    #---------------------------------------------------------------------------
-    i_NSA = NSA_index[NSA_ID]
-
-    R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
-    R = NSA_table['ELPETRO_THETA_R'][i_NSA]
-    ############################################################################
-
-
-    ############################################################################
-    # Estimate the total mass within the galaxy
-    #---------------------------------------------------------------------------
-    mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                       param_outputs['v_max_err'], 
-                                       R90, 
-                                       R, 
-                                       z)
-    ############################################################################
-
-
-    if RUN_ALL_GALAXIES:
+    if map_smoothness <= map_smoothness_max:
         ########################################################################
-        # Write the best-fit values and calculated parameters to a text file in 
-        # ascii format.
+        # Extract the necessary data from the DRP table.
         #-----------------------------------------------------------------------
-        DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
-        DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
-        DRP_table = fillin_output_table(DRP_table, R90, i_DRP, col_name='nsa_elpetro_th90')
-        DRP_table = fillin_output_table(DRP_table, R, i_DRP, col_name='nsa_elpetro_r')
+        axis_ratio = DRP_table['nsa_elpetro_ba'][i_DRP]
+        phi_EofN_deg = DRP_table['nsa_elpetro_phi'][i_DRP]
 
-        print(gal_ID, "written")
+        z = DRP_table['nsa_z'][i_DRP]
+
+        NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
         ########################################################################
+        
+        
+        ########################################################################
+        # Extract rotation curve data for the .fits file in question and create 
+        # an astropy Table containing said data.
+        #-----------------------------------------------------------------------
+        param_outputs, num_masked_gal = fit_vel_map( Ha_vel, 
+                                                     Ha_vel_ivar, 
+                                                     Ha_vel_mask, 
+                                                     r_band, 
+                                                     r_band_ivar, 
+                                                     axis_ratio, 
+                                                     phi_EofN_deg, 
+                                                     z, gal_ID, 
+                                                     vel_function, 
+                                                     #IMAGE_DIR=IMAGE_DIR, 
+                                                     #IMAGE_FORMAT=IMAGE_FORMAT, 
+                                                     num_masked_gal=num_masked_gal)
+        print(gal_ID, "velocity map fit")
+        ########################################################################
+        
+
+        ########################################################################
+        # Extract the necessary data from the NSA table.
+        #-----------------------------------------------------------------------
+        i_NSA = NSA_index[NSA_ID]
+
+        R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
+        ########################################################################
+
+
+        ########################################################################
+        # Estimate the total mass within the galaxy
+        #-----------------------------------------------------------------------
+        mass_outputs = estimate_total_mass(param_outputs['v_max'], 
+                                           param_outputs['v_max_err'], 
+                                           R90, 
+                                           z)
+        ########################################################################
+
+
+        if RUN_ALL_GALAXIES:
+            ####################################################################
+            # Write the best-fit values and calculated parameters to a text file 
+            # in ascii format.
+            #-------------------------------------------------------------------
+            DRP_table = fillin_output_table(DRP_table, map_smoothness, i_DRP, col_name='smoothness_score')
+            DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
+            DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
+            DRP_table = fillin_output_table(DRP_table, R90, i_DRP, col_name='nsa_elpetro_th90')
+
+            print(gal_ID, "written")
+            ####################################################################
+
+        else:
+            ####################################################################
+            # Print output to terminal if not analyzing all galaxies
+            #-------------------------------------------------------------------
+            print(DRP_table[['plateifu','nsa_z','nsa_elpetro_ba','nsa_elpetro_phi']][i_DRP])
+            print('Smoothness score:', map_smoothness)
+            print(param_outputs)
+            print(mass_outputs)
+            ####################################################################
 
     else:
-        ########################################################################
-        # Print output to terminal if not analyzing all galaxies
-        #-----------------------------------------------------------------------
-        print(DRP_table[['plateifu','nsa_z','nsa_elpetro_ba','nsa_elpetro_phi']][i_DRP])
-        print(param_outputs)
-        print(mass_outputs)
-        ########################################################################
+        print("Galaxy's map is not smooth enough to fit.")
+
+        num_not_smooth += 1
+
+        if RUN_ALL_GALAXIES:
+            DRP_table = fillin_output_table(DRP_table, map_smoothness, i_DRP, col_name='smoothness_score')
+        else:
+            print('Smoothness score:', map_smoothness)
 
     print("\n")
 ################################################################################
@@ -253,7 +271,7 @@ for gal_ID in FILE_IDS:
 # Save the output_table
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
-    DRP_table.write('DRP_vel_map_results_' + fit_function + '_minimize_chi' + str(chi2_max) + '.txt', 
+    DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
                     format='ascii.ecsv', overwrite=True)
 ################################################################################
 
@@ -264,6 +282,7 @@ if RUN_ALL_GALAXIES:
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
     print('There were', num_masked_gal, 'galaxies that were completely masked.')
+    print('There were', num_not_smooth, 'galaxies without smooth velocity maps.')
 ################################################################################
 
 

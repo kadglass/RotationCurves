@@ -22,7 +22,7 @@ from DRP_rotation_curve import extract_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
+sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
@@ -68,7 +68,9 @@ def process_1_galaxy(job_queue,
         file_name = VEL_MAP_FOLDER + manga_plate + '/' + manga_IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
         ########################################################################
 
-
+        if not os.path.isfile(file_name):
+            continue
+            
         ########################################################################
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
@@ -80,6 +82,10 @@ def process_1_galaxy(job_queue,
         ########################################################################
         # Extract the necessary data from the NSA table.
         #-----------------------------------------------------------------------
+        i_DRP = DRP_index[gal_ID]
+        
+        NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
+        
         i_NSA = NSA_index[NSA_ID]
 
         R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
@@ -93,8 +99,6 @@ def process_1_galaxy(job_queue,
         ########################################################################
 
 
-        i_DRP = DRP_index[gal_ID]
-
         if map_smoothness <= map_smoothness_max:
             ####################################################################
             # Extract the necessary data from the DRP table.
@@ -103,8 +107,6 @@ def process_1_galaxy(job_queue,
             phi_EofN_deg = DRP_table['nsa_elpetro_phi'][i_DRP]
 
             z = DRP_table['nsa_z'][i_DRP]
-
-            NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
             ####################################################################
             
             
@@ -197,7 +199,7 @@ vel_function = 'BB'
 #-------------------------------------------------------------------------------
 FILE_IDS = ['7443-12705']
 
-RUN_ALL_GALAXIES = False
+RUN_ALL_GALAXIES = True
 ################################################################################
 
 
@@ -224,11 +226,11 @@ else:
     #IMAGE_DIR = None
     IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
+MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 
-NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
+NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
 ################################################################################
 
 
@@ -274,7 +276,7 @@ if RUN_ALL_GALAXIES:
 
     FILE_IDS = list(DRP_index.keys())
 
-    DRP_table = add_columns(DRP_table)
+    DRP_table = add_columns(DRP_table, vel_function)
 
 else:
 

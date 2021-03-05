@@ -30,6 +30,7 @@ def add_columns(data_table, fit_function):
         Original data_table with additional columns
     '''
 
+    N = len(data_table)
 
     data_table['v_sys'] = np.nan
     data_table['v_sys_err'] = np.nan
@@ -63,7 +64,7 @@ def add_columns(data_table, fit_function):
     data_table['nsa_elpetro_r'] = np.nan*np.ones(N, dtype=float)
 
 
-    return output_table
+    return data_table
 
 
 

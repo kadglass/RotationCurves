@@ -793,7 +793,8 @@ def find_vel_map(mHa_vel,
                                'v_max': result.x[5],
                                'v_max_err': fit_params_err[5],
                                'r_turn': result.x[6],
-                               'r_turn_err': fit_params_err[6]}
+                               'r_turn_err': fit_params_err[6], 
+                               'chi2': result.fun}
 
             if fit_function == 'BB':
                 best_fit_values['alpha'] = result.x[7]

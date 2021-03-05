@@ -1,5 +1,5 @@
 '''
-Analyzes mainly face-on galaxies to determine the kinematics of the galaxy.
+Analyzes disk galaxies to determine the kinematics of the galaxy.
 
 To download the MaNGA .fits files used to calculate the kinematics for these 
 galaxies, see the instructions for each data release via the following links:
@@ -263,7 +263,8 @@ def fit_vel_map(Ha_vel,
                          'y0': np.nan,     'y0_err': np.nan,
                          'phi': np.nan,    'phi_err': np.nan, 
                          'r_turn': np.nan, 'r_turn_err': np.nan, 
-                         'v_max': np.nan,  'v_max_err': np.nan}
+                         'v_max': np.nan,  'v_max_err': np.nan, 
+                         'chi2': np.nan}
 
         if fit_function == 'BB':
             param_outputs['alpha'] = np.nan

@@ -52,6 +52,8 @@ def add_columns(data_table, fit_function):
 
     data_table['V_max'] = np.nan*np.ones(N, dtype=float)
     data_table['V_max_err'] = np.nan*np.ones(N, dtype=float)
+    
+    data_table['chi2'] = np.nan
 
     if fit_function == 'BB':
         data_table['alpha'] = np.nan*np.ones(N, dtype=float)

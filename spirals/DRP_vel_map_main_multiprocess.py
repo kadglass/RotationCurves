@@ -195,19 +195,6 @@ vel_function = 'BB'
 
 
 ################################################################################
-# List of files (in "[MaNGA_plate]-[MaNGA_IFU]" format) to be ran through the
-# individual galaxy version of this script.
-# 
-# If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
-#-------------------------------------------------------------------------------
-FILE_IDS = ['7443-12705']
-
-RUN_ALL_GALAXIES = True
-################################################################################
-
-
-
-################################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
 # working in bluehive).  It is set to 'os.path.dirname(__file__)' when working 
 # on a local system.
@@ -219,15 +206,11 @@ LOCAL_PATH = os.path.dirname(__file__)
 if LOCAL_PATH == '':
     LOCAL_PATH = './'
 
-if RUN_ALL_GALAXIES:
-    IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
+IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-    # Create directory if it does not already exist
-    if not os.path.isdir( IMAGE_DIR):
-        os.makedirs( IMAGE_DIR)
-else:
-    #IMAGE_DIR = None
-    IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
+# Create directory if it does not already exist
+if not os.path.isdir( IMAGE_DIR):
+    os.makedirs( IMAGE_DIR)
 
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
@@ -273,17 +256,11 @@ for i in range(len(NSA_table)):
 ################################################################################
 # Create a list of galaxy IDs for which to extract a rotation curve.
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES:
-    
-    N_files = len(DRP_table)
+N_files = len(DRP_table)
 
-    FILE_IDS = list(DRP_index.keys())
+FILE_IDS = list(DRP_index.keys())
 
-    DRP_table = add_columns(DRP_table, vel_function)
-
-else:
-
-    N_files = len(FILE_IDS)
+DRP_table = add_columns(DRP_table, vel_function)
 ################################################################################
 
 
@@ -322,18 +299,18 @@ processes = []
 for i in range(4):
 
     p = Process(target=process_1_galaxy, args=(job_queue, 
-                    return_queue, 
-                     num_masked_gal, 
-                     num_not_smooth, 
-                     VEL_MAP_FOLDER, 
-                     IMAGE_DIR, 
-                     IMAGE_FORMAT, 
-                     DRP_index, 
-                     map_smoothness_max, 
-                     DRP_table, 
-                     vel_function, 
-                     NSA_index, 
-                     NSA_table))
+                                               return_queue, 
+                                               num_masked_gal, 
+                                               num_not_smooth, 
+                                               VEL_MAP_FOLDER, 
+                                               IMAGE_DIR, 
+                                               IMAGE_FORMAT, 
+                                               DRP_index, 
+                                               map_smoothness_max, 
+                                               DRP_table, 
+                                               vel_function, 
+                                               NSA_index, 
+                                               NSA_table))
 
     p.start()
 
@@ -346,40 +323,35 @@ for p in processes:
 
 
 # Iterate through the populated return queue to fill in the table
-if RUN_ALL_GALAXIES:
+while True:
 
-    while True:
+    try:
+        return_tuple = return_queue.get()
+    except:
+        break
 
-        try:
-            return_tuple = return_queue.get()
-        except:
-            break
+    ############################################################################
+    # Write the best-fit values and calculated parameters to a text file in 
+    # ascii format.
+    #---------------------------------------------------------------------------
+    map_smoothness, param_outputs, mass_outputs, R90, i_DRP = return_tuple
 
-        ####################################################################
-        # Write the best-fit values and calculated parameters to a text file 
-        # in ascii format.
-        #-------------------------------------------------------------------
-        map_smoothness, param_outputs, mass_outputs, R90, i_DRP = return_tuple
+    DRP_table = fillin_output_table(DRP_table, 
+                                    map_smoothness, 
+                                    i_DRP, 
+                                    col_name='smoothness_score')
+                                    
+    DRP_table = fillin_output_table(DRP_table, 
+                                    R90, 
+                                    i_DRP, 
+                                    col_name='nsa_elpetro_th90')
 
-        DRP_table = fillin_output_table(DRP_table, map_smoothness, i_DRP, col_name='smoothness_score')
-        DRP_table = fillin_output_table(DRP_table, R90, i_DRP, col_name='nsa_elpetro_th90')
+    if param_outputs is not None:
+        DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
+        DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
 
-        if param_outputs is not None:
-            DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
-            DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
-
-        print(gal_ID, "written")
-        ####################################################################
-
-else:
-    ####################################################################
-    # Print output to terminal if not analyzing all galaxies
-    #-------------------------------------------------------------------
-    print(DRP_table[['plateifu','nsa_z','nsa_elpetro_ba','nsa_elpetro_phi']][i_DRP])
-    print('Smoothness score:', map_smoothness)
-    print(param_outputs)
-    print(mass_outputs)
-    ####################################################################
+    print(gal_ID, "written")
+    ############################################################################
 
     print("\n")
 ################################################################################
@@ -389,9 +361,8 @@ else:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES:
-    DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
-                    format='ascii.ecsv', overwrite=True)
+DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
+                format='ascii.ecsv', overwrite=True)
 ################################################################################
 
 
@@ -399,9 +370,8 @@ if RUN_ALL_GALAXIES:
 ################################################################################
 # Print number of galaxies that were completely masked
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES:
-    print('There were', num_masked_gal, 'galaxies that were completely masked.')
-    print('There were', num_not_smooth, 'galaxies without smooth velocity maps.')
+print('There were', num_masked_gal, 'galaxies that were completely masked.')
+print('There were', num_not_smooth, 'galaxies without smooth velocity maps.')
 ################################################################################
 
 

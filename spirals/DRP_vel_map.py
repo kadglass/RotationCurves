@@ -34,6 +34,7 @@ from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
 from DRP_vel_map_plottingFunctions import plot_rot_curve, \
                                           plot_diagnostic_panel, \
                                           plot_residual, \
+                                          plot_residual_norm, \
                                           plot_chi2
 ################################################################################
 
@@ -324,6 +325,23 @@ def fit_vel_map(Ha_vel,
                           FOLDER_NAME='/residuals/', 
                           FILENAME_SUFFIX='_residual.', 
                           IMAGE_FORMAT=IMAGE_FORMAT)
+
+            if IMAGE_DIR is None:
+                plt.show()
+            ####################################################################
+
+
+            ####################################################################
+            # Plot the normalized residual velocity map between the best-fit and 
+            # the data
+            #-------------------------------------------------------------------
+            plot_residual_norm(mbest_fit_map, 
+                               mHa_vel,
+                               gal_ID, 
+                               IMAGE_DIR=IMAGE_DIR, 
+                               FOLDER_NAME='/residuals_norm/', 
+                               FILENAME_SUFFIX='_residual_norm.', 
+                               IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
                 plt.show()

@@ -297,6 +297,119 @@ def plot_residual(model_map,
 
 
 
+################################################################################
+################################################################################
+################################################################################
+
+
+
+def plot_residual_norm(model_map, 
+                       data_map, 
+                       gal_ID, 
+                       IMAGE_DIR=None,
+                       FOLDER_NAME=None,
+                       IMAGE_FORMAT='eps', 
+                       FILENAME_SUFFIX=None,
+                       ax=None):
+    '''
+    Creates a plot of the residual between the model and the data, normalized by 
+    the model.
+
+
+    PARAMETERS
+    ==========
+
+    model_map : numpy array of shape (n,n)
+        Model H-alpha velocity map [km/s]
+
+    data_map : numpy array of shape (n,n)
+        Measured H-alpha velocity map [km/s]
+
+    gal_ID : string
+        [MaNGA plate] - [MaNGA IFU]
+
+    IMAGE_DIR : string
+        Path of directory to store images.  Default is None (image will not be 
+        saved).
+
+    FOLDER_NAME : string
+        Name of folder in which to save images.  Default is None (iamge will not 
+        be saved).
+
+    IMAGE_FORMAT : string
+        Format of saved images.  Default is eps.
+
+    FILENAME_SUFFIX : string
+        Suffix to append to gal_ID to create image file name.  Default is None 
+        (image will not be saved).
+
+    ax : matplotlib.pyplot figure axis object
+        Axis handle on which to create plot.
+    '''
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    ############################################################################
+    # Create residual array
+    #---------------------------------------------------------------------------
+    residual_map = (data_map - model_map)/model_map
+    ############################################################################
+
+
+    ############################################################################
+    rmax_bound = ma.max(np.abs(residual_map))
+    rmin_bound = -rmax_bound
+
+    cbar_ticks = np.linspace(rmin_bound, rmax_bound, 11, dtype='int')
+
+    ax.set_title(gal_ID + ' normalized residual')
+
+    residual_im = ax.imshow(residual_map, 
+                            cmap='PiYG_r', 
+                            origin='lower', 
+                            vmin=rmin_bound,
+                            vmax=rmax_bound)
+
+    cbar = plt.colorbar(residual_im, ax=ax, ticks=cbar_ticks)
+    cbar.ax.tick_params(direction='in')
+    cbar.set_label('normalized residual (data - model)/model')
+
+    ax.tick_params(axis='both', direction='in')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
+    ############################################################################
+
+
+    if IMAGE_DIR is not None:
+        ########################################################################
+        # Create output directory if it does not already exist
+        #-----------------------------------------------------------------------
+        if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
+            os.makedirs(IMAGE_DIR + FOLDER_NAME)
+        ########################################################################
+
+        ########################################################################
+        # Save figure
+        #-----------------------------------------------------------------------
+        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+                    format=IMAGE_FORMAT)
+        ########################################################################
+
+        ########################################################################
+        # Figure cleanup
+        #-----------------------------------------------------------------------
+        plt.cla()
+        plt.clf()
+        plt.close()
+        del cbar, residual_im
+        gc.collect()
+        ########################################################################
+
+
+
 
 ################################################################################
 ################################################################################

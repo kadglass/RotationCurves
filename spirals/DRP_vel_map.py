@@ -217,7 +217,7 @@ def fit_vel_map(Ha_vel,
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
     # Find spaxel along semi-major axis
-    delta_x = int(j_center_guess*0.5)
+    delta_x = int(j_center_guess*0.4)
     delta_y = int(delta_x/np.tan(phi_EofN_deg*np.pi/180.))
     semi_major_axis_spaxel = tuple(np.subtract(center_guess, (-delta_y, delta_x)))
 

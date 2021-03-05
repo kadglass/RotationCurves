@@ -114,6 +114,8 @@ def process_1_galaxy(job_queue,
             # Extract rotation curve data for the .fits file in question and 
             # create an astropy Table containing said data.
             #-------------------------------------------------------------------
+            start = datetime.datetime.now()
+            
             param_outputs, masked_gal_flag = fit_vel_map( Ha_vel, 
                                                           Ha_vel_ivar, 
                                                           Ha_vel_mask, 
@@ -126,11 +128,12 @@ def process_1_galaxy(job_queue,
                                                           IMAGE_DIR=IMAGE_DIR, 
                                                           IMAGE_FORMAT=IMAGE_FORMAT, 
                                                           )
+            fit_time = datetime.datetime.now() - start
 
             with num_masked_gal.get_lock():
                 num_masked_gal.value += masked_gal_flag
 
-            print(gal_ID, "velocity map fit")
+            print(gal_ID, "velocity map fit", fit_time)
             ####################################################################
 
 

@@ -220,10 +220,16 @@ def fit_vel_map(Ha_vel,
     # Find spaxel along semi-major axis
     delta_x = int(j_center_guess*0.4)
     delta_y = int(delta_x/np.tan(phi_EofN_deg*np.pi/180.))
-    semi_major_axis_spaxel = tuple(np.subtract(center_guess, (-delta_y, delta_x)))
+    semi_major_axis_spaxel = np.subtract(center_guess, (-delta_y, delta_x))
+    
+    for i in range(len(semi_major_axis_spaxel)):
+        if semi_major_axis_spaxel[i] < 0:
+            semi_major_axis_spaxel[i] = 0
+        elif semi_major_axis_spaxel[i] > mHa_vel.shape[i]:
+            semi_major_axis_spaxel[i] = mHa_vel.shape[i] - 1
 
     # Check value along semi-major axis
-    if mHa_vel[semi_major_axis_spaxel] < 0:
+    if mHa_vel[tuple(semi_major_axis_spaxel)] < 0:
         phi_guess = phi_EofN_deg*np.pi/180. + np.pi
     else:
         phi_guess = phi_EofN_deg*np.pi/180.
@@ -482,10 +488,10 @@ def estimate_total_mass(v_max, v_max_err, R90, z):
     ############################################################################
     # Calculate masses
     #---------------------------------------------------------------------------
-    M90 = mass_newton(v_max, v_max_err, R90, z)
+    M90, M90_err = mass_newton(v_max, v_max_err, R90, z)
     ############################################################################
 
-    return {'M90':np.log10(M90)}
+    return {'M90':np.log10(M90), 'M90_err':np.log10(M90_err)}
 
 
 

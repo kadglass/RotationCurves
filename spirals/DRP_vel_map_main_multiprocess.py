@@ -12,6 +12,7 @@ from astropy.table import Table
 import astropy.units as u
 
 from multiprocessing import Process, Queue, Value
+from queue import Empty
 
 from ctypes import c_long
 
@@ -26,6 +27,7 @@ sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
+warnings.simplefilter('ignore', RuntimeWarning)
 ################################################################################
 
 
@@ -52,12 +54,15 @@ def process_1_galaxy(job_queue,
     '''
     Main body of for-loop for processing one galaxy.
     '''
-
+    
     while True:
         try: 
-            gal_ID = job_queue.get(1.0)
-        except:
+            gal_ID = job_queue.get(timeout=1.0)
+        except Empty:
+            print('Worker returned successfully')
             return
+            
+            
         
         ########################################################################
         # gal_id is a simplified string that identifies each file that is run
@@ -69,6 +74,7 @@ def process_1_galaxy(job_queue,
         ########################################################################
 
         if not os.path.isfile(file_name):
+            print(gal_ID, 'data file does not exist.')
             continue
             
         ########################################################################
@@ -147,7 +153,7 @@ def process_1_galaxy(job_queue,
             ####################################################################
 
         else:
-            print("Galaxy's map is not smooth enough to fit.")
+            print(gal_ID, "is not smooth enough to fit.")
 
             with num_not_smooth.get_lock():
                 num_not_smooth.value += 1
@@ -156,7 +162,7 @@ def process_1_galaxy(job_queue,
             mass_outputs = None
 
 
-
+        print('\n')
 
         ########################################################################
         # Add output values to return queue
@@ -164,7 +170,7 @@ def process_1_galaxy(job_queue,
         output_tuple = (map_smoothness, param_outputs, mass_outputs, R90, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
-
+        
 ################################################################################
 ################################################################################
 ################################################################################
@@ -285,18 +291,15 @@ with num_not_smooth.get_lock():
 job_queue = Queue()
 return_queue = Queue()
 
+
 # Load jobs into queue
 for i,gal_ID in enumerate(FILE_IDS):
-
-    if i > 10:
-        break
         
     job_queue.put(gal_ID)
 
-
 processes = []
 
-for i in range(4):
+for i in range(12):
 
     p = Process(target=process_1_galaxy, args=(job_queue, 
                                                return_queue, 
@@ -311,22 +314,22 @@ for i in range(4):
                                                vel_function, 
                                                NSA_index, 
                                                NSA_table))
-
+    
     p.start()
 
     processes.append(p)
-
-
+    
 # Go through all the processes and join them back to the parent.
 for p in processes:
     p.join(None)
 
+print('Populating output table.', flush=True)
 
 # Iterate through the populated return queue to fill in the table
 while True:
 
     try:
-        return_tuple = return_queue.get()
+        return_tuple = return_queue.get(timeout=1.0)
     except:
         break
 
@@ -335,6 +338,8 @@ while True:
     # ascii format.
     #---------------------------------------------------------------------------
     map_smoothness, param_outputs, mass_outputs, R90, i_DRP = return_tuple
+    
+    #print('Writing', i_DRP, flush=True)
 
     DRP_table = fillin_output_table(DRP_table, 
                                     map_smoothness, 
@@ -349,11 +354,11 @@ while True:
     if param_outputs is not None:
         DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
         DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
-
-    print(gal_ID, "written")
     ############################################################################
 
-    print("\n")
+    #print("\n")
+    
+print('Finished populating output table', flush=True)
 ################################################################################
 
 
@@ -362,7 +367,7 @@ while True:
 # Save the output_table
 #-------------------------------------------------------------------------------
 DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
-                format='ascii.ecsv', overwrite=True)
+                format='ascii.commented_header', overwrite=True)
 ################################################################################
 
 
@@ -370,8 +375,8 @@ DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_
 ################################################################################
 # Print number of galaxies that were completely masked
 #-------------------------------------------------------------------------------
-print('There were', num_masked_gal, 'galaxies that were completely masked.')
-print('There were', num_not_smooth, 'galaxies without smooth velocity maps.')
+print('There were', num_masked_gal.value, 'galaxies that were completely masked.', flush=True)
+print('There were', num_not_smooth.value, 'galaxies without smooth velocity maps.', flush=True)
 ################################################################################
 
 
@@ -379,6 +384,6 @@ print('There were', num_not_smooth, 'galaxies without smooth velocity maps.')
 # Clock the program's run time to check performance.
 #-------------------------------------------------------------------------------
 FINISH = datetime.datetime.now()
-print("Runtime:", FINISH - START)
+print("Runtime:", FINISH - START, flush=True)
 ################################################################################
 

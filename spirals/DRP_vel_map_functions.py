@@ -285,6 +285,78 @@ def calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
 
 
     return chi2_norm
+    
+    
+    
+    
+def calculate_chi2_flat(params, 
+                        flat_vel_map, 
+                        flat_vel_map_ivar, 
+                        map_mask,
+                        pix_scale, 
+                        fit_function):
+    '''
+    chi2 of the velocity map
+
+
+    PARAMETERS
+    ==========
+
+    params : list
+        List of fit parameters
+
+    flat_vel_map : numpy array of shape (n,)
+        Flattened array of unmasked measured velocities
+
+    flat_vel_map_ivar : numpy array of shape (n,)
+        Flattened inverse variance of the unmasked measured velocities
+        
+    map_mask : numpy array of shape (m,m)
+        Bit mask for map.  Values of 0 are valid, all others are bad.
+
+    pix_scale : float
+        Scale of each pixel (to convert from pixel units to kpc)
+
+    fit_function : string
+        Determines which function to use for the velocity.  Options are 'BB' and 
+        'tanh'.
+
+
+    RETURNS
+    =======
+
+    chi2_norm : float
+        Chi2 value of the current value of the params normalized by the number 
+        of data points (minus the number of free parameters)
+    '''
+
+    ############################################################################
+    # Create fitted velocity map based on the values in params
+    #---------------------------------------------------------------------------
+    vel_map_model = model_vel_map(params, map_mask.shape, pix_scale, fit_function)
+    ############################################################################
+    
+    
+    ############################################################################
+    # Flatten both the mask and model, and remove all elements from the model 
+    # which are masked.
+    #---------------------------------------------------------------------------
+    mvel_map_model = ma.array(vel_map_model, mask=map_mask)
+    
+    flat_vel_map_model = mvel_map_model.compressed()
+    ############################################################################
+
+
+    ############################################################################
+    # Calculate chi2 of current fit
+    #---------------------------------------------------------------------------
+    chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
+
+    chi2_norm = chi2/(len(flat_vel_map) - len(params))
+    ############################################################################
+
+
+    return chi2_norm
 ################################################################################
 
 
@@ -743,10 +815,19 @@ def find_vel_map(mHa_vel,
     try:
         
         ########################################################################
+        # Flatten maps
+        #-----------------------------------------------------------------------
+        mHa_vel_flat = mHa_vel.compressed()
+        
+        mHa_vel_ivar_flat = mHa_vel_ivar.compressed()
+        ########################################################################
+        
+        ########################################################################
         # Fit velocity map using scipy.optimize.minimize with chi2 minimization
         #
         # Fits all 8 parameters at once
         #-----------------------------------------------------------------------
+        '''
         result = minimize(calculate_chi2,
                           np.concatenate([pos_guesses, vel_guesses]),
                           method='Powell',#'L-BFGS-B',
@@ -754,6 +835,13 @@ def find_vel_map(mHa_vel,
                           bounds=np.concatenate([pos_bounds, vel_bounds]), 
                           options={'disp':True}
                           )
+        '''
+        result = minimize(calculate_chi2_flat, 
+                          np.concatenate([pos_guesses, vel_guesses]), 
+                          method='Powell', 
+                          args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                          bounds=np.concatenate([pos_bounds, vel_bounds]),
+                          options={'disp':True})
 
         if result.success:
             print('Successful velocity fit!')
@@ -770,10 +858,12 @@ def find_vel_map(mHa_vel,
             #fit_params_err = -np.ones(len(result.x))
 
             # For use when Hessian is not provided by fit method
-            hessian = ndt.Hessian(calculate_chi2)
-            hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
+            #hessian = ndt.Hessian(calculate_chi2)
+            #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
+            hessian = ndt.Hessian(calculate_chi2_flat)
+            hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
             hess_inv = np.linalg.inv(hess)
-            fit_params_err = np.sqrt(np.diag(hess_inv))
+            fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
             #-------------------------------------------------------------------
 
 

@@ -22,6 +22,7 @@ sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
+warnings.simplefilter('ignore', RuntimeWarning)
 ################################################################################
 
 
@@ -52,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['9487-12701']
+FILE_IDS = ['7977-12701']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -123,6 +124,10 @@ for i in range(len(NSA_table)):
 
     NSA_index[NSA_ID] = i
 ################################################################################
+
+
+
+FILE_IDS = [DRP_table['plateifu'][7]]
 
 
 
@@ -273,6 +278,11 @@ for gal_ID in FILE_IDS:
 
     print("\n")
 ################################################################################
+
+
+
+test = fillin_output_table(DRP_table, mass_outputs, 7)
+test = fillin_output_table(DRP_table, param_outputs, 7)
 
 
 

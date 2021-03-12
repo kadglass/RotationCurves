@@ -26,7 +26,7 @@ import os.path
 from astropy.io import fits
 from astropy.table import Table, Column
 
-from DRP_vel_map_functions import find_vel_map, mass_newton
+from DRP_vel_map_functions import find_vel_map, mass_newton, find_phi
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
                                                  plot_Ha_vel
@@ -217,16 +217,7 @@ def fit_vel_map(Ha_vel,
     # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it 
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
-    # Find spaxel along semi-major axis
-    delta_x = int(j_center_guess*0.4)
-    delta_y = int(delta_x/np.tan(phi_EofN_deg*np.pi/180.))
-    semi_major_axis_spaxel = tuple(np.subtract(center_guess, (-delta_y, delta_x)))
-
-    # Check value along semi-major axis
-    if mHa_vel[semi_major_axis_spaxel] < 0:
-        phi_guess = phi_EofN_deg*np.pi/180. + np.pi
-    else:
-        phi_guess = phi_EofN_deg*np.pi/180.
+    phi_guess = find_phi(center_guess, phi_EofN_deg, mHa_vel)
     ############################################################################
 
 
@@ -281,8 +272,9 @@ def fit_vel_map(Ha_vel,
     # If there is unmasked data in the data array, fit the velocity map.
     #---------------------------------------------------------------------------
     else:
-        print('Fitting velocity map')
-        param_outputs, best_fit_map, scale = find_vel_map(mHa_vel, 
+        print(gal_ID, 'fitting velocity map')
+        param_outputs, best_fit_map, scale = find_vel_map(gal_ID, 
+                                                          mHa_vel, 
                                                           mHa_vel_ivar, 
                                                           z, 
                                                           i_center_guess, 
@@ -482,10 +474,10 @@ def estimate_total_mass(v_max, v_max_err, R90, z):
     ############################################################################
     # Calculate masses
     #---------------------------------------------------------------------------
-    M90 = mass_newton(v_max, v_max_err, R90, z)
+    M90, M90_err = mass_newton(v_max, v_max_err, R90, z)
     ############################################################################
 
-    return {'M90':np.log10(M90)}
+    return {'M90':np.log10(M90), 'M90_err':np.log10(M90_err)}
 
 
 

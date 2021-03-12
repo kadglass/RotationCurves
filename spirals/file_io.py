@@ -157,14 +157,14 @@ def fillin_output_table(output_table, data_to_add, row_index, col_name=None):
         for field in data_to_add:
 
             if field not in output_table.colnames:
-                output_table[field] = np.nan(len(output_table))
+                output_table[field] = np.nan
 
             output_table[field][row_index] = data_to_add[field]
 
     else:
 
         if col_name not in output_table.colnames:
-            output_table[col_name] = np.nan(len(output_table))
+            output_table[col_name] = np.nan
             
         output_table[col_name][row_index] = data_to_add
 

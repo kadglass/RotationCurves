@@ -38,7 +38,7 @@ warnings.simplefilter('ignore', RuntimeWarning)
 ################################################################################
 ################################################################################
 
-def process_1_galaxy(job_queue, 
+def process_1_galaxy(job_queue, i, 
                      return_queue, 
                      num_masked_gal, 
                      num_not_smooth, 
@@ -59,7 +59,7 @@ def process_1_galaxy(job_queue,
         try: 
             gal_ID = job_queue.get(timeout=1.0)
         except Empty:
-            print('Worker returned successfully')
+            print('Worker', i, 'returned successfully')
             return
             
             
@@ -91,10 +91,6 @@ def process_1_galaxy(job_queue,
         i_DRP = DRP_index[gal_ID]
         
         NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
-        
-        i_NSA = NSA_index[NSA_ID]
-
-        R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
         ########################################################################
 
 
@@ -116,41 +112,58 @@ def process_1_galaxy(job_queue,
             ####################################################################
             
             
-            ####################################################################
-            # Extract rotation curve data for the .fits file in question and 
-            # create an astropy Table containing said data.
-            #-------------------------------------------------------------------
-            start = datetime.datetime.now()
-            
-            param_outputs, masked_gal_flag = fit_vel_map( Ha_vel, 
-                                                          Ha_vel_ivar, 
-                                                          Ha_vel_mask, 
-                                                          r_band, 
-                                                          r_band_ivar, 
-                                                          axis_ratio, 
-                                                          phi_EofN_deg, 
-                                                          z, gal_ID, 
-                                                          vel_function, 
-                                                          IMAGE_DIR=IMAGE_DIR, 
-                                                          IMAGE_FORMAT=IMAGE_FORMAT, 
-                                                          )
-            fit_time = datetime.datetime.now() - start
+            if axis_ratio > -9999:
+                ################################################################
+                # Extract rotation curve data for the .fits file in question and 
+                # create an astropy Table containing said data.
+                #---------------------------------------------------------------
+                start = datetime.datetime.now()
+                
+                try:
+                    param_outputs, masked_gal_flag = fit_vel_map( Ha_vel, 
+                                                              Ha_vel_ivar, 
+                                                              Ha_vel_mask, 
+                                                              r_band, 
+                                                              r_band_ivar, 
+                                                              axis_ratio, 
+                                                              phi_EofN_deg, 
+                                                              z, gal_ID, 
+                                                              vel_function, 
+                                                              IMAGE_DIR=IMAGE_DIR, 
+                                                              IMAGE_FORMAT=IMAGE_FORMAT, 
+                                                              )
+                except:
+                    print(gal_ID, 'crashed!')
+                    raise
+                    
+                fit_time = datetime.datetime.now() - start
 
-            with num_masked_gal.get_lock():
-                num_masked_gal.value += masked_gal_flag
+                with num_masked_gal.get_lock():
+                    num_masked_gal.value += masked_gal_flag
 
-            print(gal_ID, "velocity map fit", fit_time)
-            ####################################################################
+                print(gal_ID, "velocity map fit", fit_time)
+                ################################################################
 
 
-            ####################################################################
-            # Estimate the total mass within the galaxy
-            #-------------------------------------------------------------------
-            mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                               param_outputs['v_max_err'], 
-                                               R90, 
-                                               z)
-            ####################################################################
+                ################################################################
+                # Estimate the total mass within the galaxy
+                #---------------------------------------------------------------
+                i_NSA = NSA_index[NSA_ID]
+
+                R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
+                
+                mass_outputs = estimate_total_mass(param_outputs['v_max'], 
+                                                   param_outputs['v_max_err'], 
+                                                   R90, 
+                                                   z)
+                ################################################################
+                
+            else:
+                print(gal_ID, 'is missing photometric measurements.')
+                
+                param_outputs = None
+                mass_outputs = None
+                R90 = None
 
         else:
             print(gal_ID, "is not smooth enough to fit.")
@@ -160,6 +173,11 @@ def process_1_galaxy(job_queue,
 
             param_outputs = None
             mass_outputs = None
+            
+            if NSA_ID >= 0:
+                R90 = NSA_table['ELPETRO_TH90_R'][NSA_index[NSA_ID]]
+            else:
+                R90 = None
 
 
         print('\n')
@@ -301,7 +319,7 @@ processes = []
 
 for i in range(12):
 
-    p = Process(target=process_1_galaxy, args=(job_queue, 
+    p = Process(target=process_1_galaxy, args=(job_queue, i, 
                                                return_queue, 
                                                num_masked_gal, 
                                                num_not_smooth, 
@@ -345,11 +363,12 @@ while True:
                                     map_smoothness, 
                                     i_DRP, 
                                     col_name='smoothness_score')
-                                    
-    DRP_table = fillin_output_table(DRP_table, 
-                                    R90, 
-                                    i_DRP, 
-                                    col_name='nsa_elpetro_th90')
+    
+    if R90 is not None:
+        DRP_table = fillin_output_table(DRP_table, 
+                                        R90, 
+                                        i_DRP, 
+                                        col_name='nsa_elpetro_th90')
 
     if param_outputs is not None:
         DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)

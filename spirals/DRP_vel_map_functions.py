@@ -39,6 +39,70 @@ fit_options = {'BB': rot_fit_BB,
 
 
 
+################################################################################
+################################################################################
+################################################################################
+def find_phi(center_coords, phi_angle, vel_map):
+    '''
+    Find a point along the semi-major axis that has data to determine if phi 
+    needs to be adjusted.  (This is necessary because the positive y-axis is 
+    defined as being along the semi-major axis of the positive velocity side of 
+    the velocity map.)
+    
+    
+    PARAMETERS
+    ==========
+    
+    center_coords : tuple
+        Coordinates of the center of the galaxy
+        
+    phi_angle : float
+        Initial rotation angle of the galaxy, E of N.  Units are degrees.
+        
+    vel_map : masked ndarray of shape (n,n)
+        Masked H-alpha velocity map
+        
+        
+    RETURNS
+    =======
+    
+    phi_adjusted : float
+        Rotation angle of the galaxy, E of N, that points along the positive 
+        velocity sector.  Units are radians.
+    '''
+    
+    # Convert phi_angle to radians
+    phi = phi_angle*np.pi/180.
+    
+    f = 0.4
+    
+    checkpoint_masked = True
+    
+    while checkpoint_masked:
+        delta_x = int(center_coords[1]*f)
+        delta_y = int(delta_x/np.tan(phi))
+        semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
+        
+        for i in range(len(semi_major_axis_spaxel)):
+            if semi_major_axis_spaxel[i] < 0:
+                semi_major_axis_spaxel[i] = 0
+            elif semi_major_axis_spaxel[i] >= vel_map.shape[i]:
+                semi_major_axis_spaxel[i] = vel_map.shape[i] - 1
+                
+        # Check value along semi-major axis
+        if vel_map.mask[tuple(semi_major_axis_spaxel)] == 0:
+            checkpoint_masked = False
+        else:
+            f *= 0.9
+            
+    if vel_map[tuple(semi_major_axis_spaxel)] < 0:
+        phi_adjusted = phi + np.pi
+    else:
+        phi_adjusted = phi
+            
+    return phi_adjusted
+
+
 
 ################################################################################
 ################################################################################
@@ -620,7 +684,8 @@ def vel_nlogL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 ################################################################################
 # Fit the velocity map
 #-------------------------------------------------------------------------------
-def find_vel_map(mHa_vel, 
+def find_vel_map(gal_ID, 
+                 mHa_vel, 
                  mHa_vel_ivar, 
                  z, 
                  i_center_guess, 
@@ -697,7 +762,7 @@ def find_vel_map(mHa_vel,
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
     v_max_index = np.unravel_index(ma.argmax(mHa_vel), mHa_vel.shape)
-    v_max_guess = mHa_vel[v_max_index]/np.sin(inclination_angle_guess)
+    v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
 
     #print("v_max_guess:", v_max_guess)
     ############################################################################
@@ -722,8 +787,8 @@ def find_vel_map(mHa_vel,
     # Set the extremes for each of the fit parameters
     #---------------------------------------------------------------------------
     # Systemic velocity
-    sys_vel_low = -100
-    sys_vel_high = 100
+    sys_vel_low = -1100
+    sys_vel_high = 1100
     sys_vel_bounds = (sys_vel_low, sys_vel_high)
 
     # Inclination angle
@@ -747,11 +812,11 @@ def find_vel_map(mHa_vel,
 
     # Maximum velocity [km/s]
     v_max_low = 10
-    v_max_high = 4100
+    v_max_high = 5100
     v_max_bounds = (v_max_low, v_max_high)
 
     # Turn radius [kpc]
-    r_turn_low = 0.5
+    r_turn_low = 0.1
     r_turn_high = 100
     r_turn_bounds = (r_turn_low, r_turn_high)
     ############################################################################
@@ -770,7 +835,7 @@ def find_vel_map(mHa_vel,
         alpha_bounds = (alpha_low, alpha_high)
 
         # Parameter guesses
-        vel_guesses = [v_max_guess, \
+        vel_guesses = [np.abs(v_max_guess), \
                        r_turn_guess_kpc, \
                        alpha_guess]
         pos_guesses = [sys_vel_guess, \
@@ -791,7 +856,7 @@ def find_vel_map(mHa_vel,
     elif fit_function == 'tanh':
 
         # Parameter guesses
-        vel_guesses = [v_max_guess, r_turn_guess_kpc]
+        vel_guesses = [np.abs(v_max_guess), r_turn_guess_kpc]
         pos_guesses = [sys_vel_guess, \
                        inclination_angle_guess, \
                        i_center_guess, \
@@ -807,6 +872,9 @@ def find_vel_map(mHa_vel,
 
     else:
         print('Selected fit function is not known!  Please edit find_vel_map function in DRP_vel_map_functions.py.')
+        
+    #print('Position guesses:', pos_guesses)
+    #print('Velocity guesses:', vel_guesses)
     ############################################################################
 
 
@@ -862,7 +930,12 @@ def find_vel_map(mHa_vel,
             #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
             hessian = ndt.Hessian(calculate_chi2_flat)
             hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
-            hess_inv = np.linalg.inv(hess)
+            #print(hess)
+            try:
+                hess_inv = np.linalg.inv(hess)
+            except np.linalg.LinAlgError:
+                hess[hess == 0] = np.nan
+                hess_inv = np.linalg.inv(hess)
             fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
             #-------------------------------------------------------------------
 

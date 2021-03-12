@@ -72,6 +72,42 @@ def add_columns(data_table, fit_function):
 
 
 ################################################################################
+# Initialize stellar mass output table
+#-------------------------------------------------------------------------------
+def add_disk_columns(data_table):
+    '''
+    Add additional columns to the table.
+
+
+    PARAMETERS
+    ==========
+
+    data_table : astropy table
+        Table of galaxies with various data already included.
+
+
+    RETURNS
+    =======
+
+    data_table : astropy table
+        Original data_table with additional columns
+    '''
+
+    N = len(data_table)
+
+    data_table['sigma_disk'] = np.nan
+    data_table['sigma_disk_err'] = np.nan
+
+    data_table['R_disk'] = np.nan
+    data_table['R_disk_err'] = np.nan
+
+
+    return data_table
+
+
+
+
+################################################################################
 ################################################################################
 ################################################################################
 

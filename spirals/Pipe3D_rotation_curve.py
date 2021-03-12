@@ -42,8 +42,15 @@ from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 import astropy.units as u
 
-from Pipe3D_rotation_curve_functions import build_mask, find_rot_curve, put_data_in_QTable
-from Pipe3D_rotation_curve_plottingFunctions import plot_vband_image, plot_Ha_vel, plot_rot_curve, plot_mass_curve, plot_diagnostic_panel
+from Pipe3D_rotation_curve_functions import build_mask, \
+                                            find_rot_curve, \
+                                            put_data_in_QTable
+
+from Pipe3D_rotation_curve_plottingFunctions import plot_vband_image, \
+                                                    plot_Ha_vel, \
+                                                    plot_rot_curve, \
+                                                    plot_mass_curve, \
+                                                    plot_diagnostic_panel
 
 
 

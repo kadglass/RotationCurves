@@ -118,19 +118,9 @@ num_masked_gal = 0 # Number of completely masked galaxies
 for gal_ID in FILE_IDS:
     
     ############################################################################
-    # gal_id is a simplified string that identifies each file that is run
-    # through the algorithm.  The gal_id name scheme is [PLATE]-[IFU].
-    #---------------------------------------------------------------------------
-    manga_plate, manga_IFU = gal_ID.split('-')
-
-    file_name = MANGA_FOLDER + manga_plate + '/' + manga_IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
-    ############################################################################
-
-
-    ############################################################################
     # Extract the necessary data from the .fits files.
     #---------------------------------------------------------------------------
-    Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data( file_name)
+    Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data( MANGA_FOLDER, gal_ID)
     sMass_density = extract_Pipe3d_data( PIPE3D_folder, gal_ID)
 
     print( gal_ID, " EXTRACTED")

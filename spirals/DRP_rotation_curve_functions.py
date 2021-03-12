@@ -94,8 +94,8 @@ def find_rot_curve( z,
     velocity data.
 
 
-    Parameters:
-    ===========
+    Parameters
+    ==========
 
     z : float
         Redshift of galaxy
@@ -132,8 +132,8 @@ def find_rot_curve( z,
         b/a Sersic axis ratio for galaxy
 
 
-    Returns:
-    ========
+    Returns
+    =======
 
     list_dict : dictionary
         Dictionary of output lists

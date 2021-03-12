@@ -603,8 +603,7 @@ def find_vel_map(mHa_vel,
 
 
     ############################################################################
-    # Convert pixel distance to physical distances in units of both
-    # kiloparsecs and centimeters.
+    # Convert pixel distance to physical distances.
     #---------------------------------------------------------------------------
     dist_to_galaxy_Mpc = c*z/H_0
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000

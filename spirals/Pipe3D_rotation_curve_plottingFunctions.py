@@ -109,7 +109,112 @@ def plot_vband_image(v_band, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps', ax=None
 
 
 
-def plot_Ha_vel(Ha_vel, gal_ID, IMAGE_DIR=None, FOLDER_NAME=None, IMAGE_FORMAT='eps', FILENAME_SUFFIX=None, ax=None):
+def plot_sMass_image(sMass, 
+                     gal_ID, 
+                     IMAGE_DIR=None, 
+                     IMAGE_FORMAT='eps', 
+                     ax=None):
+    '''
+    Creates a plot of the stellar mass density map
+
+
+    Parameters:
+    ===========
+
+    sMass : numpy array of shape (n,n)
+        stellar mass density map
+
+    gal_ID : string
+        MaNGA plate number - MaNGA fiberID number
+
+    IMAGE_DIR : string
+        Path of directory to store images
+
+    IMAGE_FORMAT : string
+        Format of saved image.  Default is eps
+
+    ax : matplotlib.pyplot axis object
+        Axes handle on which to create plot
+    '''
+
+
+    ###########################################################################
+    # Dimensions of array
+    #--------------------------------------------------------------------------
+    array_length = sMass.shape[0]  # y-coordinate distance
+    array_width = sMass.shape[1]  # x-coordinate distance
+    ###########################################################################
+
+
+    ###########################################################################
+    sMass_cbar_ticks = np.linspace(  0, sMass.max(), 7)
+
+    for val, i in zip( sMass_cbar_ticks, range( len( sMass_cbar_ticks))):
+        val = '%.3f' % val
+        sMass_cbar_ticks[i] = val
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    ax.set_title( gal_ID + ' stellar mass density')
+    sMass_im = ax.imshow( sMass, origin='lower')
+
+    cbar = plt.colorbar( sMass_im, ax=ax, ticks = np.linspace(  0, sMass.max(), 6))
+    cbar.ax.tick_params( direction='in', color='white')
+    cbar.set_label(r'stellar mass density [log($M/M_\odot$)]')
+
+    ax.set_xticks( np.arange( 0, array_width, 10))
+    ax.set_yticks( np.arange( 0, array_length, 10))
+    ax.tick_params( axis='both', direction='in', color='white')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
+    ###########################################################################
+
+
+    ###########################################################################
+    # Save figure
+    #--------------------------------------------------------------------------
+    if IMAGE_DIR is not None:
+        #######################################################################
+        # Create output directory if it does not already exist
+        #----------------------------------------------------------------------
+        if not os.path.isdir( IMAGE_DIR + '/sMass'):
+            os.makedirs( IMAGE_DIR + '/sMass')
+        #######################################################################
+
+
+        plt.savefig(IMAGE_DIR + '/sMass/' + gal_ID + '_sMass.' + IMAGE_FORMAT, 
+                    format=IMAGE_FORMAT)
+
+
+        #######################################################################
+        # Figure cleanup
+        #----------------------------------------------------------------------
+        #plt.show()
+        plt.cla()
+        plt.clf()
+        plt.close()
+        del cbar, sMass_im
+        gc.collect()
+        #######################################################################
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+
+def plot_Ha_vel(Ha_vel, 
+                gal_ID, 
+                IMAGE_DIR=None, 
+                FOLDER_NAME=None, 
+                IMAGE_FORMAT='eps', 
+                FILENAME_SUFFIX=None, 
+                ax=None):
     '''
     Creates a plot of the H-alpha velocity map.
 
@@ -370,6 +475,7 @@ def plot_mass_curve(IMAGE_DIR, IMAGE_FORMAT, gal_ID, data_table):
 ###############################################################################
 ###############################################################################
 ###############################################################################
+
 
 
 

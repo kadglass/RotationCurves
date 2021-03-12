@@ -17,8 +17,8 @@ from DRP_rotation_curve import extract_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-#sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
-sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
+#sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
@@ -81,13 +81,13 @@ else:
     #IMAGE_DIR = None
     IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-'''
+
 MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
 '''
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-
+'''
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################
@@ -154,19 +154,9 @@ num_not_smooth = 0 # Number of galaxies which do not have smooth velocity maps
 for gal_ID in FILE_IDS:
     
     ############################################################################
-    # gal_id is a simplified string that identifies each file that is run
-    # through the algorithm.  The gal_id name scheme is [PLATE]-[IFU].
-    #---------------------------------------------------------------------------
-    manga_plate, manga_IFU = gal_ID.split('-')
-
-    file_name = VEL_MAP_FOLDER + manga_plate + '/' + manga_IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
-    ############################################################################
-
-
-    ############################################################################
     # Extract the necessary data from the .fits files.
     #---------------------------------------------------------------------------
-    Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data( file_name)
+    Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data( VEL_MAP_FOLDER, gal_ID)
 
     print( gal_ID, "extracted")
     ############################################################################
@@ -196,7 +186,7 @@ for gal_ID in FILE_IDS:
         
         ########################################################################
         # Extract rotation curve data for the .fits file in question and create 
-        # an astropy Table containing said data.
+        # a dictionary containing said data.
         #-----------------------------------------------------------------------
         start = datetime.datetime.now()
         
@@ -281,7 +271,8 @@ for gal_ID in FILE_IDS:
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
     DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
-                    format='ascii.ecsv', overwrite=True)
+                    format='ascii.commented_header', 
+                    overwrite=True)
 ################################################################################
 
 

@@ -56,7 +56,7 @@ from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
 ################################################################################
 ################################################################################
 
-def extract_data( file_name):
+def extract_data( DRP_FOLDER, gal_ID):
     """
     Open the MaNGA .fits file and extract data.
 
@@ -64,8 +64,11 @@ def extract_data( file_name):
     PARAMETERS
     ==========
     
-    file_name : string
-        [DATA RELEASE]-manga-[PLATE]-[IFUID]-MAPS-HYB10-GAU-MILESHC.fits.gz
+    DRP_FOLDER : string
+        Address to location of DRP data on computer system
+
+    gal_ID : string
+        '[PLATE]-[IFUID]' of the galaxy
 
     
     RETURNS
@@ -87,6 +90,9 @@ def extract_data( file_name):
         Inverse variance in the r-band flux in units of 
         1/(1E-17 erg/s/cm^2/ang/spaxel)^2
     """
+
+    [plate, IFU] = gal_ID.split('-')
+    file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
 
     cube = fits.open( file_name)
 
@@ -129,7 +135,7 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
         Stellar mass density map, in units of log(Msun/spaxel^2)
     '''
 
-    [plate, fiberID] = gal_ID.split('-')
+    [plate, IFU] = gal_ID.split('-')
     pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
     main_file = fits.open( pipe3d_filename)

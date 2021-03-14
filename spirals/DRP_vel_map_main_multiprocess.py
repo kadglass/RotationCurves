@@ -42,6 +42,7 @@ def process_1_galaxy(job_queue, i,
                      return_queue, 
                      num_masked_gal, 
                      num_not_smooth, 
+                     num_missing_photo,
                      VEL_MAP_FOLDER, 
                      IMAGE_DIR, 
                      IMAGE_FORMAT, 
@@ -54,6 +55,12 @@ def process_1_galaxy(job_queue, i,
     '''
     Main body of for-loop for processing one galaxy.
     '''
+    
+    ############################################################################
+    # Open file to which we can write all the print statements.
+    #---------------------------------------------------------------------------
+    sys.stdout = open('Process_' + str(i) + '_output.txt', 'wt')
+    ############################################################################
     
     while True:
         try: 
@@ -122,7 +129,8 @@ def process_1_galaxy(job_queue, i,
                                                               IMAGE_FORMAT=IMAGE_FORMAT, 
                                                               )
                 except:
-                    print(gal_ID, 'crashed!')
+                    print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                    
                     raise
                     
                 fit_time = datetime.datetime.now() - start
@@ -149,6 +157,9 @@ def process_1_galaxy(job_queue, i,
                 
             else:
                 print(gal_ID, 'is missing photometric measurements.')
+                
+                with num_missing_photo.lock():
+                    num_missing_photo.value += 1
                 
                 param_outputs = None
                 mass_outputs = None
@@ -287,12 +298,16 @@ DRP_table = add_columns(DRP_table, vel_function)
 
 num_masked_gal = Value(c_long)
 num_not_smooth = Value(c_long)
+num_missing_photo = Value(c_long)
 
 with num_masked_gal.get_lock():
     num_masked_gal.value = 0
 
 with num_not_smooth.get_lock():
     num_not_smooth.value = 0
+    
+with num_missing_photo.get_lock():
+    num_missing_photo.value = 0
 
 
 job_queue = Queue()
@@ -303,6 +318,8 @@ return_queue = Queue()
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
+        
+print('Starting processes', flush=True)
 
 processes = []
 
@@ -312,6 +329,7 @@ for i in range(12):
                                                return_queue, 
                                                num_masked_gal, 
                                                num_not_smooth, 
+                                               num_missing_photo,
                                                VEL_MAP_FOLDER, 
                                                IMAGE_DIR, 
                                                IMAGE_FORMAT, 
@@ -385,6 +403,7 @@ DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_
 #-------------------------------------------------------------------------------
 print('There were', num_masked_gal.value, 'galaxies that were completely masked.', flush=True)
 print('There were', num_not_smooth.value, 'galaxies without smooth velocity maps.', flush=True)
+print('There were', num_missing_photo.value, 'galaxies missing photometry.', flush=True)
 ################################################################################
 
 

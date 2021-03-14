@@ -768,21 +768,6 @@ def find_vel_map(gal_ID,
 
 
     ############################################################################
-    # Set the initial guess for r_turn to be equal to half of the radius where 
-    # the maximum velocity occurs
-    #---------------------------------------------------------------------------
-    center_guess = (i_center_guess, j_center_guess)
-
-    r_turn_guess_spaxels,_ = deproject_spaxel(v_max_index, 
-                                              center_guess, 
-                                              phi_guess, 
-                                              inclination_angle_guess)
-
-    r_turn_guess_kpc = 0.5*r_turn_guess_spaxels*pix_scale_factor
-    ############################################################################
-
-
-    ############################################################################
     # Set the extremes for each of the fit parameters
     #---------------------------------------------------------------------------
     # Systemic velocity
@@ -818,6 +803,24 @@ def find_vel_map(gal_ID,
     r_turn_low = 0.01
     r_turn_high = 100
     r_turn_bounds = (r_turn_low, r_turn_high)
+    ############################################################################
+
+
+    ############################################################################
+    # Set the initial guess for r_turn to be equal to half of the radius where 
+    # the maximum velocity occurs
+    #---------------------------------------------------------------------------
+    center_guess = (i_center_guess, j_center_guess)
+
+    r_turn_guess_spaxels,_ = deproject_spaxel(v_max_index, 
+                                              center_guess, 
+                                              phi_guess, 
+                                              inclination_angle_guess)
+
+    r_turn_guess_kpc = 0.5*r_turn_guess_spaxels*pix_scale_factor
+
+    if r_turn_guess_kpc < r_turn_low:
+        r_turn_guess_kpc = 1.1*r_turn_low
     ############################################################################
 
 

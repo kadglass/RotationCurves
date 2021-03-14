@@ -63,25 +63,14 @@ def process_1_galaxy(job_queue, i,
             return
             
             
-        
-        ########################################################################
-        # gal_id is a simplified string that identifies each file that is run
-        # through the algorithm.  The gal_id name scheme is [PLATE]-[IFU].
-        #-----------------------------------------------------------------------
-        manga_plate, manga_IFU = gal_ID.split('-')
-
-        file_name = VEL_MAP_FOLDER + manga_plate + '/' + manga_IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
-        ########################################################################
-
-        if not os.path.isfile(file_name):
-            print(gal_ID, 'data file does not exist.')
-            continue
-            
         ########################################################################
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data( file_name)
+        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data(VEL_MAP_FOLDER, gal_ID)
 
+        if Ha_vel is None:
+            continue
+        
         print( gal_ID, "extracted")
         ########################################################################
 

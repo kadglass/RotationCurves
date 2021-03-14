@@ -760,7 +760,7 @@ def find_vel_map(gal_ID,
     # Use the maximum velocity in the data as the initial guess for the maximum 
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
-    v_max_index = np.unravel_index(ma.argmax(mHa_vel), mHa_vel.shape)
+    v_max_index = np.unravel_index(ma.argmax(np.abs(mHa_vel)), mHa_vel.shape)
     v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
 
     #print("v_max_guess:", v_max_guess)
@@ -796,12 +796,12 @@ def find_vel_map(gal_ID,
     inclination_angle_bounds = (inclination_angle_low, inclination_angle_high)
 
     # Center coordinates
-    i_center_low = i_center_guess - 5
-    i_center_high = i_center_guess + 5
+    i_center_low = i_center_guess - 10
+    i_center_high = i_center_guess + 10
     i_center_bounds = (i_center_low, i_center_high)
 
-    j_center_low = j_center_guess - 5
-    j_center_high = j_center_guess + 5
+    j_center_low = j_center_guess - 10
+    j_center_high = j_center_guess + 10
     j_center_bounds = (j_center_low, j_center_high)
 
     # Orientation angle
@@ -815,7 +815,7 @@ def find_vel_map(gal_ID,
     v_max_bounds = (v_max_low, v_max_high)
 
     # Turn radius [kpc]
-    r_turn_low = 0.1
+    r_turn_low = 0.01
     r_turn_high = 100
     r_turn_bounds = (r_turn_low, r_turn_high)
     ############################################################################
@@ -929,13 +929,11 @@ def find_vel_map(gal_ID,
             #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
             hessian = ndt.Hessian(calculate_chi2_flat)
             hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
-            #print(hess)
             try:
                 hess_inv = np.linalg.inv(hess)
+                fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
             except np.linalg.LinAlgError:
-                hess[hess == 0] = np.nan
-                hess_inv = np.linalg.inv(hess)
-            fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+                fit_params_err = np.nan*np.ones(len(result.x))
             #-------------------------------------------------------------------
 
 

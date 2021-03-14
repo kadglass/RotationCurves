@@ -17,8 +17,8 @@ from DRP_rotation_curve import extract_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
-#sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+#sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
+sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
@@ -53,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8154-12703']
+FILE_IDS = ['8613-12703']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -82,13 +82,13 @@ else:
     #IMAGE_DIR = None
     IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-
+'''
 MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
 '''
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-'''
+
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################

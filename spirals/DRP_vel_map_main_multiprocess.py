@@ -26,8 +26,8 @@ import sys
 sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
-warnings.simplefilter('ignore', np.RankWarning)
-warnings.simplefilter('ignore', RuntimeWarning)
+#warnings.simplefilter('ignore', np.RankWarning)
+#warnings.simplefilter('ignore', RuntimeWarning)
 ################################################################################
 
 
@@ -59,14 +59,20 @@ def process_1_galaxy(job_queue, i,
     ############################################################################
     # Open file to which we can write all the print statements.
     #---------------------------------------------------------------------------
-    sys.stdout = open('Process_' + str(i) + '_output.txt', 'wt')
+    outfile = open('Process_' + str(i) + '_output.txt', 'wt')
+    sys.stdout = outfile
+    sys.stderr = outfile
     ############################################################################
     
     while True:
         try: 
             gal_ID = job_queue.get(timeout=1.0)
         except Empty:
-            print('Worker', i, 'returned successfully')
+            outfile.close()
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            print('Worker', i, 'returned successfully', datetime.datetime.now(), 
+                  flush=True)
             return
             
             
@@ -78,7 +84,7 @@ def process_1_galaxy(job_queue, i,
         if Ha_vel is None:
             continue
         
-        print( gal_ID, "extracted")
+        print( gal_ID, "extracted", flush=True)
         ########################################################################
 
         ########################################################################
@@ -129,7 +135,8 @@ def process_1_galaxy(job_queue, i,
                                                               IMAGE_FORMAT=IMAGE_FORMAT, 
                                                               )
                 except:
-                    print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                    print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', 
+                          flush=True)
                     
                     raise
                     
@@ -138,7 +145,7 @@ def process_1_galaxy(job_queue, i,
                 with num_masked_gal.get_lock():
                     num_masked_gal.value += masked_gal_flag
 
-                print(gal_ID, "velocity map fit", fit_time)
+                print(gal_ID, "velocity map fit", fit_time, flush=True)
                 ################################################################
 
 
@@ -149,16 +156,18 @@ def process_1_galaxy(job_queue, i,
 
                 R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
                 
-                mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                                   param_outputs['v_max_err'], 
-                                                   R90, 
-                                                   z)
+                if param_outputs is not None:
+                    mass_outputs = estimate_total_mass(param_outputs['v_max'], 
+                                                       param_outputs['v_max_err'], 
+                                                       R90, 
+                                                       z)
                 ################################################################
                 
             else:
-                print(gal_ID, 'is missing photometric measurements.')
+                print(gal_ID, 'is missing photometric measurements.', 
+                      flush=True)
                 
-                with num_missing_photo.lock():
+                with num_missing_photo.get_lock():
                     num_missing_photo.value += 1
                 
                 param_outputs = None
@@ -166,7 +175,7 @@ def process_1_galaxy(job_queue, i,
                 R90 = None
 
         else:
-            print(gal_ID, "is not smooth enough to fit.")
+            print(gal_ID, "is not smooth enough to fit.", flush=True)
 
             with num_not_smooth.get_lock():
                 num_not_smooth.value += 1
@@ -180,7 +189,7 @@ def process_1_galaxy(job_queue, i,
                 R90 = None
 
 
-        print('\n')
+        print('\n', flush=True)
 
         ########################################################################
         # Add output values to return queue
@@ -188,6 +197,7 @@ def process_1_galaxy(job_queue, i,
         output_tuple = (map_smoothness, param_outputs, mass_outputs, R90, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
+
         
 ################################################################################
 ################################################################################

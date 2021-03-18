@@ -251,7 +251,8 @@ def model_vel_map(params, map_shape, scale, fit_function):
     elif fit_function == 'tanh':
         v_sys, i_angle, i_center, j_center, phi, v_max, r_turn = params
     else:
-        print('Unknown fit function.  Please update model_vel_map function.')
+        print('Unknown fit function.  Please update model_vel_map function.', 
+              flush=True)
     ############################################################################
 
 
@@ -282,7 +283,8 @@ def model_vel_map(params, map_shape, scale, fit_function):
             elif fit_function == 'tanh':
                 v[i,j] = rot_fit_tanh(r*scale, [v_max, r_turn])
             else:
-                print('Fit function not known.  Please update model_vel_map function.')
+                print('Fit function not known.  Please update model_vel_map function.', 
+                      flush=True)
 
     #print([v_max, r_turn, alpha])
     #print(params)
@@ -873,7 +875,8 @@ def find_vel_map(gal_ID,
                       phi_bounds]
 
     else:
-        print('Selected fit function is not known!  Please edit find_vel_map function in DRP_vel_map_functions.py.')
+        print('Selected fit function is not known!  Please edit find_vel_map function in DRP_vel_map_functions.py.', 
+              flush=True)
         
     #print('Position guesses:', pos_guesses)
     #print('Velocity guesses:', vel_guesses)
@@ -914,7 +917,7 @@ def find_vel_map(gal_ID,
                           options={'disp':True})
 
         if result.success:
-            print('Successful velocity fit!')
+            print('Successful velocity fit!', flush=True)
 
             #print(result)
 
@@ -969,7 +972,7 @@ def find_vel_map(gal_ID,
                                          pix_scale_factor, 
                                          fit_function)
         else:
-            print('Fit did not converge.')
+            print('Fit did not converge.', flush=True)
             best_fit_values = None
             best_fit_map = None
         ########################################################################

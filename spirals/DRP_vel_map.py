@@ -264,7 +264,7 @@ def fit_vel_map(Ha_vel,
 
         num_masked_gal += 1
 
-        print("ALL DATA POINTS FOR THE GALAXY ARE MASKED!!!")
+        print("ALL DATA POINTS FOR THE GALAXY ARE MASKED!!!", flush=True)
     ############################################################################
 
 

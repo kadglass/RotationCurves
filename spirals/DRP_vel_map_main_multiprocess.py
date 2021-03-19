@@ -69,15 +69,29 @@ def process_1_galaxy(job_queue, i,
             gal_ID = job_queue.get(timeout=1.0)
         except Empty:
         
+            print('Queue is empty!', flush=True)
+        
             outfile.close()
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
             
+            print('Worker', i, 'redirected stdout and stderr.', flush=True)
+            
             return_queue.close()
+            
+            print('Worker', i, 'closed the return queue.', flush=True)
+            
             return_queue.join_thread()
             
-            print('Worker', i, 'returned successfully', datetime.datetime.now(), 
-                  flush=True)
+            print('Worker', i, 'joined the return queue.', flush=True)
+            
+            job_queue.close()
+            
+            print('Worker', i, 'closed the job queue.', flush=True)
+            
+            job_queue.join_thread()
+            
+            print('Worker', i, 'returned successfully', datetime.datetime.now(), flush=True)
             return
             
             
@@ -87,6 +101,8 @@ def process_1_galaxy(job_queue, i,
         Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data(VEL_MAP_FOLDER, gal_ID)
 
         if Ha_vel is None:
+            output_tuple = (None, None, None, None, None)
+            return_queue.put(output_tuple)
             continue
         
         print( gal_ID, "extracted", flush=True)
@@ -328,13 +344,16 @@ with num_missing_photo.get_lock():
 job_queue = Queue()
 return_queue = Queue()
 
+num_tasks = len(FILE_IDS)
 
 # Load jobs into queue
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
+    
+    if i > 40:
+        break
 
-        
 print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
@@ -360,19 +379,22 @@ for i in range(12):
 
     processes.append(p)
     
-# Go through all the processes and join them back to the parent.
-for p in processes:
-    p.join(None)
+job_queue.close()
+job_queue.join_thread()
 
 print('Populating output table', datetime.datetime.now(), flush=True)
 
+################################################################################
 # Iterate through the populated return queue to fill in the table
-while True:
+#-------------------------------------------------------------------------------
+num_processed = 0
+
+while num_processed < num_tasks:
 
     try:
         return_tuple = return_queue.get(timeout=1.0)
     except:
-        break
+        continue
 
     ############################################################################
     # Write the best-fit values and calculated parameters to a text file in 
@@ -382,10 +404,11 @@ while True:
     
     #print('Writing', i_DRP, flush=True)
 
-    DRP_table = fillin_output_table(DRP_table, 
-                                    map_smoothness, 
-                                    i_DRP, 
-                                    col_name='smoothness_score')
+    if map_smoothness is not None:
+        DRP_table = fillin_output_table(DRP_table, 
+                                        map_smoothness, 
+                                        i_DRP, 
+                                        col_name='smoothness_score')
     
     if R90 is not None:
         DRP_table = fillin_output_table(DRP_table, 
@@ -397,6 +420,8 @@ while True:
         DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
         DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
     ############################################################################
+    
+    num_processed += 1
 
     #print("\n")
     
@@ -404,14 +429,17 @@ print('Finished populating output table', datetime.datetime.now(), flush=True)
 ################################################################################
 
 
-'''
+# Go through all the processes and join them back to the parent.
+for p in processes:
+    p.join(None)
+
+
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
 DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
                 format='ascii.commented_header', overwrite=True)
 ################################################################################
-'''
 
 
 ################################################################################

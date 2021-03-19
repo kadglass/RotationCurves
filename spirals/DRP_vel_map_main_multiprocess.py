@@ -68,9 +68,14 @@ def process_1_galaxy(job_queue, i,
         try: 
             gal_ID = job_queue.get(timeout=1.0)
         except Empty:
+        
             outfile.close()
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
+            
+            return_queue.close()
+            return_queue.join_thread()
+            
             print('Worker', i, 'returned successfully', datetime.datetime.now(), 
                   flush=True)
             return
@@ -328,8 +333,9 @@ return_queue = Queue()
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
+
         
-print('Starting processes', flush=True)
+print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
@@ -358,7 +364,7 @@ for i in range(12):
 for p in processes:
     p.join(None)
 
-print('Populating output table.', flush=True)
+print('Populating output table', datetime.datetime.now(), flush=True)
 
 # Iterate through the populated return queue to fill in the table
 while True:
@@ -394,18 +400,18 @@ while True:
 
     #print("\n")
     
-print('Finished populating output table', flush=True)
+print('Finished populating output table', datetime.datetime.now(), flush=True)
 ################################################################################
 
 
-
+'''
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
 DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
                 format='ascii.commented_header', overwrite=True)
 ################################################################################
-
+'''
 
 
 ################################################################################

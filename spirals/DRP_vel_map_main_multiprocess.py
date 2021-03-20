@@ -350,9 +350,7 @@ num_tasks = len(FILE_IDS)
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
-    
-    if i > 40:
-        break
+
 
 print('Starting processes', datetime.datetime.now(), flush=True)
 
@@ -378,9 +376,6 @@ for i in range(12):
     p.start()
 
     processes.append(p)
-    
-job_queue.close()
-job_queue.join_thread()
 
 print('Populating output table', datetime.datetime.now(), flush=True)
 
@@ -388,6 +383,8 @@ print('Populating output table', datetime.datetime.now(), flush=True)
 # Iterate through the populated return queue to fill in the table
 #-------------------------------------------------------------------------------
 num_processed = 0
+
+print(num_tasks)
 
 while num_processed < num_tasks:
 
@@ -422,8 +419,13 @@ while num_processed < num_tasks:
     ############################################################################
     
     num_processed += 1
+    
+    print(num_processed)
 
     #print("\n")
+    
+#job_queue.close()
+#job_queue.join_thread()
     
 print('Finished populating output table', datetime.datetime.now(), flush=True)
 ################################################################################
@@ -437,8 +439,8 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
-                format='ascii.commented_header', overwrite=True)
+DRP_table.write('DRP_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.fits', 
+                format='fits', overwrite=True)
 ################################################################################
 
 

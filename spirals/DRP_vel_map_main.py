@@ -219,15 +219,15 @@ for gal_ID in FILE_IDS:
             R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
             ####################################################################
 
-
-            ####################################################################
-            # Estimate the total mass within the galaxy
-            #-------------------------------------------------------------------
-            mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                               param_outputs['v_max_err'], 
-                                               R90, 
-                                               z)
-            ####################################################################
+            if param_outputs is not None:
+                ################################################################
+                # Estimate the total mass within the galaxy
+                #---------------------------------------------------------------
+                mass_outputs = estimate_total_mass(param_outputs['v_max'], 
+                                                   param_outputs['v_max_err'], 
+                                                   R90, 
+                                                   z)
+                ################################################################
 
 
             if RUN_ALL_GALAXIES:
@@ -239,12 +239,19 @@ for gal_ID in FILE_IDS:
                                                 map_smoothness, 
                                                 i_DRP, 
                                                 col_name='smoothness_score')
-                DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
-                DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
+                                                
                 DRP_table = fillin_output_table(DRP_table, 
                                                 R90, 
                                                 i_DRP, 
                                                 col_name='nsa_elpetro_th90')
+                
+                if param_outputs is not None:
+                    DRP_table = fillin_output_table(DRP_table, 
+                                                    param_outputs, 
+                                                    i_DRP)
+                    DRP_table = fillin_output_table(DRP_table, 
+                                                    mass_outputs, 
+                                                    i_DRP)
 
                 print(gal_ID, "written")
                 ################################################################

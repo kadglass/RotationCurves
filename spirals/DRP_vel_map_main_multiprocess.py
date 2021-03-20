@@ -26,8 +26,8 @@ import sys
 sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
-warnings.simplefilter('ignore', np.RankWarning)
-warnings.simplefilter('ignore', RuntimeWarning)
+#warnings.simplefilter('ignore', np.RankWarning)
+#warnings.simplefilter('ignore', RuntimeWarning)
 ################################################################################
 
 
@@ -42,6 +42,7 @@ def process_1_galaxy(job_queue, i,
                      return_queue, 
                      num_masked_gal, 
                      num_not_smooth, 
+                     num_missing_photo,
                      VEL_MAP_FOLDER, 
                      IMAGE_DIR, 
                      IMAGE_FORMAT, 
@@ -55,11 +56,42 @@ def process_1_galaxy(job_queue, i,
     Main body of for-loop for processing one galaxy.
     '''
     
+    ############################################################################
+    # Open file to which we can write all the print statements.
+    #---------------------------------------------------------------------------
+    outfile = open('Process_' + str(i) + '_output.txt', 'wt')
+    sys.stdout = outfile
+    sys.stderr = outfile
+    ############################################################################
+    
     while True:
         try: 
             gal_ID = job_queue.get(timeout=1.0)
         except Empty:
-            print('Worker', i, 'returned successfully')
+        
+            print('Queue is empty!', flush=True)
+        
+            outfile.close()
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            
+            print('Worker', i, 'redirected stdout and stderr.', flush=True)
+            
+            return_queue.close()
+            
+            print('Worker', i, 'closed the return queue.', flush=True)
+            
+            return_queue.join_thread()
+            
+            print('Worker', i, 'joined the return queue.', flush=True)
+            
+            job_queue.close()
+            
+            print('Worker', i, 'closed the job queue.', flush=True)
+            
+            job_queue.join_thread()
+            
+            print('Worker', i, 'returned successfully', datetime.datetime.now(), flush=True)
             return
             
             
@@ -69,9 +101,11 @@ def process_1_galaxy(job_queue, i,
         Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data(VEL_MAP_FOLDER, gal_ID)
 
         if Ha_vel is None:
+            output_tuple = (None, None, None, None, None)
+            return_queue.put(output_tuple)
             continue
         
-        print( gal_ID, "extracted")
+        print( gal_ID, "extracted", flush=True)
         ########################################################################
 
         ########################################################################
@@ -122,7 +156,9 @@ def process_1_galaxy(job_queue, i,
                                                               IMAGE_FORMAT=IMAGE_FORMAT, 
                                                               )
                 except:
-                    print(gal_ID, 'crashed!')
+                    print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', 
+                          flush=True)
+                    
                     raise
                     
                 fit_time = datetime.datetime.now() - start
@@ -130,7 +166,7 @@ def process_1_galaxy(job_queue, i,
                 with num_masked_gal.get_lock():
                     num_masked_gal.value += masked_gal_flag
 
-                print(gal_ID, "velocity map fit", fit_time)
+                print(gal_ID, "velocity map fit", fit_time, flush=True)
                 ################################################################
 
 
@@ -141,21 +177,26 @@ def process_1_galaxy(job_queue, i,
 
                 R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
                 
-                mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                                   param_outputs['v_max_err'], 
-                                                   R90, 
-                                                   z)
+                if param_outputs is not None:
+                    mass_outputs = estimate_total_mass(param_outputs['v_max'], 
+                                                       param_outputs['v_max_err'], 
+                                                       R90, 
+                                                       z)
                 ################################################################
                 
             else:
-                print(gal_ID, 'is missing photometric measurements.')
+                print(gal_ID, 'is missing photometric measurements.', 
+                      flush=True)
+                
+                with num_missing_photo.get_lock():
+                    num_missing_photo.value += 1
                 
                 param_outputs = None
                 mass_outputs = None
                 R90 = None
 
         else:
-            print(gal_ID, "is not smooth enough to fit.")
+            print(gal_ID, "is not smooth enough to fit.", flush=True)
 
             with num_not_smooth.get_lock():
                 num_not_smooth.value += 1
@@ -169,7 +210,7 @@ def process_1_galaxy(job_queue, i,
                 R90 = None
 
 
-        print('\n')
+        print('\n', flush=True)
 
         ########################################################################
         # Add output values to return queue
@@ -177,6 +218,7 @@ def process_1_galaxy(job_queue, i,
         output_tuple = (map_smoothness, param_outputs, mass_outputs, R90, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
+
         
 ################################################################################
 ################################################################################
@@ -287,22 +329,30 @@ DRP_table = add_columns(DRP_table, vel_function)
 
 num_masked_gal = Value(c_long)
 num_not_smooth = Value(c_long)
+num_missing_photo = Value(c_long)
 
 with num_masked_gal.get_lock():
     num_masked_gal.value = 0
 
 with num_not_smooth.get_lock():
     num_not_smooth.value = 0
+    
+with num_missing_photo.get_lock():
+    num_missing_photo.value = 0
 
 
 job_queue = Queue()
 return_queue = Queue()
 
+num_tasks = len(FILE_IDS)
 
 # Load jobs into queue
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
+
+
+print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
@@ -312,6 +362,7 @@ for i in range(12):
                                                return_queue, 
                                                num_masked_gal, 
                                                num_not_smooth, 
+                                               num_missing_photo,
                                                VEL_MAP_FOLDER, 
                                                IMAGE_DIR, 
                                                IMAGE_FORMAT, 
@@ -325,20 +376,22 @@ for i in range(12):
     p.start()
 
     processes.append(p)
-    
-# Go through all the processes and join them back to the parent.
-for p in processes:
-    p.join(None)
 
-print('Populating output table.', flush=True)
+print('Populating output table', datetime.datetime.now(), flush=True)
 
+################################################################################
 # Iterate through the populated return queue to fill in the table
-while True:
+#-------------------------------------------------------------------------------
+num_processed = 0
+
+print(num_tasks)
+
+while num_processed < num_tasks:
 
     try:
         return_tuple = return_queue.get(timeout=1.0)
     except:
-        break
+        continue
 
     ############################################################################
     # Write the best-fit values and calculated parameters to a text file in 
@@ -348,10 +401,11 @@ while True:
     
     #print('Writing', i_DRP, flush=True)
 
-    DRP_table = fillin_output_table(DRP_table, 
-                                    map_smoothness, 
-                                    i_DRP, 
-                                    col_name='smoothness_score')
+    if map_smoothness is not None:
+        DRP_table = fillin_output_table(DRP_table, 
+                                        map_smoothness, 
+                                        i_DRP, 
+                                        col_name='smoothness_score')
     
     if R90 is not None:
         DRP_table = fillin_output_table(DRP_table, 
@@ -363,21 +417,31 @@ while True:
         DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
         DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
     ############################################################################
+    
+    num_processed += 1
+    
+    print(num_processed)
 
     #print("\n")
     
-print('Finished populating output table', flush=True)
+#job_queue.close()
+#job_queue.join_thread()
+    
+print('Finished populating output table', datetime.datetime.now(), flush=True)
 ################################################################################
 
+
+# Go through all the processes and join them back to the parent.
+for p in processes:
+    p.join(None)
 
 
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
-                format='ascii.commented_header', overwrite=True)
+DRP_table.write('DRP_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.fits', 
+                format='fits', overwrite=True)
 ################################################################################
-
 
 
 ################################################################################
@@ -385,6 +449,7 @@ DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_
 #-------------------------------------------------------------------------------
 print('There were', num_masked_gal.value, 'galaxies that were completely masked.', flush=True)
 print('There were', num_not_smooth.value, 'galaxies without smooth velocity maps.', flush=True)
+print('There were', num_missing_photo.value, 'galaxies missing photometry.', flush=True)
 ################################################################################
 
 

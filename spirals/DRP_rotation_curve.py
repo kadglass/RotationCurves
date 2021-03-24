@@ -142,6 +142,10 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
     [plate, IFU] = gal_ID.split('-')
     pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
+    if not os.path.isfile(pipe3d_filename):
+        print(gal_ID, 'Pipe3d data file does not exist.')
+        return None
+
     main_file = fits.open( pipe3d_filename)
     ssp = main_file[1].data
     main_file.close()

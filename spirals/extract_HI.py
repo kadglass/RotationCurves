@@ -5,8 +5,7 @@ angles of inclination.
 
 
 
-from astropy.table import QTable
-#from astropy.table import Table
+from astropy.table import QTable, Table
 
 from extract_HI_functions import match_HI
 
@@ -20,7 +19,8 @@ DATA_PIPELINE = 'DRP'
 
 #MASTER_FILE_NAME = '/Users/kellydouglass/Desktop/Pipe3D-master_file_vflag_10_smooth2p27_N2O2_noWords.txt'
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_chi10_alpha10_smooth2p27.txt'
-MASTER_FILE_NAME = 'DRPall-master_file.txt'
+#MASTER_FILE_NAME = 'DRPall-master_file.txt'
+MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit.txt'
 ###############################################################################
 
 

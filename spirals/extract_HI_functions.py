@@ -90,8 +90,8 @@ def match_HI( master_table):
     ############################################################################
     # Load in HI data
     #---------------------------------------------------------------------------
-    ALFALFA_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/MaNGA/HI/manga_dr15_alfalfa.fits'
-    GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/MaNGA/HI/mangaHIall.fits'
+    ALFALFA_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/manga_alfalfa-dr15.fits'
+    GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/mangaHIall.fits'
 
     ALFALFA = Table.read(ALFALFA_filename, format='fits')
     GBT = Table.read(GBT_filename, format='fits')
@@ -128,7 +128,10 @@ def match_HI( master_table):
             ####################################################################
             # Calculate sin(i)
             #-------------------------------------------------------------------
-            sini = np.sqrt(1 - master_table['ba'][gal_i]**2)
+            if 'ba_map' in master_table.colnames and master_table['ba_map'][gal_i] > 0:
+                sini = np.sqrt(1 - master_table['ba_map'][gal_i]**2)
+            else:
+                sini = np.sqrt(1 - master_table['NSA_ba'][gal_i]**2)
 
             if sini == 0:
                 sini = 1
@@ -168,7 +171,10 @@ def match_HI( master_table):
             ####################################################################
             # Calculate sin(i)
             #-------------------------------------------------------------------
-            sini = np.sqrt(1 - master_table['ba'][gal_i]**2)
+            if 'ba_map' in master_table.colnames and master_table['ba_map'][gal_i] > 0:
+                sini = np.sqrt(1 - master_table['ba_map'][gal_i]**2)
+            else:
+                sini = np.sqrt(1 - master_table['NSA_ba'][gal_i]**2)
 
             if sini == 0:
                 sini = 1

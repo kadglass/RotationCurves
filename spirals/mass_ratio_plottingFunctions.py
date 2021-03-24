@@ -20,7 +20,8 @@ label_dict = {'Mdark_Mstar_ratio':'$M_{DM}/M_*$',
               'Z12logOH': '12 + log(O/H)',
               'Rmax': '$R_{max}$ [kpc]',
               'avg_r_turn': '$R_{turn}$ [kpc]',
-              'Rmax_Rturn_ratio': '$R_{max}$/$R_{turn}$'}
+              'Rmax_Rturn_ratio': '$R_{max}$/$R_{turn}$', 
+              'M90_Mdisk_ratio': '$M_{90}/M_{90, disk}$'}
 ###############################################################################
 
 
@@ -115,7 +116,7 @@ def median_hist( void, wall, x_param, y_param, bins, error_linestyle=['', ':'],
                      marker='o', mfc='r', ms=200, 
                      ecolor='r', fmt='none')
     plt.plot(bins + bin_width, median_void, 'ro', label='Void')
-    if error_linestyle[0] is not '':
+    if error_linestyle[0] != '':
         v[-1][0].set_linestyle(error_linestyle[0])
         v[-1][1].set_linestyle(error_linestyle[0])
 
@@ -406,6 +407,7 @@ def param_CDF( void, wall, field, field_range, save_fig=False, IMAGE_DIR='',
 def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60), 
                 y_max=0.05, y_err=False, 
                 plot_title='$M_{DM}$ / $M_*$ distribution', 
+                x_label='$M_{DM}/M_*$', 
                 save_fig=False, FILE_SUFFIX='', IMAGE_DIR='', 
                 IMAGE_FORMAT='eps'):
     '''
@@ -436,6 +438,9 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
 
     plot_title : string
         Title of plot; default is '$M_{DM}$ / $M_*$ distribution'
+        
+    x_label : string
+        Axis label for x-axis; default is '$M_{DM}/M_*$'
 
     save_fig : boolean
         Flag to determine whether or not the figure should be saved.  Default 
@@ -497,7 +502,7 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
     ax1.errorbar(bins[:-1] + 0.5*bin_step, nw, yerr=1/(Ntot_wall*np.sqrt(Nw)),
                  ecolor='k', fmt='none')
 
-    ax1.set_xlabel(r'$M_{DM}$ / $M_{*}$')
+    ax1.set_xlabel(x_label)
     ax1.set_ylabel('Fraction')
 
     ax1.set_xlim( hist_range)
@@ -528,7 +533,7 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
     #--------------------------------------------------------------------------
     # Histogram plot formatting
     #--------------------------------------------------------------------------
-    ax2.set_xlabel(r'$M_{DM}$ / $M_{*}$')
+    ax2.set_xlabel(x_label)
     ax2.set_ylabel('Galaxy fraction')
     ax2.set_title(plot_title)
 
@@ -556,7 +561,7 @@ def DM_SM_hist( void_ratios, wall_ratios, bins=None, hist_range=(0,60),
     #--------------------------------------------------------------------------
     # CDF plot formatting
     #--------------------------------------------------------------------------
-    ax3.set_xlabel(r'$M_{DM}$ / $M_*$')
+    ax3.set_xlabel(x_label)
     ax3.set_ylabel('Galaxy fraction')
     ax3.set_title(plot_title)
 

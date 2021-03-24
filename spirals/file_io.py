@@ -47,11 +47,11 @@ def add_columns(data_table, fit_function):
     data_table['phi'] = np.nan
     data_table['phi_err'] = np.nan
 
-    data_table['R_turn'] = np.nan*np.ones(N, dtype=float)
-    data_table['R_turn_err'] = np.nan*np.ones(N, dtype=float)
+    data_table['r_turn'] = np.nan*np.ones(N, dtype=float)
+    data_table['r_turn_err'] = np.nan*np.ones(N, dtype=float)
 
-    data_table['V_max'] = np.nan*np.ones(N, dtype=float)
-    data_table['V_max_err'] = np.nan*np.ones(N, dtype=float)
+    data_table['v_max'] = np.nan*np.ones(N, dtype=float)
+    data_table['v_max_err'] = np.nan*np.ones(N, dtype=float)
     
     data_table['chi2'] = np.nan
 
@@ -62,8 +62,6 @@ def add_columns(data_table, fit_function):
         print('This fit_function is not known.  Please update add_columns function.')
 
     data_table['nsa_elpetro_th90'] = np.nan*np.ones(N, dtype=float)
-
-    data_table['nsa_elpetro_r'] = np.nan*np.ones(N, dtype=float)
 
 
     return data_table

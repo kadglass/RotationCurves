@@ -73,6 +73,9 @@ def find_phi(center_coords, phi_angle, vel_map):
     
     # Convert phi_angle to radians
     phi = phi_angle*np.pi/180.
+
+    # Extract "systemic" velocity (velocity at center spaxel)
+    v_sys = vel_map[center_coords]
     
     f = 0.4
     
@@ -95,7 +98,7 @@ def find_phi(center_coords, phi_angle, vel_map):
         else:
             f *= 0.9
             
-    if vel_map[tuple(semi_major_axis_spaxel)] < 0:
+    if vel_map[tuple(semi_major_axis_spaxel)] - v_sys < 0:
         phi_adjusted = phi + np.pi
     else:
         phi_adjusted = phi
@@ -835,7 +838,7 @@ def find_vel_map(gal_ID,
         # Alpha
         alpha_guess = 2
         alpha_low = 0.001
-        alpha_high = 15
+        alpha_high = 100
         alpha_bounds = (alpha_low, alpha_high)
 
         # Parameter guesses

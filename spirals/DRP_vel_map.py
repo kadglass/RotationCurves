@@ -51,6 +51,7 @@ from DRP_vel_map_plottingFunctions import plot_rot_curve, \
 def fit_vel_map(Ha_vel, 
                 Ha_vel_ivar, 
                 Ha_vel_mask, 
+                Ha_flux, 
                 r_band, 
                 r_band_ivar,
                 axis_ratio, 
@@ -77,6 +78,9 @@ def fit_vel_map(Ha_vel,
 
     Ha_vel_mask : numpy array of shape (n,n)
         Bitmask for the H-alpha velocity map
+
+    Ha_flux : numpy array of shape (n,n)
+        H-alpha flux field data
 
     r_band : numpy array of shape (n,n)
         r-band flux data
@@ -191,6 +195,8 @@ def fit_vel_map(Ha_vel,
     # the r-band.
     #---------------------------------------------------------------------------
     center_guess = np.unravel_index(ma.argmax(mr_band), mr_band.shape)
+
+    #print(center_guess)
     
     i_center_guess = center_guess[0]
     j_center_guess = center_guess[1]
@@ -202,6 +208,8 @@ def fit_vel_map(Ha_vel,
     # velocity at the initially-guessed center spaxel.
     #---------------------------------------------------------------------------
     sys_vel_guess = mHa_vel[center_guess]
+
+    #print(sys_vel_guess)
     ############################################################################
 
 
@@ -210,6 +218,7 @@ def fit_vel_map(Ha_vel,
     # measured axis ratio.
     #---------------------------------------------------------------------------
     inclination_angle_guess = np.arccos(axis_ratio)
+    #print(axis_ratio, inclination_angle_guess)
     ############################################################################
 
 
@@ -218,6 +227,8 @@ def fit_vel_map(Ha_vel,
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
     phi_guess = find_phi(center_guess, phi_EofN_deg, mHa_vel)
+
+    #print(phi_EofN_deg, phi_guess*180/np.pi)
     ############################################################################
 
 
@@ -273,16 +284,17 @@ def fit_vel_map(Ha_vel,
     #---------------------------------------------------------------------------
     else:
         print(gal_ID, 'fitting velocity map')
-        param_outputs, best_fit_map, scale = find_vel_map(gal_ID, 
-                                                          mHa_vel, 
-                                                          mHa_vel_ivar, 
-                                                          z, 
-                                                          i_center_guess, 
-                                                          j_center_guess,
-                                                          sys_vel_guess, 
-                                                          inclination_angle_guess, 
-                                                          phi_guess, 
-                                                          fit_function)
+        param_outputs, best_fit_map, scale, fit_flag = find_vel_map(gal_ID, 
+                                                                    mHa_vel, 
+                                                                    mHa_vel_ivar, 
+                                                                    Ha_flux, 
+                                                                    z, 
+                                                                    i_center_guess, 
+                                                                    j_center_guess,
+                                                                    sys_vel_guess, 
+                                                                    inclination_angle_guess, 
+                                                                    phi_guess, 
+                                                                    fit_function)
 
         if param_outputs is not None:
             ####################################################################
@@ -428,7 +440,7 @@ def fit_vel_map(Ha_vel,
     ############################################################################
 
 
-    return param_outputs, num_masked_gal
+    return param_outputs, num_masked_gal, fit_flag
 
 
 

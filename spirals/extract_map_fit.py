@@ -9,9 +9,10 @@ import numpy as np
 ################################################################################
 # File names
 #-------------------------------------------------------------------------------
-master_filename = '/Users/kellydouglass/Desktop/Pipe3D-master_file_vflag_10_smooth2p27_N2O2_noWords.txt'
+#master_filename = '/Users/kellydouglass/Desktop/Pipe3D-master_file_vflag_10_smooth2p27_N2O2_noWords.txt'
+master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
 
-map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_diskFit.fits'
+map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v2_diskFit.fits'
 ################################################################################
 
 
@@ -63,11 +64,11 @@ map_fit_colnames = ['ba', 'ba_err',
                     'v_sys', 'v_sys_err', 
                     'x0', 'x0_err', 
                     'y0', 'y0_err', 
-                    'V_max', 'V_max_err', 
+                    'v_max', 'v_max_err', 
                     'alpha', 'alpha_err', 
-                    'R_turn', 'R_turn_err', 
+                    'r_turn', 'r_turn_err', 
                     'M90', 'M90_err', 
-                    'sigma_disk', 'sigma_disk_err', 
+                    'Sigma_disk', 'Sigma_disk_err', 
                     'R_disk', 'R_disk_err', 
                     'M90_disk', 'M90_disk_err', 
                     'smoothness_score', 
@@ -107,7 +108,8 @@ for i,name in enumerate(master_colnames):
     else:
         master_table[name] = np.nan*np.ones(Ngal)
     '''
-    master_table[name] = np.nan*np.ones(Ngal)
+    #master_table[name] = np.nan*np.ones(Ngal)
+    master_table[name] = -99*np.ones(Ngal, dtype=float)
 ################################################################################
 
 
@@ -138,7 +140,8 @@ for i in range(Ngal):
 ################################################################################
 # Save updated master table
 #-------------------------------------------------------------------------------
-master_table.write(master_filename[:-4] + '_mapFit.txt', 
+master_table.write(master_filename[:-4] + '_v2.txt', 
+                   #master_filename[:-4] + '_mapFit.txt', 
                    format='ascii.commented_header', #'ascii.ecsv', 
                    overwrite=True)
 ################################################################################

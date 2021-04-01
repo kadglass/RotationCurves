@@ -197,6 +197,108 @@ def match_HI( master_table):
 
 
 
+################################################################################
+################################################################################
+
+def match_HI_dr2( master_table):
+    '''
+    Locate the HI mass, velocity width for each galaxy with data taken from the 
+    DR2 of the HI-MaNGA survey.
+
+
+    PARAMETERS
+    ==========
+
+    master_table : astropy QTable
+        Data table with N rows, each row containing one MaNGA galaxy for which 
+        the rotation curve has been measured.
+
+
+    RETURNS
+    =======
+
+    master_table : astropy QTable
+        Same as the input master_table object, but with the additional HI mass 
+        and velocity width columns:
+          - logHI : log(M_HI) in units of log(M_sun)
+          - WF50  : width of the HI line profile at 50% of the peak's height, 
+                    measured from a fit to the line profile (units are km/s)
+          - WP20  : width of the HI line profile at 20% of the peak's height 
+                    (units are km/s)
+    '''
+
+
+    ############################################################################
+    # Initialize HI columns in master_table
+    #---------------------------------------------------------------------------
+    master_table['logHI'] = np.nan*np.ones(len(master_table), dtype=float)# * u.dex(u.M_sun)
+    master_table['WF50'] = np.nan*np.ones(len(master_table), dtype=float)# * (u.km/u.s)
+    master_table['WP20'] = np.nan*np.ones(len(master_table), dtype=float)# * (u.km/u.s)
+    ############################################################################
+
+
+    ############################################################################
+    # Load in HI data
+    #---------------------------------------------------------------------------
+    GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/himanga_dr2.fits'
+
+    GBT = Table.read(GBT_filename, format='fits')
+    ############################################################################
+
+
+    ############################################################################
+    # Build galaxy reference dictionary
+    #---------------------------------------------------------------------------
+    master_table_dict = galaxies_dict( master_table)
+    ############################################################################
+
+
+    ############################################################################
+    # Insert GBT measurements into table
+    #---------------------------------------------------------------------------
+    for i in range(len(GBT)):
+
+        ########################################################################
+        # Deconstruct galaxy ID
+        #-----------------------------------------------------------------------
+        plate, IFU = GBT['PLATEIFU'][i].split('-')
+        ########################################################################
+
+
+        if (int(plate), int(IFU)) in master_table_dict:
+            ####################################################################
+            # Find galaxy's row number in master_table
+            #-------------------------------------------------------------------
+            gal_i = master_table_dict[(int(plate), int(IFU))]
+            ####################################################################
+
+
+            ####################################################################
+            # Calculate sin(i)
+            #-------------------------------------------------------------------
+            if 'ba_map' in master_table.colnames and master_table['ba_map'][gal_i] > 0:
+                sini = np.sqrt((1 - master_table['ba_map'][gal_i]**2)/(1 - 0.2**2))
+            else:
+                sini = np.sqrt((1 - master_table['NSA_ba'][gal_i]**2)/(1 - 0.2**2))
+
+            if sini == 0:
+                sini = 1
+            ####################################################################
+
+
+            ####################################################################
+            # Insert HI data into master table
+            #-------------------------------------------------------------------
+            master_table['logHI'][gal_i] = GBT['LOGMHI'][i]# * u.dex(u.M_sun)
+            master_table['WF50'][gal_i] = GBT['WF50'][i]/sini# * (u.km/u.s)
+            master_table['WP20'][gal_i] = GBT['WP20'][i]/sini# * (u.km/u.s)
+            ####################################################################
+    ############################################################################
+
+
+    return master_table
+
+
 
 
 

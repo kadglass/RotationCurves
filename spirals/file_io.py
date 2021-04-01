@@ -63,6 +63,8 @@ def add_columns(data_table, fit_function):
 
     data_table['nsa_elpetro_th90'] = np.nan*np.ones(N, dtype=float)
 
+    data_table['fit_flag'] = np.nan*np.ones(N, dtype=float)
+
 
     return data_table
 
@@ -93,8 +95,8 @@ def add_disk_columns(data_table):
 
     N = len(data_table)
 
-    data_table['sigma_disk'] = np.nan
-    data_table['sigma_disk_err'] = np.nan
+    data_table['Sigma_disk'] = np.nan
+    data_table['Sigma_disk_err'] = np.nan
 
     data_table['R_disk'] = np.nan
     data_table['R_disk_err'] = np.nan

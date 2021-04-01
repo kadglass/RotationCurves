@@ -98,7 +98,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data(VEL_MAP_FOLDER, gal_ID)
+        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux = extract_data(VEL_MAP_FOLDER, gal_ID)
 
         if Ha_vel is None:
             output_tuple = (None, None, None, None, None)
@@ -143,18 +143,19 @@ def process_1_galaxy(job_queue, i,
                 start = datetime.datetime.now()
                 
                 try:
-                    param_outputs, masked_gal_flag = fit_vel_map( Ha_vel, 
-                                                              Ha_vel_ivar, 
-                                                              Ha_vel_mask, 
-                                                              r_band, 
-                                                              r_band_ivar, 
-                                                              axis_ratio, 
-                                                              phi_EofN_deg, 
-                                                              z, gal_ID, 
-                                                              vel_function, 
-                                                              IMAGE_DIR=IMAGE_DIR, 
-                                                              IMAGE_FORMAT=IMAGE_FORMAT, 
-                                                              )
+                    param_outputs, masked_gal_flag, fit_flag = fit_vel_map(Ha_vel, 
+                                                                           Ha_vel_ivar, 
+                                                                           Ha_vel_mask, 
+                                                                           Ha_flux, 
+                                                                           r_band, 
+                                                                           r_band_ivar, 
+                                                                           axis_ratio, 
+                                                                           phi_EofN_deg, 
+                                                                           z, gal_ID, 
+                                                                           vel_function, 
+                                                                           IMAGE_DIR=IMAGE_DIR, 
+                                                                           IMAGE_FORMAT=IMAGE_FORMAT, 
+                                                                           )
                 except:
                     print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', 
                           flush=True)
@@ -193,6 +194,7 @@ def process_1_galaxy(job_queue, i,
                 
                 param_outputs = None
                 mass_outputs = None
+                fit_flag = None
                 R90 = None
 
         else:
@@ -203,6 +205,7 @@ def process_1_galaxy(job_queue, i,
 
             param_outputs = None
             mass_outputs = None
+            fit_flag = None
             
             if NSA_ID >= 0:
                 R90 = NSA_table['ELPETRO_TH90_R'][NSA_index[NSA_ID]]
@@ -215,7 +218,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Add output values to return queue
         #-----------------------------------------------------------------------
-        output_tuple = (map_smoothness, param_outputs, mass_outputs, R90, i_DRP)
+        output_tuple = (map_smoothness, param_outputs, mass_outputs, fit_flag, R90, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
 
@@ -397,7 +400,7 @@ while num_processed < num_tasks:
     # Write the best-fit values and calculated parameters to a text file in 
     # ascii format.
     #---------------------------------------------------------------------------
-    map_smoothness, param_outputs, mass_outputs, R90, i_DRP = return_tuple
+    map_smoothness, param_outputs, mass_outputs, fit_flag, R90, i_DRP = return_tuple
     
     #print('Writing', i_DRP, flush=True)
 
@@ -416,6 +419,10 @@ while num_processed < num_tasks:
     if param_outputs is not None:
         DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
         DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
+        DRP_table = fillin_output_table(DRP_table, 
+                                        fit_flag, 
+                                        i_DRP, 
+                                        col_name='fit_flag')
     ############################################################################
     
     num_processed += 1

@@ -84,7 +84,7 @@ MASS_CURVE_MASTER_FOLDER = LOCAL_PATH + 'Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85.fits'
+GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85_v2.fits'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################
 

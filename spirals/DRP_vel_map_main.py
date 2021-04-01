@@ -53,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8263-3703']
+FILE_IDS = ['9869-1902']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -158,7 +158,7 @@ for gal_ID in FILE_IDS:
     ############################################################################
     # Extract the necessary data from the .fits files.
     #---------------------------------------------------------------------------
-    Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data( VEL_MAP_FOLDER, gal_ID)
+    Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux = extract_data( VEL_MAP_FOLDER, gal_ID)
 
     print( gal_ID, "extracted")
     ############################################################################
@@ -193,18 +193,19 @@ for gal_ID in FILE_IDS:
             #-------------------------------------------------------------------
             start = datetime.datetime.now()
             
-            param_outputs, num_masked_gal = fit_vel_map( Ha_vel, 
-                                                         Ha_vel_ivar, 
-                                                         Ha_vel_mask, 
-                                                         r_band, 
-                                                         r_band_ivar, 
-                                                         axis_ratio, 
-                                                         phi_EofN_deg, 
-                                                         z, gal_ID, 
-                                                         vel_function, 
-                                                         #IMAGE_DIR=IMAGE_DIR, 
-                                                         #IMAGE_FORMAT=IMAGE_FORMAT, 
-                                                         num_masked_gal=num_masked_gal)
+            param_outputs, num_masked_gal, fit_flag = fit_vel_map(Ha_vel, 
+                                                                  Ha_vel_ivar, 
+                                                                  Ha_vel_mask, 
+                                                                  Ha_flux, 
+                                                                  r_band, 
+                                                                  r_band_ivar, 
+                                                                  axis_ratio, 
+                                                                  phi_EofN_deg, 
+                                                                  z, gal_ID, 
+                                                                  vel_function, 
+                                                                  #IMAGE_DIR=IMAGE_DIR, 
+                                                                  #IMAGE_FORMAT=IMAGE_FORMAT, 
+                                                                  num_masked_gal=num_masked_gal)
                                                          
             fit_time = datetime.datetime.now() - start
             
@@ -252,6 +253,10 @@ for gal_ID in FILE_IDS:
                     DRP_table = fillin_output_table(DRP_table, 
                                                     mass_outputs, 
                                                     i_DRP)
+                    DRP_table = fillin_output_table(DRP_table, 
+                                                    fit_flag, 
+                                                    i_DRP, 
+                                                    col_name='fit_flag')
 
                 print(gal_ID, "written")
                 ################################################################
@@ -264,6 +269,7 @@ for gal_ID in FILE_IDS:
                 print('Smoothness score:', map_smoothness)
                 print(param_outputs)
                 print(mass_outputs)
+                print('Fit flag:', fit_flag)
                 ################################################################
             
         else:

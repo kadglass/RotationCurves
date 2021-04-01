@@ -102,6 +102,8 @@ def extract_data( DRP_FOLDER, gal_ID):
 
     r_band = cube['SPX_MFLUX'].data
     r_band_ivar = cube['SPX_MFLUX_IVAR'].data
+
+    Ha_flux = cube['EMLINE_GFLUX'].data[18]
     
     Ha_vel = cube['EMLINE_GVEL'].data[18]
     Ha_vel_ivar = cube['EMLINE_GVEL_IVAR'].data[18]
@@ -109,7 +111,7 @@ def extract_data( DRP_FOLDER, gal_ID):
 
     cube.close()
 
-    return Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar
+    return Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux
 
 
 ###############################################################################

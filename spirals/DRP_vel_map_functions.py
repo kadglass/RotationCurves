@@ -73,6 +73,9 @@ def find_phi(center_coords, phi_angle, vel_map):
     
     # Convert phi_angle to radians
     phi = phi_angle*np.pi/180.
+
+    # Extract "systemic" velocity (velocity at center spaxel)
+    v_sys = vel_map[center_coords]
     
     f = 0.4
     
@@ -95,7 +98,7 @@ def find_phi(center_coords, phi_angle, vel_map):
         else:
             f *= 0.9
             
-    if vel_map[tuple(semi_major_axis_spaxel)] < 0:
+    if vel_map[tuple(semi_major_axis_spaxel)] - v_sys < 0:
         phi_adjusted = phi + np.pi
     else:
         phi_adjusted = phi
@@ -417,12 +420,82 @@ def calculate_chi2_flat(params,
     # Calculate chi2 of current fit
     #---------------------------------------------------------------------------
     chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
+    #chi2 = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
     chi2_norm = chi2/(len(flat_vel_map) - len(params))
     ############################################################################
 
 
     return chi2_norm
+################################################################################
+
+
+
+
+def calculate_residual_flat(params, 
+                            flat_vel_map, 
+                            map_mask,
+                            pix_scale, 
+                            fit_function):
+    '''
+    residual of the velocity map
+
+
+    PARAMETERS
+    ==========
+
+    params : list
+        List of fit parameters
+
+    flat_vel_map : numpy array of shape (n,)
+        Flattened array of unmasked measured velocities
+        
+    map_mask : numpy array of shape (m,m)
+        Bit mask for map.  Values of 0 are valid, all others are bad.
+
+    pix_scale : float
+        Scale of each pixel (to convert from pixel units to kpc)
+
+    fit_function : string
+        Determines which function to use for the velocity.  Options are 'BB' and 
+        'tanh'.
+
+
+    RETURNS
+    =======
+
+    residual_norm : float
+        Residual value of the current value of the params normalized by the 
+        number of data points (minus the number of free parameters)
+    '''
+
+    ############################################################################
+    # Create fitted velocity map based on the values in params
+    #---------------------------------------------------------------------------
+    vel_map_model = model_vel_map(params, map_mask.shape, pix_scale, fit_function)
+    ############################################################################
+    
+    
+    ############################################################################
+    # Flatten both the mask and model, and remove all elements from the model 
+    # which are masked.
+    #---------------------------------------------------------------------------
+    mvel_map_model = ma.array(vel_map_model, mask=map_mask)
+    
+    flat_vel_map_model = mvel_map_model.compressed()
+    ############################################################################
+
+
+    ############################################################################
+    # Calculate residual of current fit
+    #---------------------------------------------------------------------------
+    residual = np.sum((flat_vel_map_model - flat_vel_map)**2)
+
+    residual_norm = residual/(len(flat_vel_map) - len(params))
+    ############################################################################
+
+
+    return residual_norm
 ################################################################################
 
 
@@ -689,6 +762,7 @@ def vel_nlogL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 def find_vel_map(gal_ID, 
                  mHa_vel, 
                  mHa_vel_ivar, 
+                 Ha_flux, 
                  z, 
                  i_center_guess, 
                  j_center_guess,
@@ -708,6 +782,9 @@ def find_vel_map(gal_ID,
 
     Ha_vel_ivar : numpy array of shape (n,n)
         Inverse variance in the H-alpha velocity field data
+
+    Ha_flux : numpy array of shape (n,n)
+        H-alpha flux field data
 
     z : float
         Redshift of galaxy
@@ -793,7 +870,7 @@ def find_vel_map(gal_ID,
 
     # Orientation angle
     phi_low = 0
-    phi_high = 2*np.pi
+    phi_high = 2*np.pi + 0.1
     phi_bounds = (phi_low, phi_high)
 
     # Maximum velocity [km/s]
@@ -878,14 +955,16 @@ def find_vel_map(gal_ID,
         print('Selected fit function is not known!  Please edit find_vel_map function in DRP_vel_map_functions.py.', 
               flush=True)
         
-    #print('Position guesses:', pos_guesses)
-    #print('Velocity guesses:', vel_guesses)
+    print('Position guesses:', pos_guesses)
+    print('Velocity guesses:', vel_guesses)
     ############################################################################
 
 
     ############################################################################
     #---------------------------------------------------------------------------
     try:
+
+        fit_flag = -1
         
         ########################################################################
         # Flatten maps
@@ -915,6 +994,97 @@ def find_vel_map(gal_ID,
                           args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
                           bounds=np.concatenate([pos_bounds, vel_bounds]),
                           options={'disp':True})
+
+        if result.fun > 5000:
+
+            fit_flag = -2
+            '''
+            ####################################################################
+            # Remove spaxels with S/N < 5% of the maximum S/N in the data map 
+            # (up to a S/N = 10)
+            #-------------------------------------------------------------------
+            SN = np.abs(Ha_flux/np.sqrt(mHa_vel_ivar))
+
+            SN_cut = 0.05*np.max(SN)
+            if SN_cut > 1:
+                SN_cut = 1
+
+            modified_mask = np.logical_or(mHa_vel.mask, SN < SN_cut)
+
+            modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
+            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
+
+            modified_mHa_vel_flat = modified_mHa_vel.compressed()
+            modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+            ####################################################################
+            '''
+            '''
+            ####################################################################
+            # Or, remove spaxel with the largest velocity.
+            #-------------------------------------------------------------------
+            max_spaxel_flat = np.argmax(np.abs(mHa_vel_flat))
+            max_spaxel = np.unravel_index(ma.argmax(np.abs(mHa_vel)), mHa_vel.shape)
+
+            modified_mask = mHa_vel.mask.copy()
+            modified_mask[max_spaxel] = True
+
+            modified_mHa_vel_flat = np.delete(mHa_vel_flat, max_spaxel_flat)
+            modified_mHa_vel_ivar_flat = np.delete(mHa_vel_ivar_flat, max_spaxel_flat)
+            ####################################################################
+            '''
+
+            ####################################################################
+            # Refit galaxy
+            #-------------------------------------------------------------------
+            '''
+            result = minimize(calculate_chi2_flat, 
+                          np.concatenate([pos_guesses, vel_guesses]), 
+                          method='Powell', 
+                          args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                          bounds=np.concatenate([pos_bounds, vel_bounds]),
+                          options={'disp':True})
+            '''
+            result = minimize(calculate_residual_flat, 
+                          np.concatenate([pos_guesses, vel_guesses]), 
+                          method='Powell', 
+                          args=(mHa_vel_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                          bounds=np.concatenate([pos_bounds, vel_bounds]),
+                          options={'disp':True})
+            ####################################################################
+
+            if result.fun > 2000:
+
+                ################################################################
+                # Remove spaxels with S/N < 5% of the maximum S/N in the data 
+                # map (up to a S/N = 1)
+                #---------------------------------------------------------------
+                SN = np.abs(Ha_flux/np.sqrt(mHa_vel_ivar))
+
+                SN_cut = 0.05*np.max(SN)
+                if SN_cut > 1:
+                    SN_cut = 1
+                fit_flag = SN_cut
+
+                modified_mask = np.logical_or(mHa_vel.mask, SN < SN_cut)
+
+                modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
+                modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
+
+                modified_mHa_vel_flat = modified_mHa_vel.compressed()
+                modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+                ################################################################
+
+
+                ################################################################
+                # Refit galaxy
+                #---------------------------------------------------------------
+                result = minimize(calculate_chi2_flat, 
+                              np.concatenate([pos_guesses, vel_guesses]), 
+                              method='Powell', 
+                              args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                              bounds=np.concatenate([pos_bounds, vel_bounds]),
+                              options={'disp':True})
+                ################################################################
 
         if result.success:
             print('Successful velocity fit!', flush=True)
@@ -975,14 +1145,16 @@ def find_vel_map(gal_ID,
             print('Fit did not converge.', flush=True)
             best_fit_values = None
             best_fit_map = None
+            fit_flag = None
         ########################################################################
     except RuntimeError:
         best_fit_values = None
         best_fit_map = None
+        fit_flag = None
     ############################################################################
         
 
-    return best_fit_values, best_fit_map, pix_scale_factor
+    return best_fit_values, best_fit_map, pix_scale_factor, fit_flag
 
 
 

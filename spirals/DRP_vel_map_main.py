@@ -82,13 +82,13 @@ else:
     #IMAGE_DIR = None
     IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-
+'''
 MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
 '''
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-'''
+
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################

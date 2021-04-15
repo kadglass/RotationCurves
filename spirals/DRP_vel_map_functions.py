@@ -955,8 +955,8 @@ def find_vel_map(gal_ID,
         print('Selected fit function is not known!  Please edit find_vel_map function in DRP_vel_map_functions.py.', 
               flush=True)
         
-    print('Position guesses:', pos_guesses)
-    print('Velocity guesses:', vel_guesses)
+    #print('Position guesses:', pos_guesses)
+    #print('Velocity guesses:', vel_guesses)
     ############################################################################
 
 

@@ -101,7 +101,7 @@ def process_1_galaxy(job_queue, i,
         Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux = extract_data(VEL_MAP_FOLDER, gal_ID)
 
         if Ha_vel is None:
-            output_tuple = (None, None, None, None, None)
+            output_tuple = (None, None, None, None, None, None)
             return_queue.put(output_tuple)
             continue
         

@@ -84,7 +84,7 @@ MASS_CURVE_MASTER_FOLDER = LOCAL_PATH + 'Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85_v2.fits'
+GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85_v3.fits'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################
 
@@ -151,7 +151,7 @@ for gal_ID in FILE_IDS:
     ############################################################################
     # Extract the necessary data from the .fits files.
     #---------------------------------------------------------------------------
-    _,_, map_mask, r_band,_ = extract_data(VEL_MAP_FOLDER, gal_ID)
+    _,_, map_mask, r_band,_,_ = extract_data(VEL_MAP_FOLDER, gal_ID)
     sMass_density = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
 
     if map_mask is None or r_band is None or sMass_density is None:

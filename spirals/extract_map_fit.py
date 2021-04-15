@@ -10,9 +10,10 @@ import numpy as np
 # File names
 #-------------------------------------------------------------------------------
 #master_filename = '/Users/kellydouglass/Desktop/Pipe3D-master_file_vflag_10_smooth2p27_N2O2_noWords.txt'
-master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
+#master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
+master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_v2_HIdr2.txt'
 
-map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v2_diskFit.fits'
+map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v3_diskFit.fits'
 ################################################################################
 
 
@@ -58,7 +59,8 @@ master_colnames = ['ba_map', 'ba_err_map',
                    'M90_disk_map', 'M90_disk_err_map', 
                    'DRP_map_smoothness', 
                    'NSA_elpetro_th90', 
-                   'chi2_map', 'chi2_disk_map']
+                   'chi2_map', 'chi2_disk_map', 
+                   'map_fit_flag']
 map_fit_colnames = ['ba', 'ba_err', 
                     'phi', 'phi_err', 
                     'v_sys', 'v_sys_err', 
@@ -73,7 +75,8 @@ map_fit_colnames = ['ba', 'ba_err',
                     'M90_disk', 'M90_disk_err', 
                     'smoothness_score', 
                     'nsa_elpetro_th90', 
-                    'chi2', 'chi2_disk']
+                    'chi2', 'chi2_disk', 
+                    'fit_flag']
 '''
 col_units = [None, None, 
              u.deg, u.deg, 
@@ -140,7 +143,7 @@ for i in range(Ngal):
 ################################################################################
 # Save updated master table
 #-------------------------------------------------------------------------------
-master_table.write(master_filename[:-4] + '_v2.txt', 
+master_table.write(master_filename[:-4] + '_v3.txt', 
                    #master_filename[:-4] + '_mapFit.txt', 
                    format='ascii.commented_header', #'ascii.ecsv', 
                    overwrite=True)

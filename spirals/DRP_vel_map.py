@@ -196,6 +196,11 @@ def fit_vel_map(Ha_vel,
     #---------------------------------------------------------------------------
     center_guess = np.unravel_index(ma.argmax(mr_band), mr_band.shape)
 
+    if gal_ID == '8613-12701':
+        center_guess = (40,35)
+    elif gal_ID == '8134-3701':
+        center_guess = (22,22)
+
     #print(center_guess)
     
     i_center_guess = center_guess[0]
@@ -227,6 +232,11 @@ def fit_vel_map(Ha_vel,
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
     phi_guess = find_phi(center_guess, phi_EofN_deg, mHa_vel)
+
+    if gal_ID == '8613-12703':
+        phi_guess += 0.5*np.pi
+    elif gal_ID == '9029-12705':
+        phi_guess += np.pi
 
     #print(phi_EofN_deg, phi_guess*180/np.pi)
     ############################################################################

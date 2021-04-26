@@ -139,6 +139,12 @@ def fit_vel_map(Ha_vel,
     ############################################################################
     # Apply mask to all data arrays
     #---------------------------------------------------------------------------
+    if gal_ID == '8568-6104':
+        stellar_spaxel_rows = [31, 32, 33, 33, 34, 34, 34, 33, 32, 32, 31]
+        stellar_spaxel_cols = [29, 28, 28, 29, 29, 30, 31, 32, 32, 31, 31]
+
+        Ha_vel_mask[stellar_spaxel_rows, stellar_spaxel_cols] = True
+
     num_masked_spaxels = np.sum(Ha_vel_mask) - np.sum(r_band == 0)
     frac_masked_spaxels = num_masked_spaxels/np.sum(r_band != 0)
 
@@ -200,6 +206,10 @@ def fit_vel_map(Ha_vel,
         center_guess = (40,35)
     elif gal_ID == '8134-3701':
         center_guess = (22,22)
+    elif gal_ID == '8447-9102':
+        center_guess = (32,32)
+    elif gal_ID in ['8940-12701', '8941-12703', '7958-12703', '8950-12705']:
+        center_guess = (38,38)
 
     #print(center_guess)
     
@@ -213,6 +223,9 @@ def fit_vel_map(Ha_vel,
     # velocity at the initially-guessed center spaxel.
     #---------------------------------------------------------------------------
     sys_vel_guess = mHa_vel[center_guess]
+
+    if gal_ID == '8940-12701':
+        sys_vel_guess = 0.
 
     #print(sys_vel_guess)
     ############################################################################
@@ -233,10 +246,28 @@ def fit_vel_map(Ha_vel,
     #---------------------------------------------------------------------------
     phi_guess = find_phi(center_guess, phi_EofN_deg, mHa_vel)
 
-    if gal_ID == '8613-12703':
+
+    if gal_ID in ['8134-6102']:
+        phi_guess += 0.25*np.pi
+
+    elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102', 
+                  '8274-6101', '9027-12705', '9868-12702', '8135-1901', 
+                  '7815-1901', '8568-1901', '8989-1902', '8458-3701']:
         phi_guess += 0.5*np.pi
-    elif gal_ID == '9029-12705':
+
+    elif gal_ID in ['9029-12705', '8137-3701', '8618-3704', '8323-12701', 
+                    '8942-3703', '8333-12701', '8615-6103', '9486-3704', 
+                    '8937-1902', '9095-3704']:
         phi_guess += np.pi
+
+    elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703']:
+        phi_guess += 1.5*np.pi
+
+    elif gal_ID in ['8655-1902', '7960-3701', '9864-9101']:
+        phi_guess = phi_EofN_deg*np.pi/180.
+
+
+    phi_guess = phi_guess%(2*np.pi)
 
     #print(phi_EofN_deg, phi_guess*180/np.pi)
     ############################################################################

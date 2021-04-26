@@ -40,7 +40,7 @@ fit_options = {'BB': rot_fit_BB,
 ################################################################################
 ################################################################################
 ################################################################################
-def find_vel_bounds(mHa_vel):
+def find_vel_bounds(mHa_vel, gal_ID):
     '''
     Locate the minimum and maximum velocities of the velocity distribution that 
     is continuously linked to the most common velocity (normally around 0) 
@@ -52,6 +52,9 @@ def find_vel_bounds(mHa_vel):
 
     mHa_vel : masked ndarray of shape (n,n)
         Masked H-alpha velocity map, in units of km/s
+
+    gal_ID : string
+        <MaNGA plate>-<MaNGA IFU>
 
 
     RETURNS
@@ -66,7 +69,10 @@ def find_vel_bounds(mHa_vel):
         with velocities outside of the determined velocity range).
     '''
 
-    bin_width = 10 # Bin the velocity in bins of 50 km/s
+    bin_width = 10 # Bin the velocity in bins of 10 km/s
+
+    if gal_ID in ['8150-12703']:
+        bin_width = 5
 
     vel_extreme = ma.max(ma.abs(mHa_vel)) # Maximum velocity in the map
 
@@ -1044,9 +1050,6 @@ def find_vel_map(gal_ID,
     ############################################################################
     #---------------------------------------------------------------------------
     try:
-
-        fit_flag = -1
-        
         ########################################################################
         # Flatten maps
         #-----------------------------------------------------------------------
@@ -1060,6 +1063,7 @@ def find_vel_map(gal_ID,
         #
         # Fits all 8 parameters at once
         #-----------------------------------------------------------------------
+        print('Fitting entire map')
         '''
         result = minimize(calculate_chi2,
                           np.concatenate([pos_guesses, vel_guesses]),
@@ -1069,36 +1073,41 @@ def find_vel_map(gal_ID,
                           options={'disp':True}
                           )
         '''
-        result = minimize(calculate_chi2_flat, 
-                          np.concatenate([pos_guesses, vel_guesses]), 
-                          method='Powell', 
-                          args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
-                          bounds=np.concatenate([pos_bounds, vel_bounds]),
-                          options={'disp':True})
+        result_all = minimize(calculate_chi2_flat, 
+                              np.concatenate([pos_guesses, vel_guesses]), 
+                              method='Powell', 
+                              args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                              bounds=np.concatenate([pos_bounds, vel_bounds]),
+                              options={'disp':True})
+        ########################################################################
 
-        if result.fun > 240:
 
-            fit_flag = -3
-            '''
-            ############################################################
-            # Remove spaxels that are larger/smaller than 3-sigma of the 
-            # velocity distribution in the map
-            #-----------------------------------------------------------
-            stddev = ma.std(mHa_vel)
-            stddev2 = ma.std(mHa_vel[ma.abs(mHa_vel) <= sys_vel_guess + stddev])
+        ########################################################################
+        # Fit velocity map using only continuous velocity field
+        #-----------------------------------------------------------------------
+        print('Fitting continuous map')
+        '''
+        #-----------------------------------------------------------------------
+        # Remove spaxels that are larger/smaller than 3-sigma of the 
+        # velocity distribution in the map
+        #-----------------------------------------------------------------------
+        stddev = ma.std(mHa_vel)
+        stddev2 = ma.std(mHa_vel[ma.abs(mHa_vel) <= sys_vel_guess + stddev])
 
-            modified_mask = np.logical_or(mHa_vel.mask, 
-                                          np.abs(mHa_vel) > sys_vel_guess + 3*stddev2)
-            ################################################################
-            '''
-            ####################################################################
-            # Remove spaxels that are not part of the continuous velocity field
+        modified_mask = np.logical_or(mHa_vel.mask, 
+                                      np.abs(mHa_vel) > sys_vel_guess + 3*stddev2)
+        #-----------------------------------------------------------------------
+        '''
+        #-----------------------------------------------------------------------
+        # Remove spaxels that are not part of the continuous velocity field
+        #-----------------------------------------------------------------------
+        min_vel, max_vel, modified_mask = find_vel_bounds(mHa_vel, gal_ID)
+        #-----------------------------------------------------------------------
+
+        if np.sum(modified_mask == 0) == np.sum(mHa_vel.mask == 0):
+            result_continuous = result_all
+        else:
             #-------------------------------------------------------------------
-            min_vel, max_vel, modified_mask = find_vel_bounds(mHa_vel)
-            ####################################################################
-
-
-            ####################################################################
             # Update velocity field
             #-------------------------------------------------------------------
             modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
@@ -1106,10 +1115,9 @@ def find_vel_map(gal_ID,
 
             modified_mHa_vel_flat = modified_mHa_vel.compressed()
             modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
-            ####################################################################
+            #-------------------------------------------------------------------
 
-
-            ####################################################################
+            #-------------------------------------------------------------------
             # Update maximum velocity initial guess
             #-------------------------------------------------------------------
             v_max_guess = ma.abs(ma.max(modified_mHa_vel)/np.sin(inclination_angle_guess))
@@ -1117,110 +1125,127 @@ def find_vel_map(gal_ID,
             #print(v_max_guess)
 
             vel_guesses[0] = v_max_guess
-            ####################################################################
+            #-------------------------------------------------------------------
 
-
-            ####################################################################
+            #-------------------------------------------------------------------
             # Refit galaxy
             #-------------------------------------------------------------------
-            result = minimize(calculate_chi2_flat, 
-                          np.concatenate([pos_guesses, vel_guesses]), 
-                          method='Powell', 
-                          args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
-                          bounds=np.concatenate([pos_bounds, vel_bounds]),
-                          options={'disp':True})
-            ####################################################################
-
-            if result.fun > 240:
-
-                fit_flag = -2
-                '''
-                ####################################################################
-                # Remove spaxels with S/N < 5% of the maximum S/N in the data map 
-                # (up to a S/N = 10)
-                #-------------------------------------------------------------------
-                SN = np.abs(Ha_flux/np.sqrt(mHa_vel_ivar))
-
-                SN_cut = 0.05*np.max(SN)
-                if SN_cut > 1:
-                    SN_cut = 1
-
-                modified_mask = np.logical_or(mHa_vel.mask, SN < SN_cut)
-
-                modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
-                modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
-
-                modified_mHa_vel_flat = modified_mHa_vel.compressed()
-                modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
-                ####################################################################
-                '''
-                '''
-                ####################################################################
-                # Or, remove spaxel with the largest velocity.
-                #-------------------------------------------------------------------
-                max_spaxel_flat = np.argmax(np.abs(mHa_vel_flat))
-                max_spaxel = np.unravel_index(ma.argmax(np.abs(mHa_vel)), mHa_vel.shape)
-
-                modified_mask = mHa_vel.mask.copy()
-                modified_mask[max_spaxel] = True
-
-                modified_mHa_vel_flat = np.delete(mHa_vel_flat, max_spaxel_flat)
-                modified_mHa_vel_ivar_flat = np.delete(mHa_vel_ivar_flat, max_spaxel_flat)
-                ####################################################################
-                '''
-
-                ####################################################################
-                # Refit galaxy
-                #-------------------------------------------------------------------
-                '''
-                result = minimize(calculate_chi2_flat, 
-                              np.concatenate([pos_guesses, vel_guesses]), 
-                              method='Powell', 
-                              args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
-                              bounds=np.concatenate([pos_bounds, vel_bounds]),
-                              options={'disp':True})
-                '''
-                result = minimize(calculate_residual_flat, 
-                              np.concatenate([pos_guesses, vel_guesses]), 
-                              method='Powell', 
-                              args=(mHa_vel_flat, mHa_vel.mask, pix_scale_factor, fit_function),
-                              bounds=np.concatenate([pos_bounds, vel_bounds]),
-                              options={'disp':True})
-                ####################################################################
-
-                if result.fun > 405:
-
-                    ################################################################
-                    # Remove spaxels with S/N < 5% of the maximum S/N in the data 
-                    # map (up to a S/N = 1)
-                    #---------------------------------------------------------------
-                    SN = np.abs(Ha_flux/np.sqrt(mHa_vel_ivar))
-
-                    SN_cut = 0.05*np.max(SN)
-                    if SN_cut > 1:
-                        SN_cut = 1
-                    fit_flag = SN_cut
-
-                    modified_mask = np.logical_or(mHa_vel.mask, SN < SN_cut)
-
-                    modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
-                    modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
-
-                    modified_mHa_vel_flat = modified_mHa_vel.compressed()
-                    modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
-                    ################################################################
+            result_continuous = minimize(calculate_chi2_flat, 
+                                         np.concatenate([pos_guesses, vel_guesses]), 
+                                         method='Powell', 
+                                         args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                                         bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                         options={'disp':True})
+            '''
+            # Calculate chi2 of the fit
+            result_continuous.fun = calculate_chi2_flat(result_continuous.x, 
+                                                        mHa_vel_flat, 
+                                                        mHa_vel_ivar_flat, 
+                                                        mHa_vel.mask, 
+                                                        pix_scale_factor, 
+                                                        fit_function)
+            '''
+        ########################################################################
 
 
-                    ################################################################
-                    # Refit galaxy
-                    #---------------------------------------------------------------
-                    result = minimize(calculate_chi2_flat, 
-                                  np.concatenate([pos_guesses, vel_guesses]), 
-                                  method='Powell', 
-                                  args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
-                                  bounds=np.concatenate([pos_bounds, vel_bounds]),
-                                  options={'disp':True})
-                    ################################################################
+        ########################################################################
+        # Fit velocity field using the residual
+        #-----------------------------------------------------------------------
+        print('Fitting using residual')
+        result_residual = minimize(calculate_residual_flat, 
+                                   np.concatenate([pos_guesses, vel_guesses]), 
+                                   method='Powell', 
+                                   args=(mHa_vel_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                                   bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                   options={'disp':True})
+
+        # Calculate chi2 of the fit
+        result_residual.fun = calculate_chi2_flat(result_residual.x, 
+                                                  mHa_vel_flat, 
+                                                  mHa_vel_ivar_flat, 
+                                                  mHa_vel.mask, 
+                                                  pix_scale_factor, 
+                                                  fit_function)
+        ########################################################################
+
+        
+        ########################################################################
+        # Fit velocity field using only spaxels with sufficient S/N
+        #-----------------------------------------------------------------------
+        print('Fitting highest S/N')
+        #-----------------------------------------------------------------------
+        # Remove spaxels with S/N < 5% of the maximum S/N in the data map (up to 
+        # a S/N = 1)
+        #-----------------------------------------------------------------------
+        SN = np.abs(Ha_flux*np.sqrt(mHa_vel_ivar))
+
+        SN_cut = 0.05*np.max(SN)
+        if SN_cut > 1:
+            SN_cut = 1
+
+        modified_mask = np.logical_or(mHa_vel.mask, SN < SN_cut)
+
+        modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
+        modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
+
+        modified_mHa_vel_flat = modified_mHa_vel.compressed()
+        modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+        #-----------------------------------------------------------------------
+
+
+        result_SN = minimize(calculate_chi2_flat, 
+                             np.concatenate([pos_guesses, vel_guesses]), 
+                             method='Powell', 
+                             args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                             bounds=np.concatenate([pos_bounds, vel_bounds]),
+                             options={'disp':True})
+        '''
+        # Calculate chi2 of the fit
+        result_SN.fun = calculate_chi2_flat(result_SN.x, 
+                                            mHa_vel_flat, 
+                                            mHa_vel_ivar_flat, 
+                                            mHa_vel.mask, 
+                                            pix_scale_factor, 
+                                            fit_function)
+        '''
+        ########################################################################
+
+
+        ########################################################################
+        # Choose the best fit (the one with the lowest chi2)
+        #-----------------------------------------------------------------------
+        fit_chi2 = np.inf*np.ones(4)
+
+        alpha_max = alpha_high - 5
+
+        if result_all.x[7] < alpha_max:
+            fit_chi2[0] = result_all.fun
+        if result_continuous.x[7] < alpha_max:
+            fit_chi2[1] = result_continuous.fun
+        if result_SN.x[7] < alpha_max:
+            fit_chi2[2] = result_SN.fun
+        if result_residual.x[7] < alpha_max:
+            fit_chi2[3] = result_residual.fun
+
+        if np.sum(np.isfinite(fit_chi2)) == 0:
+            print('All fit methods have bad alpha values.')
+            min_pos = 0
+        else:
+            min_pos = np.argmin(fit_chi2)
+
+        if min_pos == 0:
+            fit_flag = -1
+            result = result_all
+        elif min_pos == 1:
+            fit_flag = -3
+            result = result_continuous
+        elif min_pos == 2:
+            fit_flag = SN_cut
+            result = result_SN
+        else:
+            fit_flag = -2
+            result = result_residual
+        ########################################################################
 
 
 

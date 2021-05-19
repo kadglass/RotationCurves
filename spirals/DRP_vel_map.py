@@ -35,7 +35,8 @@ from DRP_vel_map_plottingFunctions import plot_rot_curve, \
                                           plot_diagnostic_panel, \
                                           plot_residual, \
                                           plot_residual_norm, \
-                                          plot_chi2
+                                          plot_chi2, \
+                                          plot_Ha_sigma
 ################################################################################
 
 
@@ -51,6 +52,9 @@ from DRP_vel_map_plottingFunctions import plot_rot_curve, \
 def fit_vel_map(Ha_vel, 
                 Ha_vel_ivar, 
                 Ha_vel_mask, 
+                Ha_sigma, 
+                Ha_sigma_ivar, 
+                Ha_sigma_mask, 
                 Ha_flux, 
                 r_band, 
                 r_band_ivar,
@@ -78,6 +82,15 @@ def fit_vel_map(Ha_vel,
 
     Ha_vel_mask : numpy array of shape (n,n)
         Bitmask for the H-alpha velocity map
+
+    Ha_sigma : numpy array of shape (n,n)
+        H-alpha line width data
+
+    Ha_sigma_ivar : numpy array of shape (n,n)
+        Inverse variance in the H-alpha line width data
+
+    Ha_sigma_mask : numpy array of shape (n,n)
+        Bitmask for the H-alpha line width map
 
     Ha_flux : numpy array of shape (n,n)
         H-alpha flux field data
@@ -139,11 +152,22 @@ def fit_vel_map(Ha_vel,
     ############################################################################
     # Apply mask to all data arrays
     #---------------------------------------------------------------------------
-    if gal_ID == '8568-6104':
-        stellar_spaxel_rows = [31, 32, 33, 33, 34, 34, 34, 33, 32, 32, 31]
-        stellar_spaxel_cols = [29, 28, 28, 29, 29, 30, 31, 32, 32, 31, 31]
+    '''
+    if gal_ID in ['8568-6104', '8326-6102']:
+
+        if gal_ID == '8568-6104':
+            stellar_spaxel_rows = [31, 32, 33, 33, 34, 34, 34, 33, 32, 32, 31]
+            stellar_spaxel_cols = [29, 28, 28, 29, 29, 30, 31, 32, 32, 31, 31]
+        elif gal_ID == '8326-6102':
+            stellar_spaxel_rows = [30, 30, 30, 29, 29, 29, 29, 29, 28, 28, 28, 
+                                   28, 28, 28, 27, 27, 27, 27, 27, 27, 26, 26, 
+                                   26, 26, 26, 26, 25, 25, 25, 25, 24, 24]
+            stellar_spaxel_cols = [27, 28, 29, 26, 27, 28, 29, 30, 25, 26, 27, 
+                                   28, 29, 30, 25, 26, 27, 28, 29, 30, 24, 25, 
+                                   26, 27, 28, 29, 25, 26, 27, 28, 26, 27]
 
         Ha_vel_mask[stellar_spaxel_rows, stellar_spaxel_cols] = True
+    '''
 
     num_masked_spaxels = np.sum(Ha_vel_mask) - np.sum(r_band == 0)
     frac_masked_spaxels = num_masked_spaxels/np.sum(r_band != 0)
@@ -153,6 +177,9 @@ def fit_vel_map(Ha_vel,
 
     mHa_vel = ma.array( Ha_vel, mask=Ha_vel_mask)
     mHa_vel_ivar = ma.array( Ha_vel_ivar, mask=Ha_vel_mask)
+
+    mHa_sigma = ma.array( Ha_sigma, mask=Ha_vel_mask + Ha_sigma_mask)
+    mHa_sigma_ivar = ma.array( Ha_sigma_ivar, mask=Ha_vel_mask + Ha_sigma_mask)
     '''
     #---------------------------------------------------------------------------
     # Show the mask.  Yellow points represent masked data points.
@@ -193,6 +220,15 @@ def fit_vel_map(Ha_vel,
     if IMAGE_DIR is None:
         plt.show()
     '''
+    #---------------------------------------------------------------------------
+    # Plot H-alpha line width
+    #---------------------------------------------------------------------------
+    plot_Ha_sigma(mHa_sigma, 
+                  gal_ID, 
+                  IMAGE_DIR=IMAGE_DIR, 
+                  FOLDER_NAME='/Ha_sigma/', 
+                  IMAGE_FORMAT=IMAGE_FORMAT, 
+                  FILENAME_SUFFIX='_Ha_sigma.')
     ############################################################################
 
 
@@ -206,10 +242,13 @@ def fit_vel_map(Ha_vel,
         center_guess = (40,35)
     elif gal_ID == '8134-3701':
         center_guess = (22,22)
+    elif gal_ID in ['8252-6103']:
+        center_guess = (27,27)
     elif gal_ID == '8447-9102':
         center_guess = (32,32)
-    elif gal_ID in ['8940-12701', '8941-12703', '7958-12703', '8950-12705']:
-        center_guess = (38,38)
+    elif gal_ID in ['8940-12701', '8941-12703', '7958-12703', '8950-12705', 
+                    '9488-12702']:
+        center_guess = (37,37)
 
     #print(center_guess)
     
@@ -250,20 +289,35 @@ def fit_vel_map(Ha_vel,
     if gal_ID in ['8134-6102']:
         phi_guess += 0.25*np.pi
 
+    elif gal_ID in ['8932-12704', '8252-6103']:
+        phi_guess -= 0.25*np.pi
+
     elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102', 
-                  '8274-6101', '9027-12705', '9868-12702', '8135-1901', 
-                  '7815-1901', '8568-1901', '8989-1902', '8458-3701']:
+                    '8274-6101', '9027-12705', '9868-12702', '8135-1901', 
+                    '7815-1901', '8568-1901', '8989-1902', '8458-3701', 
+                    '9000-1901', '9037-3701', '8456-6101']:
         phi_guess += 0.5*np.pi
+
+    elif gal_ID in ['9864-3702', '8601-1902']:
+        phi_guess -= 0.5*np.pi
+
+    elif gal_ID in ['9502-12702']:
+        phi_guess += 0.75*np.pi
 
     elif gal_ID in ['9029-12705', '8137-3701', '8618-3704', '8323-12701', 
                     '8942-3703', '8333-12701', '8615-6103', '9486-3704', 
-                    '8937-1902', '9095-3704']:
+                    '8937-1902', '9095-3704', '8466-1902', '9508-3702', 
+                    '8727-3703', '8341-12704', '8655-6103']:
         phi_guess += np.pi
 
-    elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703']:
+    elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703', 
+                    '8624-1902', '8948-12702', '8443-6102', '8259-1901']:
         phi_guess += 1.5*np.pi
 
-    elif gal_ID in ['8655-1902', '7960-3701', '9864-9101']:
+    elif gal_ID in ['8241-12705', '8326-6102']:
+        phi_guess += 1.75*np.pi
+
+    elif gal_ID in ['8655-1902', '7960-3701', '9864-9101', '8588-3703']:
         phi_guess = phi_EofN_deg*np.pi/180.
 
 
@@ -328,6 +382,7 @@ def fit_vel_map(Ha_vel,
         param_outputs, best_fit_map, scale, fit_flag = find_vel_map(gal_ID, 
                                                                     mHa_vel, 
                                                                     mHa_vel_ivar, 
+                                                                    mHa_sigma,
                                                                     Ha_flux, 
                                                                     z, 
                                                                     i_center_guess, 

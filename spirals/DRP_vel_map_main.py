@@ -53,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8458-3701']
+FILE_IDS = ['8332-12704']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -162,7 +162,7 @@ for gal_ID in FILE_IDS:
         ############################################################################
         # Extract the necessary data from the .fits files.
         #---------------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux = extract_data( VEL_MAP_FOLDER, gal_ID)
+        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data( VEL_MAP_FOLDER, gal_ID)
 
         print( gal_ID, "extracted")
         ############################################################################
@@ -198,6 +198,9 @@ for gal_ID in FILE_IDS:
                 param_outputs, num_masked_gal, fit_flag = fit_vel_map(Ha_vel, 
                                                                       Ha_vel_ivar, 
                                                                       Ha_vel_mask, 
+                                                                      Ha_sigma, 
+                                                                      Ha_sigma_ivar, 
+                                                                      Ha_sigma_mask, 
                                                                       Ha_flux, 
                                                                       r_band, 
                                                                       r_band_ivar, 

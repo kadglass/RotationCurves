@@ -16,6 +16,109 @@ from DRP_rotation_curve_plottingFunctions import plot_rband_image, plot_Ha_vel
 
 ################################################################################
 ################################################################################
+################################################################################s
+
+def plot_Ha_sigma(Ha_sigma, 
+                  gal_ID, 
+                  IMAGE_DIR=None, 
+                  FOLDER_NAME=None, 
+                  IMAGE_FORMAT='eps', 
+                  FILENAME_SUFFIX=None, 
+                  ax=None):
+    '''
+    Creates a plot of the H-alpha line widths.
+
+
+    Parameters:
+    ===========
+
+    Ha_sigma : numpy array of shape (n,n)
+        H-alpha line width map
+
+    gal_ID : string
+        [MaNGA plate] - [MaNGA IFU]
+
+    IMAGE_DIR : string
+        Path of directory to store images
+
+    FOLDER_NAME : string
+        Name of folder in which to save image
+
+    IMAGE_FORMAT : string
+        Format of saved image.  Default is eps
+
+    FILENAME_SUFFIX : string
+        Suffix to append to gal_ID to create image filename
+
+    ax : matplotlib.pyplot figure axis object
+        Axes handle on which to create plot
+    '''
+
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+
+    ###########################################################################
+    minimum = ma.min( Ha_sigma)
+    maximum = ma.max( Ha_sigma)
+
+    cbar_ticks = np.linspace( minimum, maximum, 11, dtype='int')
+
+    ax.set_title( gal_ID + r' H$\alpha$ $\sigma$')
+    Ha_sigma_im = ax.imshow( Ha_sigma, 
+                             #cmap='RdBu_r', 
+                             origin='lower', 
+                             vmin = minimum, 
+                             vmax = maximum)
+
+    cbar = plt.colorbar( Ha_sigma_im, ax=ax, ticks=cbar_ticks)
+    cbar.ax.tick_params( direction='in')
+    cbar.set_label(r'$\sigma$ [km/s]')
+
+    ax.tick_params( axis='both', direction='in')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    ax.set_xlabel('spaxel')
+    ax.set_ylabel('spaxel')
+    '''
+    ax.set_xlabel('$\Delta \alpha$ [arcsec]')
+    ax.set_ylabel('$\Delta \delta$ [arcsec]')
+    '''
+    ############################################################################
+
+
+    
+    if IMAGE_DIR is not None:
+        ########################################################################
+        # Create output directory if it does not already exist
+        #-----------------------------------------------------------------------
+        if not os.path.isdir( IMAGE_DIR + FOLDER_NAME):
+            os.makedirs( IMAGE_DIR + FOLDER_NAME)
+        ########################################################################
+
+        ########################################################################
+        # Save figure
+        #-----------------------------------------------------------------------
+        plt.savefig( IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+                     format=IMAGE_FORMAT)
+        ########################################################################
+
+        ########################################################################
+        # Figure cleanup
+        #-----------------------------------------------------------------------
+        plt.cla()
+        plt.clf()
+        plt.close()
+        del cbar, Ha_sigma_im
+        gc.collect()
+        ########################################################################
+
+
+
+
+################################################################################
+################################################################################
 ################################################################################
 
 

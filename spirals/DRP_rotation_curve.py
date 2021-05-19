@@ -109,9 +109,13 @@ def extract_data( DRP_FOLDER, gal_ID):
     Ha_vel_ivar = cube['EMLINE_GVEL_IVAR'].data[18]
     Ha_vel_mask = cube['EMLINE_GVEL_MASK'].data[18]
 
+    Ha_sigma = cube['EMLINE_GSIGMA'].data[18]
+    Ha_sigma_ivar = cube['EMLINE_GSIGMA_IVAR'].data[18]
+    Ha_sigma_mask = cube['EMLINE_GSIGMA_MASK'].data[18]
+
     cube.close()
 
-    return Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux
+    return Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask
 
 
 ###############################################################################

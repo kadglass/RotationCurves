@@ -13,7 +13,7 @@ import numpy as np
 #master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
 master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_v3.txt'
 
-map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v4_diskFit.fits'
+map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v5_diskFit.fits'
 ################################################################################
 
 
@@ -143,7 +143,7 @@ for i in range(Ngal):
 ################################################################################
 # Save updated master table
 #-------------------------------------------------------------------------------
-master_table.write(master_filename[:-5] + '4.txt', 
+master_table.write(master_filename[:-5] + '5.txt', 
                    #master_filename[:-4] + '_mapFit.txt', 
                    format='ascii.commented_header', #'ascii.ecsv', 
                    overwrite=True)

@@ -3,7 +3,7 @@
 import datetime
 START = datetime.datetime.now()
 
-import glob, os.path, warnings
+import os.path, warnings
 
 import numpy as np
 
@@ -53,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8332-12704']
+FILE_IDS = ['9029-6104']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -159,40 +159,44 @@ for gal_ID in FILE_IDS:
 
     if DRP_table['mngtarg1'][i_DRP] > 0:
     
-        ############################################################################
+        ########################################################################
         # Extract the necessary data from the .fits files.
-        #---------------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data( VEL_MAP_FOLDER, gal_ID)
+        #-----------------------------------------------------------------------
+        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data( VEL_MAP_FOLDER, gal_ID)
 
         print( gal_ID, "extracted")
-        ############################################################################
+        ########################################################################
 
 
-        ############################################################################
+        ########################################################################
         # Calculate degree of smoothness of velocity map
-        #---------------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         map_smoothness = how_smooth( Ha_vel, Ha_vel_mask)
-        ############################################################################
+
+        map_smoothness_5sigma = how_smooth(Ha_vel, 
+                                           np.logical_or(Ha_vel_mask > 0, 
+                                                         np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5))
+        ########################################################################
 
 
-        if map_smoothness <= map_smoothness_max:
-            ########################################################################
+        if map_smoothness <= map_smoothness_max or map_smoothness_5sigma <= map_smoothness_max:
+            ####################################################################
             # Extract the necessary data from the DRP table.
-            #-----------------------------------------------------------------------
+            #-------------------------------------------------------------------
             axis_ratio = DRP_table['nsa_elpetro_ba'][i_DRP]
             phi_EofN_deg = DRP_table['nsa_elpetro_phi'][i_DRP]
 
             z = DRP_table['nsa_z'][i_DRP]
 
             NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
-            ########################################################################
+            ####################################################################
             
             
             if axis_ratio > -9999:
-                ####################################################################
+                ################################################################
                 # Extract rotation curve data for the .fits file in question and 
                 # create an astropy Table containing said data.
-                #-------------------------------------------------------------------
+                #---------------------------------------------------------------
                 start = datetime.datetime.now()
                 
                 param_outputs, num_masked_gal, fit_flag = fit_vel_map(Ha_vel, 
@@ -202,6 +206,8 @@ for gal_ID in FILE_IDS:
                                                                       Ha_sigma_ivar, 
                                                                       Ha_sigma_mask, 
                                                                       Ha_flux, 
+                                                                      Ha_flux_ivar, 
+                                                                      Ha_flux_mask, 
                                                                       r_band, 
                                                                       r_band_ivar, 
                                                                       axis_ratio, 
@@ -289,6 +295,7 @@ for gal_ID in FILE_IDS:
                 DRP_table = fillin_output_table(DRP_table, map_smoothness, i_DRP, col_name='smoothness_score')
             else:
                 print('Smoothness score:', map_smoothness)
+                print('5-sigma smoothness score:', map_smoothness_5sigma)
 
     else:
         print(gal_ID, 'is not a galaxy target.')

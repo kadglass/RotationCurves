@@ -58,7 +58,7 @@ def PMJDF_match( master_table, ref_table, column_names):
     # Match galaxies in KIAS-VAGC
     #--------------------------------------------------------------------------
     for i in range( len( master_table)):
-        '''
+        
         plate = master_table['NSA_plate'][i]
         MJD = master_table['NSA_MJD'][i]
         fiberID = master_table['NSA_fiberID'][i]
@@ -66,7 +66,7 @@ def PMJDF_match( master_table, ref_table, column_names):
         plate = master_table['plate'][i]
         MJD = master_table['MJD'][i]
         fiberID = master_table['fiberID'][i]
-
+        '''
         galaxy_ID = (plate, MJD, fiberID)
 
         if galaxy_ID in ref_dict.keys():

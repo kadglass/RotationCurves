@@ -125,6 +125,8 @@ def plot_Ha_sigma(Ha_sigma,
 def plot_rot_curve(mHa_vel, 
                    mHa_vel_ivar,
                    best_fit_values, 
+                   i_angle, 
+                   phi, 
                    scale,
                    gal_ID, 
                    fit_function,
@@ -147,6 +149,12 @@ def plot_rot_curve(mHa_vel,
 
     best_fit_values : dictionary
         Best-fit values for the velocity map
+
+    i_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north
 
     scale : float
         Pixel scale (to convert from pixels to kpc)
@@ -175,20 +183,6 @@ def plot_rot_curve(mHa_vel,
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(5,5))
-
-
-    ############################################################################
-    # Convert axis ratio to angle of inclination
-    #---------------------------------------------------------------------------
-    i_angle = np.arccos(best_fit_values['ba'])
-    ############################################################################
-
-
-    ############################################################################
-    # Convert rotation angle from degrees to radians
-    #---------------------------------------------------------------------------
-    phi = best_fit_values['phi']*np.pi/180
-    ############################################################################
 
 
     ############################################################################
@@ -644,6 +638,8 @@ def plot_diagnostic_panel(r_band,
                           mHa_vel_ivar, 
                           best_fit_map,
                           best_fit_values,
+                          i_angle, 
+                          phi, 
                           scale,
                           gal_ID, 
                           fit_function,
@@ -672,6 +668,12 @@ def plot_diagnostic_panel(r_band,
 
     best_fit_values : dictionary
         Best-fit values for the velocity map
+
+    i_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north
 
     scale : float
         Pixel scale (to convert from pixels to kpc)
@@ -705,6 +707,8 @@ def plot_diagnostic_panel(r_band,
     plot_rot_curve(mHa_vel, 
                    mHa_vel_ivar, 
                    best_fit_values, 
+                   i_angle, 
+                   phi, 
                    scale, 
                    gal_ID, 
                    fit_function, 

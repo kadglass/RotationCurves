@@ -386,7 +386,12 @@ def deproject_spaxel(coords, center, phi, i_angle):
 ################################################################################
 # Model velocity map
 #-------------------------------------------------------------------------------
-def model_vel_map(params, map_shape, scale, fit_function):
+def model_vel_map(params, 
+                  map_shape, 
+                  scale, 
+                  i_angle, 
+                  phi, 
+                  fit_function):
     '''
     Create a model velocity map of shape map_shape based on the values in params
 
@@ -402,6 +407,12 @@ def model_vel_map(params, map_shape, scale, fit_function):
 
     scale : float
         Pixel scale (to convert from pixels to kpc)
+
+    i_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north.
 
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
@@ -420,9 +431,9 @@ def model_vel_map(params, map_shape, scale, fit_function):
     # Unpack fit parameters
     #---------------------------------------------------------------------------
     if fit_function == 'BB':
-        v_sys, i_angle, i_center, j_center, phi, v_max, r_turn, alpha = params
+        v_sys, i_center, j_center, v_max, r_turn, alpha = params
     elif fit_function == 'tanh':
-        v_sys, i_angle, i_center, j_center, phi, v_max, r_turn = params
+        v_sys, i_center, j_center, v_max, r_turn = params
     else:
         print('Unknown fit function.  Please update model_vel_map function.', 
               flush=True)
@@ -474,7 +485,13 @@ def model_vel_map(params, map_shape, scale, fit_function):
 ################################################################################
 # Function to minimize
 #-------------------------------------------------------------------------------
-def calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
+def calculate_chi2(params, 
+                   vel_map, 
+                   vel_map_ivar, 
+                   pix_scale, 
+                   i_angle, 
+                   phi, 
+                   fit_function):
     '''
     chi2 of the velocity map
 
@@ -494,6 +511,12 @@ def calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
     pix_scale : float
         Scale of each pixel (to convert from pixel units to kpc)
 
+    i_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north.
+
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
@@ -510,7 +533,12 @@ def calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
     ############################################################################
     # Create fitted velocity map based on the values in params
     #---------------------------------------------------------------------------
-    vel_map_model = model_vel_map(params, vel_map.shape, pix_scale, fit_function)
+    vel_map_model = model_vel_map(params, 
+                                  vel_map.shape, 
+                                  pix_scale, 
+                                  i_angle, 
+                                  phi, 
+                                  fit_function)
     ############################################################################
 
 
@@ -533,6 +561,8 @@ def calculate_chi2_flat(params,
                         flat_vel_map_ivar, 
                         map_mask,
                         pix_scale, 
+                        inclination_angle, 
+                        phi, 
                         fit_function):
     '''
     chi2 of the velocity map
@@ -556,6 +586,12 @@ def calculate_chi2_flat(params,
     pix_scale : float
         Scale of each pixel (to convert from pixel units to kpc)
 
+    inclination_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north.
+
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
@@ -572,7 +608,12 @@ def calculate_chi2_flat(params,
     ############################################################################
     # Create fitted velocity map based on the values in params
     #---------------------------------------------------------------------------
-    vel_map_model = model_vel_map(params, map_mask.shape, pix_scale, fit_function)
+    vel_map_model = model_vel_map(params, 
+                                  map_mask.shape, 
+                                  pix_scale, 
+                                  inclination_angle, 
+                                  phi, 
+                                  fit_function)
     ############################################################################
     
     
@@ -606,6 +647,8 @@ def calculate_residual_flat(params,
                             flat_vel_map, 
                             map_mask,
                             pix_scale, 
+                            inclination_angle, 
+                            phi, 
                             fit_function):
     '''
     residual of the velocity map
@@ -626,6 +669,12 @@ def calculate_residual_flat(params,
     pix_scale : float
         Scale of each pixel (to convert from pixel units to kpc)
 
+    inclination_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north
+
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
@@ -642,7 +691,12 @@ def calculate_residual_flat(params,
     ############################################################################
     # Create fitted velocity map based on the values in params
     #---------------------------------------------------------------------------
-    vel_map_model = model_vel_map(params, map_mask.shape, pix_scale, fit_function)
+    vel_map_model = model_vel_map(params, 
+                                  map_mask.shape, 
+                                  pix_scale, 
+                                  inclination_angle, 
+                                  phi, 
+                                  fit_function)
     ############################################################################
     
     
@@ -679,6 +733,8 @@ def chi2_velocity(params,
                   vel_map, 
                   vel_map_ivar, 
                   pix_scale, 
+                  inclination_angle, 
+                  phi, 
                   fit_function):
     '''
     Calculate the chi2 of the velocity map.  The free parameters are the 
@@ -703,6 +759,12 @@ def chi2_velocity(params,
     pix_scale : float
         Scale of each pixel (to convert from pixel units to kpc)
 
+    inclination_angle : float
+        Inclination angle of the galaxy
+
+    phi : angle 
+        Orientation angle of the galaxy, measured east of north
+
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
@@ -723,6 +785,8 @@ def chi2_velocity(params,
     vel_map_model = model_vel_map(map_params, 
                                   vel_map.shape, 
                                   pix_scale, 
+                                  inclination_angle, 
+                                  phi, 
                                   fit_function)
     ############################################################################
 
@@ -750,6 +814,8 @@ def chi2_position(params,
                   vel_map, 
                   vel_map_ivar, 
                   pix_scale, 
+                  inclination_angle, 
+                  phi, 
                   fit_function):
     '''
     Calculate the chi2 of the velocity map.  The free parameters are the 
@@ -774,6 +840,12 @@ def chi2_position(params,
     pix_scale : float
         Scale of each pixel (to convert from pixel units to kpc)
 
+    inclination_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Rotation angle of the galaxy, measured east of north
+
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
@@ -791,7 +863,12 @@ def chi2_position(params,
     # Create fitted velocity map based on the values in params
     #---------------------------------------------------------------------------
     map_params = np.concatenate([params, vel_params])
-    vel_map_model = model_vel_map(map_params, vel_map.shape, pix_scale, fit_function)
+    vel_map_model = model_vel_map(map_params, 
+                                  vel_map.shape, 
+                                  pix_scale, 
+                                  inclination_angle, 
+                                  phi, 
+                                  fit_function)
     ############################################################################
 
 
@@ -814,7 +891,7 @@ def chi2_position(params,
 ################################################################################
 ################################################################################
 
-def logL_BB(params, pix_scale, vel_map, vel_map_ivar):
+def logL_BB(params, inclination_angle, phi, pix_scale, vel_map, vel_map_ivar):
     '''
     Log likelihood of the data and the fit values for the BB fit function.
 
@@ -824,6 +901,12 @@ def logL_BB(params, pix_scale, vel_map, vel_map_ivar):
 
     params : list or ndarray
         List of fit parameters
+
+    inclination_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north
 
     pix_scale : float
         Conversion from spaxels to kpc
@@ -842,10 +925,15 @@ def logL_BB(params, pix_scale, vel_map, vel_map_ivar):
         Log likelihood of set velocity given model parameters
     '''
 
-    lambda1 = model_vel_map(params, vel_map.shape, pix_scale, 'BB')
+    lambda1 = model_vel_map(params, 
+                            vel_map.shape, 
+                            pix_scale, 
+                            inclination_angle, 
+                            phi, 
+                            'BB')
     lambda1[lambda1 <= 0] = np.finfo( dtype=np.float64).tiny
 
-    return -0.5*ma.sum( vel_map_ivar*(vel_map - lambda1)**2 - ma.log(vel_map_ivar))
+    return -0.5*ma.sum(vel_map_ivar*(vel_map - lambda1)**2 - ma.log(vel_map_ivar))
 
 
 
@@ -854,13 +942,13 @@ def logL_BB(params, pix_scale, vel_map, vel_map_ivar):
 ################################################################################
 ################################################################################
 
-def nlogL_BB(params, pix_scale, vel_map, vel_map_ivar):
+def nlogL_BB(params, i_angle, phi, pix_scale, vel_map, vel_map_ivar):
     '''
     Returns the negative log likelihood of the data and the fit values for the 
     BB fit function.
     '''
 
-    return -logL_BB(params, pix_scale, vel_map, vel_map_ivar)
+    return -logL_BB(params, i_angle, phi, pix_scale, vel_map, vel_map_ivar)
 
 
 
@@ -869,7 +957,13 @@ def nlogL_BB(params, pix_scale, vel_map, vel_map_ivar):
 ################################################################################
 ################################################################################
 
-def vel_logL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
+def vel_logL_BB(vel_params, 
+                pos_params, 
+                i_angle, 
+                phi, 
+                pix_scale, 
+                vel_map, 
+                vel_map_ivar):
     '''
     Log likelihood of the data and the fit values for the BB fit function.
 
@@ -883,6 +977,12 @@ def vel_logL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
     pos_params : list or ndarray
         Position parameters (assumed fixed in this fit)
 
+    i_angle : float
+        Inclination angle of the galaxy
+
+    phi : float
+        Orientation angle of the galaxy, measured east of north
+
     pix_scale : float
         Conversion from spaxels to kpc
 
@@ -902,10 +1002,15 @@ def vel_logL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 
     params = np.concatenate([pos_params, vel_params])
 
-    lambda1 = model_vel_map(params, vel_map.shape, pix_scale, 'BB')
+    lambda1 = model_vel_map(params, 
+                            vel_map.shape, 
+                            pix_scale, 
+                            i_angle, 
+                            phi, 
+                            'BB')
     lambda1[lambda1 <= 0] = np.finfo( dtype=np.float64).tiny
 
-    return -0.5*ma.sum( vel_map_ivar*(vel_map - lambda1)**2 - ma.log(vel_map_ivar))
+    return -0.5*ma.sum(vel_map_ivar*(vel_map - lambda1)**2 - ma.log(vel_map_ivar))
 
 
 
@@ -913,7 +1018,13 @@ def vel_logL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 ################################################################################
 ################################################################################
 
-def vel_nlogL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
+def vel_nlogL_BB(vel_params, 
+                 pos_params, 
+                 i_angle, 
+                 phi, 
+                 pix_scale, 
+                 vel_map, 
+                 vel_map_ivar):
     '''
     Returns the negative log likelihood of the data and the best fit values for 
     the BB fit funciton.
@@ -921,7 +1032,7 @@ def vel_nlogL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 
     params = np.concatenate([pos_params, vel_params])
 
-    return -logL_BB(params, pix_scale, vel_map, vel_map_ivar)
+    return -logL_BB(params, i_angle, phi, pix_scale, vel_map, vel_map_ivar)
 
 
 
@@ -939,8 +1050,8 @@ def find_vel_map(gal_ID,
                  i_center_guess, 
                  j_center_guess,
                  sys_vel_guess, 
-                 inclination_angle_guess, 
-                 phi_guess, 
+                 inclination_angle, 
+                 phi, 
                  fit_function):
     '''
     Fit the H-alpha velocity map to find the best-fit values for the kinematics.
@@ -976,12 +1087,11 @@ def find_vel_map(gal_ID,
     sys_vel_guess : float
         Initial guess for the galaxy's systemic velocity
 
-    inclination_angle_guess : float
-        Initial guess for the inclination angle of the galaxy
+    inclination_angle : float
+        Inclination angle of the galaxy
 
-    phi_guess : float
-        Initial guess for the orientation angle of the galaxy's major axis, 
-        defined as east of north.
+    phi : float
+        Orientation angle of the galaxy's major axis, defined as east of north.
 
     fit_function : string
         Determines which function to use for the velocity.  Options are 'BB' and 
@@ -1021,7 +1131,7 @@ def find_vel_map(gal_ID,
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
     v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
-    v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
+    v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle))
 
     #print("v_max_guess:", v_max_guess)
     ############################################################################
@@ -1035,11 +1145,6 @@ def find_vel_map(gal_ID,
     sys_vel_high = 1100
     sys_vel_bounds = (sys_vel_low, sys_vel_high)
 
-    # Inclination angle
-    inclination_angle_low = 0
-    inclination_angle_high = 0.5*np.pi
-    inclination_angle_bounds = (inclination_angle_low, inclination_angle_high)
-
     # Center coordinates
     i_center_low = i_center_guess - 10
     i_center_high = i_center_guess + 10
@@ -1048,11 +1153,6 @@ def find_vel_map(gal_ID,
     j_center_low = j_center_guess - 10
     j_center_high = j_center_guess + 10
     j_center_bounds = (j_center_low, j_center_high)
-
-    # Orientation angle
-    phi_low = 0
-    phi_high = 2*np.pi + 0.1
-    phi_bounds = (phi_low, phi_high)
 
     # Maximum velocity [km/s]
     v_max_low = 10
@@ -1074,8 +1174,8 @@ def find_vel_map(gal_ID,
 
     r_turn_guess_spaxels,_ = deproject_spaxel(v_max_index, 
                                               center_guess, 
-                                              phi_guess, 
-                                              inclination_angle_guess)
+                                              phi, 
+                                              inclination_angle)
 
     r_turn_guess_kpc = 0.5*r_turn_guess_spaxels*pix_scale_factor
 
@@ -1101,36 +1201,28 @@ def find_vel_map(gal_ID,
                        r_turn_guess_kpc, \
                        alpha_guess]
         pos_guesses = [sys_vel_guess, \
-                       inclination_angle_guess, \
                        i_center_guess, \
-                       j_center_guess, \
-                       phi_guess]
+                       j_center_guess]
         # Parameter bounds
         vel_bounds = [v_max_bounds, \
                       r_turn_bounds, \
                       alpha_bounds]
         pos_bounds = [sys_vel_bounds, \
-                      inclination_angle_bounds, \
                       i_center_bounds, \
-                      j_center_bounds, \
-                      phi_bounds]
+                      j_center_bounds]
 
     elif fit_function == 'tanh':
 
         # Parameter guesses
         vel_guesses = [v_max_guess, r_turn_guess_kpc]
         pos_guesses = [sys_vel_guess, \
-                       inclination_angle_guess, \
                        i_center_guess, \
-                       j_center_guess, \
-                       phi_guess]
+                       j_center_guess]
         # Parameter bounds
         vel_bounds = [v_max_bounds, r_turn_bounds]
         pos_bounds = [sys_vel_bounds, \
-                      inclination_angle_bounds, \
                       i_center_bounds, \
-                      j_center_bounds, \
-                      phi_bounds]
+                      j_center_bounds]
 
     else:
         print('Selected fit function is not known!  Please edit find_vel_map function in DRP_vel_map_functions.py.', 
@@ -1162,7 +1254,13 @@ def find_vel_map(gal_ID,
         result_all = minimize(calculate_chi2_flat, 
                               np.concatenate([pos_guesses, vel_guesses]), 
                               method='Powell', 
-                              args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                              args=(mHa_vel_flat, 
+                                    mHa_vel_ivar_flat, 
+                                    mHa_vel.mask, 
+                                    pix_scale_factor, 
+                                    inclination_angle, 
+                                    phi, 
+                                    fit_function),
                               bounds=np.concatenate([pos_bounds, vel_bounds]),
                               options={'disp':True})
         ########################################################################
@@ -1194,7 +1292,7 @@ def find_vel_map(gal_ID,
             #-------------------------------------------------------------------
             # Update maximum velocity initial guess
             #-------------------------------------------------------------------
-            v_max_guess = ma.max(ma.abs(modified_mHa_vel)/np.sin(inclination_angle_guess))
+            v_max_guess = ma.max(ma.abs(modified_mHa_vel)/np.sin(inclination_angle))
 
             #print(v_max_guess)
 
@@ -1205,10 +1303,18 @@ def find_vel_map(gal_ID,
             # Refit galaxy
             #-------------------------------------------------------------------
             result_continuous = minimize(calculate_chi2_flat, 
-                                         np.concatenate([pos_guesses, vel_guesses]), 
+                                         np.concatenate([pos_guesses, 
+                                                         vel_guesses]), 
                                          method='Powell', 
-                                         args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
-                                         bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                         args=(modified_mHa_vel_flat, 
+                                               modified_mHa_vel_ivar_flat, 
+                                               modified_mask, 
+                                               pix_scale_factor, 
+                                               inclination_angle, 
+                                               phi, 
+                                               fit_function),
+                                         bounds=np.concatenate([pos_bounds, 
+                                                                vel_bounds]),
                                          options={'disp':True})
         ########################################################################
         
@@ -1220,8 +1326,14 @@ def find_vel_map(gal_ID,
         result_residual = minimize(calculate_residual_flat, 
                                    np.concatenate([pos_guesses, vel_guesses]), 
                                    method='Powell', 
-                                   args=(mHa_vel_flat, mHa_vel.mask, pix_scale_factor, fit_function),
-                                   bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                   args=(mHa_vel_flat, 
+                                         mHa_vel.mask, 
+                                         pix_scale_factor, 
+                                         inclination_angle, 
+                                         phi, 
+                                         fit_function),
+                                   bounds=np.concatenate([pos_bounds, 
+                                                          vel_bounds]),
                                    options={'disp':True})
 
         # Calculate chi2 of the fit
@@ -1230,6 +1342,8 @@ def find_vel_map(gal_ID,
                                                   mHa_vel_ivar_flat, 
                                                   mHa_vel.mask, 
                                                   pix_scale_factor, 
+                                                  inclination_angle, 
+                                                  phi, 
                                                   fit_function)
         ########################################################################
         
@@ -1264,7 +1378,13 @@ def find_vel_map(gal_ID,
         result_SN = minimize(calculate_chi2_flat, 
                              np.concatenate([pos_guesses, vel_guesses]), 
                              method='Powell', 
-                             args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                             args=(modified_mHa_vel_flat, 
+                                   modified_mHa_vel_ivar_flat, 
+                                   modified_mask, 
+                                   pix_scale_factor, 
+                                   inclination_angle, 
+                                   phi, 
+                                   fit_function),
                              bounds=np.concatenate([pos_bounds, vel_bounds]),
                              options={'disp':True})
         ########################################################################
@@ -1286,8 +1406,10 @@ def find_vel_map(gal_ID,
             #-------------------------------------------------------------------
             # Update velocity field
             #-------------------------------------------------------------------
-            modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask_sigma)
-            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask_sigma)
+            modified_mHa_vel = ma.array(mHa_vel.data, 
+                                        mask=modified_mask_sigma)
+            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, 
+                                             mask=modified_mask_sigma)
 
             modified_mHa_vel_flat = modified_mHa_vel.compressed()
             modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
@@ -1296,7 +1418,7 @@ def find_vel_map(gal_ID,
             #-------------------------------------------------------------------
             # Update maximum velocity initial guess
             #-------------------------------------------------------------------
-            v_max_guess = ma.max(ma.abs(modified_mHa_vel)/np.sin(inclination_angle_guess))
+            v_max_guess = ma.max(ma.abs(modified_mHa_vel)/np.sin(inclination_angle))
 
             vel_guesses[0] = v_max_guess
             #-------------------------------------------------------------------
@@ -1307,8 +1429,15 @@ def find_vel_map(gal_ID,
             result_nonAGN = minimize(calculate_chi2_flat, 
                                      np.concatenate([pos_guesses, vel_guesses]), 
                                      method='Powell', 
-                                     args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask_sigma, pix_scale_factor, fit_function),
-                                     bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                     args=(modified_mHa_vel_flat, 
+                                           modified_mHa_vel_ivar_flat, 
+                                           modified_mask_sigma, 
+                                           pix_scale_factor, 
+                                           inclination_angle, 
+                                           phi, 
+                                           fit_function),
+                                     bounds=np.concatenate([pos_bounds, 
+                                                            vel_bounds]),
                                      options={'disp':True})
         ########################################################################
 
@@ -1320,15 +1449,15 @@ def find_vel_map(gal_ID,
 
         alpha_max = alpha_high - 5
         
-        if result_all.x[7] < alpha_max:
+        if result_all.x[-1] < alpha_max:
             fit_chi2[0] = result_all.fun
-        if result_continuous.x[7] < alpha_max:
+        if result_continuous.x[-1] < alpha_max:
             fit_chi2[1] = result_continuous.fun
-        if result_SN.x[7] < alpha_max:
+        if result_SN.x[-1] < alpha_max:
             fit_chi2[2] = result_SN.fun
-        if result_residual.x[7] < alpha_max:
+        if result_residual.x[-1] < alpha_max:
             fit_chi2[3] = result_residual.fun
-        if result_nonAGN.x[7] < alpha_max:
+        if result_nonAGN.x[-1] < alpha_max:
             fit_chi2[4] = result_nonAGN.fun
 
         print(fit_chi2)
@@ -1376,7 +1505,14 @@ def find_vel_map(gal_ID,
             #hessian = ndt.Hessian(calculate_chi2)
             #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
             hessian = ndt.Hessian(calculate_chi2_flat)
-            hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
+            hess = hessian(result.x, 
+                           mHa_vel_flat, 
+                           mHa_vel_ivar_flat, 
+                           mHa_vel.mask, 
+                           pix_scale_factor, 
+                           inclination_angle, 
+                           phi, 
+                           fit_function)
 
             # Save Hessian matrix (for uncertainty calculations)
             np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
@@ -1394,28 +1530,26 @@ def find_vel_map(gal_ID,
             #-------------------------------------------------------------------
             best_fit_values = {'v_sys': result.x[0],
                                'v_sys_err': fit_params_err[0],
-                               'ba': np.cos(result.x[1]),
-                               'ba_err': np.cos(fit_params_err[1]),
-                               'x0': result.x[2],
-                               'x0_err': fit_params_err[2],
-                               'y0': result.x[3],
-                               'y0_err': fit_params_err[3],
-                               'phi': result.x[4]*180/np.pi,
-                               'phi_err': fit_params_err[4]*180/np.pi,
-                               'v_max': result.x[5],
-                               'v_max_err': fit_params_err[5],
-                               'r_turn': result.x[6],
-                               'r_turn_err': fit_params_err[6], 
+                               'x0': result.x[1],
+                               'x0_err': fit_params_err[1],
+                               'y0': result.x[2],
+                               'y0_err': fit_params_err[2],
+                               'v_max': result.x[3],
+                               'v_max_err': fit_params_err[3],
+                               'r_turn': result.x[4],
+                               'r_turn_err': fit_params_err[4], 
                                'chi2': result.fun}
 
             if fit_function == 'BB':
-                best_fit_values['alpha'] = result.x[7]
-                best_fit_values['alpha_err'] = fit_params_err[7]
+                best_fit_values['alpha'] = result.x[5]
+                best_fit_values['alpha_err'] = fit_params_err[5]
             #-------------------------------------------------------------------
 
             best_fit_map = model_vel_map(result.x,
                                          mHa_vel.shape, 
                                          pix_scale_factor, 
+                                         inclination_angle, 
+                                         phi, 
                                          fit_function)
         else:
             print('Fit did not converge.', flush=True)

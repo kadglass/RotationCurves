@@ -35,17 +35,11 @@ def add_columns(data_table, fit_function):
     data_table['v_sys'] = np.nan
     data_table['v_sys_err'] = np.nan
 
-    data_table['ba'] = np.nan
-    data_table['ba_err'] = np.nan
-
     data_table['x0'] = np.nan
     data_table['x0_err'] = np.nan
 
     data_table['y0'] = np.nan
     data_table['y0_err'] = np.nan
-
-    data_table['phi'] = np.nan
-    data_table['phi_err'] = np.nan
 
     data_table['r_turn'] = np.nan*np.ones(N, dtype=float)
     data_table['r_turn_err'] = np.nan*np.ones(N, dtype=float)

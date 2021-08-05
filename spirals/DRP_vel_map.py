@@ -277,11 +277,10 @@ def fit_vel_map(Ha_vel,
 
 
     ############################################################################
-    # Set the initial guess for the inclination angle equal that given by the 
-    # measured axis ratio.
+    # Set the inclination angle equal that given by the measured axis ratio.
     #---------------------------------------------------------------------------
-    inclination_angle_guess = np.arccos(axis_ratio)
-    #print(axis_ratio, inclination_angle_guess)
+    inclination_angle = np.arccos(axis_ratio)
+    #print(axis_ratio, inclination_angle)
     ############################################################################
 
 
@@ -289,47 +288,47 @@ def fit_vel_map(Ha_vel,
     # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it 
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
-    phi_guess = find_phi(center_guess, phi_EofN_deg, mHa_vel)
+    phi = find_phi(center_guess, phi_EofN_deg, mHa_vel)
 
 
     if gal_ID in ['8134-6102']:
-        phi_guess += 0.25*np.pi
+        phi += 0.25*np.pi
 
     elif gal_ID in ['8932-12704', '8252-6103']:
-        phi_guess -= 0.25*np.pi
+        phi -= 0.25*np.pi
 
     elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102', 
                     '8274-6101', '9027-12705', '9868-12702', '8135-1901', 
                     '7815-1901', '8568-1901', '8989-1902', '8458-3701', 
                     '9000-1901', '9037-3701', '8456-6101']:
-        phi_guess += 0.5*np.pi
+        phi += 0.5*np.pi
 
     elif gal_ID in ['9864-3702', '8601-1902']:
-        phi_guess -= 0.5*np.pi
+        phi -= 0.5*np.pi
 
     elif gal_ID in ['9502-12702']:
-        phi_guess += 0.75*np.pi
+        phi += 0.75*np.pi
 
     elif gal_ID in ['9029-12705', '8137-3701', '8618-3704', '8323-12701', 
                     '8942-3703', '8333-12701', '8615-6103', '9486-3704', 
                     '8937-1902', '9095-3704', '8466-1902', '9508-3702', 
                     '8727-3703', '8341-12704', '8655-6103']:
-        phi_guess += np.pi
+        phi += np.pi
 
     elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703', 
                     '8624-1902', '8948-12702', '8443-6102', '8259-1901']:
-        phi_guess += 1.5*np.pi
+        phi += 1.5*np.pi
 
     elif gal_ID in ['8241-12705', '8326-6102']:
-        phi_guess += 1.75*np.pi
+        phi += 1.75*np.pi
 
     elif gal_ID in ['8655-1902', '7960-3701', '9864-9101', '8588-3703']:
-        phi_guess = phi_EofN_deg*np.pi/180.
+        phi = phi_EofN_deg*np.pi/180.
 
 
-    phi_guess = phi_guess%(2*np.pi)
+    phi = phi%(2*np.pi)
 
-    #print(phi_EofN_deg, phi_guess*180/np.pi)
+    #print(phi_EofN_deg, phi*180/np.pi)
     ############################################################################
 
 
@@ -362,10 +361,8 @@ def fit_vel_map(Ha_vel,
     #---------------------------------------------------------------------------
     if not unmasked_data:
         param_outputs = {'v_sys': np.nan,  'v_sys_err': np.nan,
-                         'ba': np.nan,     'ba_err': np.nan,
                          'x0': np.nan,     'x0_err': np.nan,
                          'y0': np.nan,     'y0_err': np.nan,
-                         'phi': np.nan,    'phi_err': np.nan, 
                          'r_turn': np.nan, 'r_turn_err': np.nan, 
                          'v_max': np.nan,  'v_max_err': np.nan, 
                          'chi2': np.nan}
@@ -395,8 +392,8 @@ def fit_vel_map(Ha_vel,
                                                                     i_center_guess, 
                                                                     j_center_guess,
                                                                     sys_vel_guess, 
-                                                                    inclination_angle_guess, 
-                                                                    phi_guess, 
+                                                                    inclination_angle, 
+                                                                    phi, 
                                                                     fit_function)
 
         if param_outputs is not None:
@@ -493,6 +490,8 @@ def fit_vel_map(Ha_vel,
             plot_rot_curve(mHa_vel, 
                            mHa_vel_ivar,
                            param_outputs, 
+                           inclination_angle, 
+                           phi, 
                            scale,
                            gal_ID, 
                            fit_function,
@@ -531,6 +530,8 @@ def fit_vel_map(Ha_vel,
                                   mHa_vel_ivar, 
                                   mbest_fit_map,
                                   param_outputs,
+                                  inclination_angle, 
+                                  phi, 
                                   scale, 
                                   gal_ID, 
                                   fit_function,
@@ -596,7 +597,7 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     dist_to_galaxy_Mpc = c*z/H_0
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
 
-    r_kpc = dist_to_galaxy_pc*np.tan(r*(1./60)*(1./60)*(np.pi/180))
+    r_kpc = dist_to_galaxy_kpc*np.tan(r*(1./60)*(1./60)*(np.pi/180))
     ############################################################################
 
 
@@ -605,24 +606,43 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     #---------------------------------------------------------------------------
     N_samples = 10000
 
-    v_samples = np.zeros(N_samples, dtype=float)
+    v_samples = np.nan*np.ones(N_samples, dtype=float)
 
     if fit_function == 'BB':
         v = rot_fit_BB(r_kpc, params)
 
         hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
 
-        param_samples = np.random.multivariate_normal(mean=params, 
-                                                      cov=hess[-3:,-3:], 
-                                                      size=N_samples)
+        try:
+            param_samples = np.random.multivariate_normal(mean=params, 
+                                                          cov=hess[-3:,-3:], 
+                                                          size=N_samples)
 
-        for i in range(N_samples):
+            for i in range(N_samples):
+
+                if np.all(param_samples[i] > 0):
+                    v_samples[i] = rot_fit_BB(r_kpc, param_samples[i])
+
+            v_err = np.std(v_samples[np.isfinite(v_samples)])
             
-
-        v_err = np.std(v_samples)
+        except np.linalg.LinAlgError:
+            v_err = np.nan
     
     elif fit_function == 'tanh':
         v = rot_fit_tanh(r_kpc, params)
+
+        hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+
+        param_samples = np.random.multivariate_normal(mean=params, 
+                                                      cov=hess[-2:,-2:], 
+                                                      size=N_samples)
+
+        for i in range(N_samples):
+
+            if np.all(param_samples[i] > 0):
+                v_samples[i] = rot_fit_tanh(r_kpc, param_samples[i])
+
+        v_err = np.std(v_samples[np.isfinite(v_samples)])
     
     else:
         print('Fit function not known.  Please update estimate_total_mass function.')

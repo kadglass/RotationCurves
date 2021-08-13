@@ -39,18 +39,27 @@ data = Table.read(data_directory + data_filename,
 
 
 
-'''
+
 ################################################################################
 # Calculate the velocity at R90
 #-------------------------------------------------------------------------------
-data['R90'] = data['NSA_elpetro_th90']*
+# Convert r from arcsec to kpc
+#-------------------------------------------------------------------------------
+H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458 # Speed of light in units of km/s
 
-data['V90'] = rot_fit_BB(data['R90'], 
-                         data['Vmax_map'], 
-                         data['Rturn_map'], 
-                         data['alpha_map'])
+dist_to_galaxy_Mpc = c*data['NSA_redshift']/H_0
+dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+
+data['R90_kpc'] = dist_to_galaxy_kpc*np.tan(data['NSA_elpetro_th90']*(1./60)*(1./60)*(np.pi/180))
+#-------------------------------------------------------------------------------
+
+data['V90_kms'] = rot_fit_BB(data['R90_kpc'], 
+                             [data['Vmax_map'], 
+                              data['Rturn_map'], 
+                              data['alpha_map']])
 ################################################################################
-'''
+
 
 
 
@@ -60,8 +69,8 @@ data['V90'] = rot_fit_BB(data['R90'],
 bad_boolean = np.logical_or.reduce([data['M90_map'] == -99, 
                                     data['M90_disk_map'] == -99, 
                                     data['alpha_map'] > 99, 
-                                    data['ba_map'] > 0.998])#, 
-#                                    data['V90']/data['Vmax_map'] < 0.9])
+                                    data['ba_map'] > 0.998, 
+                                    data['V90_kms']/data['Vmax_map'] < 0.9])
 
 sample = data[~bad_boolean]
 ################################################################################
@@ -93,7 +102,7 @@ Rdata = sample[rboolarray]
 # Plot Tully-Fisher relation
 #-------------------------------------------------------------------------------
 # Formatting
-tSize = 8 # text size
+tSize = 14 # text size
 
 fig = plt.figure()
 
@@ -136,11 +145,11 @@ ax.tick_params(labelsize=tSize)#, length=10., width=3.)
 
 plt.tight_layout()
 
-plt.show()
-#plt.savefig(data_directory + 'Images/Tully-Fisher_CMD_v5.eps', 
-#            format='eps', 
-#            #transparent=True,
-#            dpi=300)
+#plt.show()
+plt.savefig(data_directory + 'Images/Tully-Fisher_CMD_V90_v5.eps', 
+            format='eps', 
+            #transparent=True,
+            dpi=300)
 ################################################################################
 
 

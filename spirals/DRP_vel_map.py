@@ -596,13 +596,15 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     dist_to_galaxy_Mpc = c*z/H_0
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
 
-    r_kpc = dist_to_galaxy_pc*np.tan(r*(1./60)*(1./60)*(np.pi/180))
+    r_kpc = dist_to_galaxy_kpc*np.tan(r*(1./60)*(1./60)*(np.pi/180))
     ############################################################################
 
 
     ############################################################################
     # Calculate velocity at given radius
     #---------------------------------------------------------------------------
+    hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+
     N_samples = 10000
 
     v_samples = np.zeros(N_samples, dtype=float)
@@ -610,19 +612,35 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     if fit_function == 'BB':
         v = rot_fit_BB(r_kpc, params)
 
-        hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+        try:
 
-        param_samples = np.random.multivariate_normal(mean=params, 
-                                                      cov=hess[-3:,-3:], 
-                                                      size=N_samples)
+            param_samples = np.random.multivariate_normal(mean=params, 
+                                                          cov=hess[-3:,-3:], 
+                                                          size=N_samples)
 
-        for i in range(N_samples):
-            
+            for i in range(N_samples):
+                
+                if np.all(param_samples[i] > 0):
+                    v_samples[i] = rot_fit_BB(r_kpc, param_smaples[i])
 
-        v_err = np.std(v_samples)
+            v_err = np.std(v_samples[np.isfinite(v_samples)])
+
+        except np.linalg.LinAlgError:
+            v_err = np.nan
     
     elif fit_function == 'tanh':
         v = rot_fit_tanh(r_kpc, params)
+
+        param_samples = np.random.multivariate_normal(mean=params, 
+                                                      cov=hess[-2:,-2:], 
+                                                      size=N_samples)
+
+        for i in range(N_samples):
+
+            if np.all(param_samples[i] > 0):
+                v_samples[i] = rot_fit_tanh(r_kpc, param_samples[i])
+
+        v_err = np.std(v_samples[np.isfinite(v_samples)])
     
     else:
         print('Fit function not known.  Please update estimate_total_mass function.')

@@ -11,7 +11,8 @@ from extract_CMD_v1 import match_CMD
 CMD_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/kias1033_5_MPAJHU_ZdustOS_HI100_NSAv012_CMDJan2020.txt'
 
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_10_smooth2p27.txt'
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
+#MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
+MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
 ###############################################################################
 
 
@@ -37,7 +38,7 @@ master_table = match_CMD( master_table, CMD_table)
 ###############################################################################
 
 
-print(master_table.colnames)
+#print(master_table.colnames)
 
 
 ###############################################################################

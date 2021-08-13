@@ -14,11 +14,13 @@ from extract_KIAS_functions import PMJDF_match
 ###############################################################################
 # User inputs
 #------------------------------------------------------------------------------
-INDEX_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/SDSS/kias1033_5_MPAJHU_ZdustOS.txt'
+INDEX_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/kias1033_5_MPAJHU_ZdustOS.txt'
 
 #MASTER_FILE_NAME = 'master_file_vflag_10.txt'
-MASTER_FILE_NAME = 'DRPall-master_file.txt'
-master_file_format = 'ascii.ecsv'
+#MASTER_FILE_NAME = 'DRPall-master_file.txt'
+MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+
+master_file_format = 'ascii.commented_header'
 ###############################################################################
 
 
@@ -43,7 +45,7 @@ index_table = Table.read( INDEX_FILE_NAME, format='ascii.commented_header')
 # Match to the 'master_table' according to 'NSA_plate', 'NSA_MJD', and 
 # 'NSA_fiberID'
 #------------------------------------------------------------------------------
-columns_to_add = ['imc', 'aimc']
+columns_to_add = ['imc', 'aimc', 'cd']
 
 master_table = PMJDF_match( master_table, index_table, columns_to_add)
 ###############################################################################

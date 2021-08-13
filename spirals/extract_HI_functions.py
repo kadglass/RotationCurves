@@ -8,7 +8,7 @@ import numpy as np
 ################################################################################
 ################################################################################
 
-def galaxies_dict( ref_table):
+def galaxies_dict(ref_table):
     '''
     Built dictionary of (plate, IFU) tuples that refer to the galaxy's row 
     index in the ref_table.

@@ -55,7 +55,7 @@ vel_function = 'BB'
 #-------------------------------------------------------------------------------
 FILE_IDS = ['9029-6104']
 
-RUN_ALL_GALAXIES = False
+RUN_ALL_GALAXIES = True
 ################################################################################
 
 
@@ -82,13 +82,13 @@ else:
     #IMAGE_DIR = None
     IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 
-'''
+
 MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
 '''
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-
+'''
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################
@@ -96,9 +96,20 @@ DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 
 
 ################################################################################
+# Open the file containing the list of galaxies to fit
+#-------------------------------------------------------------------------------
+DESI_DIRECTORY = '/Users/kellydouglass/Documents/Research/DESI/Targets/'
+DESI_FILENAME = DESI_DIRECTORY + 'MaNGA_DESI_galaxies_07292021.txt'
+
+DESI_table = Table.read(DESI_FILENAME, format='ascii.commented_header')
+################################################################################
+
+
+
+################################################################################
 # Open the DRPall file
 #-------------------------------------------------------------------------------
-DRP_table = Table.read( DRP_FILENAME, format='fits')
+DRP_table = Table.read(DRP_FILENAME, format='fits')
 
 
 DRP_index = {}
@@ -133,11 +144,11 @@ for i in range(len(NSA_table)):
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
     
-    N_files = len(DRP_table)
+    N_files = len(DESI_table)
 
-    FILE_IDS = list(DRP_index.keys())
+    FILE_IDS = list(DESI_table['plateifu'])
 
-    DRP_table = add_columns(DRP_table)
+    DESI_table = add_columns(DESI_table, vel_function)
 
 else:
 
@@ -153,7 +164,7 @@ else:
 num_masked_gal = 0 # Number of completely masked galaxies
 num_not_smooth = 0 # Number of galaxies which do not have smooth velocity maps
 
-for gal_ID in FILE_IDS:
+for i_DESI, gal_ID in enumerate(FILE_IDS):
 
     i_DRP = DRP_index[gal_ID]
 
@@ -214,74 +225,88 @@ for gal_ID in FILE_IDS:
                                                                       phi_EofN_deg, 
                                                                       z, gal_ID, 
                                                                       vel_function, 
-                                                                      #IMAGE_DIR=IMAGE_DIR, 
-                                                                      #IMAGE_FORMAT=IMAGE_FORMAT, 
+                                                                      IMAGE_DIR=IMAGE_DIR, 
+                                                                      IMAGE_FORMAT=IMAGE_FORMAT, 
                                                                       num_masked_gal=num_masked_gal)
                                                              
                 fit_time = datetime.datetime.now() - start
                 
                 print(gal_ID, "velocity map fit", fit_time)
-                ####################################################################
+                ################################################################
 
-                ####################################################################
+                ################################################################
                 # Extract the necessary data from the NSA table.
-                #-------------------------------------------------------------------
+                #---------------------------------------------------------------
                 i_NSA = NSA_index[NSA_ID]
 
                 R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
-                ####################################################################
+                ################################################################
 
                 if param_outputs is not None:
-                    ################################################################
+                    ############################################################
                     # Estimate the total mass within the galaxy
-                    #---------------------------------------------------------------
-                    mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                                       param_outputs['v_max_err'], 
+                    #-----------------------------------------------------------
+                    if vel_function == 'BB':
+                        params_for_mass = [param_outputs['v_max'], 
+                                           param_outputs['r_turn'], 
+                                           param_outputs['alpha']]
+                    elif vel_function == 'tanh':
+                        params_for_mass = [param_outputs['v_max'], 
+                                           param_outputs['r_turn']]
+                    else:
+                        print('Fit function unknown.  Please update end of main script.')
+
+                    mass_outputs = estimate_total_mass(params_for_mass, 
                                                        R90, 
-                                                       z)
-                    ################################################################
+                                                       z, 
+                                                       vel_function)
+
+                    # Rename mass_output keys to M90, M90_err
+                    mass_outputs['M90'] = mass_outputs.pop('M')
+                    mass_outputs['M90_err'] = mass_outputs.pop('M_err')
+                    ############################################################
 
 
                 if RUN_ALL_GALAXIES:
-                    ################################################################
-                    # Write the best-fit values and calculated parameters to a text 
-                    # file in ascii format.
-                    #---------------------------------------------------------------
-                    DRP_table = fillin_output_table(DRP_table, 
-                                                    map_smoothness, 
-                                                    i_DRP, 
-                                                    col_name='smoothness_score')
+                    ############################################################
+                    # Write the best-fit values and calculated parameters to a 
+                    # text file in ascii format.
+                    #-----------------------------------------------------------
+                    DESI_table = fillin_output_table(DESI_table, 
+                                                     map_smoothness, 
+                                                     i_DESI, 
+                                                     col_name='smoothness_score')
                                                     
-                    DRP_table = fillin_output_table(DRP_table, 
-                                                    R90, 
-                                                    i_DRP, 
-                                                    col_name='nsa_elpetro_th90')
+                    DESI_table = fillin_output_table(DESI_table, 
+                                                     R90, 
+                                                     i_DESI, 
+                                                     col_name='nsa_elpetro_th90')
                     
                     if param_outputs is not None:
-                        DRP_table = fillin_output_table(DRP_table, 
-                                                        param_outputs, 
-                                                        i_DRP)
-                        DRP_table = fillin_output_table(DRP_table, 
-                                                        mass_outputs, 
-                                                        i_DRP)
-                        DRP_table = fillin_output_table(DRP_table, 
-                                                        fit_flag, 
-                                                        i_DRP, 
-                                                        col_name='fit_flag')
+                        DESI_table = fillin_output_table(DESI_table, 
+                                                         param_outputs, 
+                                                         i_DESI)
+                        DESI_table = fillin_output_table(DESI_table, 
+                                                         mass_outputs, 
+                                                         i_DESI)
+                        DESI_table = fillin_output_table(DESI_table, 
+                                                         fit_flag, 
+                                                         i_DESI, 
+                                                         col_name='fit_flag')
 
                     print(gal_ID, "written")
-                    ################################################################
+                    ############################################################
 
                 else:
-                    ################################################################
+                    ############################################################
                     # Print output to terminal if not analyzing all galaxies
-                    #---------------------------------------------------------------
+                    #-----------------------------------------------------------
                     print(DRP_table[['plateifu','nsa_z','nsa_elpetro_ba','nsa_elpetro_phi']][i_DRP])
                     print('Smoothness score:', map_smoothness)
                     print(param_outputs)
                     print(mass_outputs)
                     print('Fit flag:', fit_flag)
-                    ################################################################
+                    ############################################################
                 
             else:
                 print(gal_ID, 'is missing photometric measurements.')
@@ -292,7 +317,10 @@ for gal_ID in FILE_IDS:
             num_not_smooth += 1
 
             if RUN_ALL_GALAXIES:
-                DRP_table = fillin_output_table(DRP_table, map_smoothness, i_DRP, col_name='smoothness_score')
+                DESI_table = fillin_output_table(DESI_table, 
+                                                 map_smoothness, 
+                                                 i_DESI, 
+                                                 col_name='smoothness_score')
             else:
                 print('Smoothness score:', map_smoothness)
                 print('5-sigma smoothness score:', map_smoothness_5sigma)
@@ -309,9 +337,9 @@ for gal_ID in FILE_IDS:
 # Save the output_table
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
-    DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
-                    format='ascii.commented_header', 
-                    overwrite=True)
+    DESI_table.write(DESI_DIRECTORY + 'DESI_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
+                     format='ascii.commented_header', 
+                     overwrite=True)
 ################################################################################
 
 

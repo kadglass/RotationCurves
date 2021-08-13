@@ -933,7 +933,8 @@ def find_vel_map(gal_ID,
                  mHa_vel, 
                  mHa_vel_ivar, 
                  mHa_sigma, 
-                 Ha_flux, 
+                 mHa_flux, 
+                 mHa_flux_ivar,
                  z, 
                  i_center_guess, 
                  j_center_guess,
@@ -948,17 +949,23 @@ def find_vel_map(gal_ID,
     PARAMETERS
     ==========
 
+    gal_ID : string
+        <plate>-<IFU>
+
     mHa_vel : numpy array of shape (n,n)
-        H-alpha velocity field data
+        Masked H-alpha velocity field data
 
     Ha_vel_ivar : numpy array of shape (n,n)
-        Inverse variance in the H-alpha velocity field data
+        Masked inverse variance in the H-alpha velocity field data
 
     mHa_sigma : numpy array of shape (n,n)
-        H-alpha line width data
+        Masked H-alpha line width data
 
-    Ha_flux : numpy array of shape (n,n)
-        H-alpha flux field data
+    mHa_flux : numpy array of shape (n,n)
+        Masked H-alpha flux field data
+
+    mHa_flux_ivar : numpy array of shape (n,n)
+        Masked inverse variance of the H-alpha flux field data
 
     z : float
         Redshift of galaxy
@@ -1228,20 +1235,23 @@ def find_vel_map(gal_ID,
         
         
         ########################################################################
-        # Fit velocity field using only spaxels with sufficient S/N
+        # Fit velocity field using only spaxels with S/N > 5
         #-----------------------------------------------------------------------
-        print('Fitting highest S/N')
+        print('Fitting S/N > 5')
         #-----------------------------------------------------------------------
         # Remove spaxels with S/N < 5% of the maximum S/N in the data map (up to 
         # a S/N = 1)
         #-----------------------------------------------------------------------
-        SN = np.abs(Ha_flux*np.sqrt(mHa_vel_ivar))
+        SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
 
+        SN_cut = 5
+        '''
         SN_cut = 0.05*np.max(SN)
         if SN_cut > 1:
             SN_cut = 1
+        '''
 
-        modified_mask = np.logical_or(mHa_vel.mask, SN < SN_cut)
+        modified_mask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < SN_cut)
 
         modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
         modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
@@ -1367,6 +1377,10 @@ def find_vel_map(gal_ID,
             #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
             hessian = ndt.Hessian(calculate_chi2_flat)
             hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
+
+            # Save Hessian matrix (for uncertainty calculations)
+            np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
+            #print('Hessian:', hess)
             try:
                 hess_inv = np.linalg.inv(hess)
                 fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
@@ -1428,7 +1442,7 @@ def find_vel_map(gal_ID,
 
 
 
-def mass_newton(v,v_err,r,z):
+def mass_newton(v,v_err,r):
     '''
     Calculate the mass within radius r orbiting with a velocity v.
 
@@ -1443,10 +1457,7 @@ def mass_newton(v,v_err,r,z):
         Uncertainty in the velocity [km/s]
 
     r : float
-        Radius within which to calculate the mass [arcsec]
-
-    z : float
-        Galaxy redshift
+        Radius within which to calculate the mass [kpc]
 
 
     RETURNS
@@ -1460,10 +1471,7 @@ def mass_newton(v,v_err,r,z):
     ############################################################################
     # Convert radius to pc
     #---------------------------------------------------------------------------
-    dist_to_galaxy_Mpc = c*z/H_0
-    dist_to_galaxy_pc = dist_to_galaxy_Mpc*1000000
-
-    r_pc = dist_to_galaxy_pc*np.tan(r*(1/60)*(1/60)*(np.pi/180))
+    r_pc = r*1000
     ############################################################################
 
 

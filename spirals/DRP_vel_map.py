@@ -26,6 +26,8 @@ import os.path
 from astropy.io import fits
 from astropy.table import Table, Column
 
+from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
+
 from DRP_vel_map_functions import find_vel_map, mass_newton, find_phi
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
@@ -37,6 +39,16 @@ from DRP_vel_map_plottingFunctions import plot_rot_curve, \
                                           plot_residual_norm, \
                                           plot_chi2, \
                                           plot_Ha_sigma
+################################################################################
+
+
+
+
+################################################################################
+# Constants
+#-------------------------------------------------------------------------------
+H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458 # Speed of light in units of km/s
 ################################################################################
 
 
@@ -56,6 +68,8 @@ def fit_vel_map(Ha_vel,
                 Ha_sigma_ivar, 
                 Ha_sigma_mask, 
                 Ha_flux, 
+                Ha_flux_ivar, 
+                Ha_flux_mask, 
                 r_band, 
                 r_band_ivar,
                 axis_ratio, 
@@ -94,6 +108,12 @@ def fit_vel_map(Ha_vel,
 
     Ha_flux : numpy array of shape (n,n)
         H-alpha flux field data
+
+    Ha_flux_ivar : numpy array of shape (n,n)
+        Inverse variance of the H-alpha flux field data
+
+    Ha_flux_mask : numpy array of shape (n,n)
+        Bitmask for the H-alpha flux map
 
     r_band : numpy array of shape (n,n)
         r-band flux data
@@ -152,23 +172,6 @@ def fit_vel_map(Ha_vel,
     ############################################################################
     # Apply mask to all data arrays
     #---------------------------------------------------------------------------
-    '''
-    if gal_ID in ['8568-6104', '8326-6102']:
-
-        if gal_ID == '8568-6104':
-            stellar_spaxel_rows = [31, 32, 33, 33, 34, 34, 34, 33, 32, 32, 31]
-            stellar_spaxel_cols = [29, 28, 28, 29, 29, 30, 31, 32, 32, 31, 31]
-        elif gal_ID == '8326-6102':
-            stellar_spaxel_rows = [30, 30, 30, 29, 29, 29, 29, 29, 28, 28, 28, 
-                                   28, 28, 28, 27, 27, 27, 27, 27, 27, 26, 26, 
-                                   26, 26, 26, 26, 25, 25, 25, 25, 24, 24]
-            stellar_spaxel_cols = [27, 28, 29, 26, 27, 28, 29, 30, 25, 26, 27, 
-                                   28, 29, 30, 25, 26, 27, 28, 29, 30, 24, 25, 
-                                   26, 27, 28, 29, 25, 26, 27, 28, 26, 27]
-
-        Ha_vel_mask[stellar_spaxel_rows, stellar_spaxel_cols] = True
-    '''
-
     num_masked_spaxels = np.sum(Ha_vel_mask) - np.sum(r_band == 0)
     frac_masked_spaxels = num_masked_spaxels/np.sum(r_band != 0)
 
@@ -177,6 +180,9 @@ def fit_vel_map(Ha_vel,
 
     mHa_vel = ma.array( Ha_vel, mask=Ha_vel_mask)
     mHa_vel_ivar = ma.array( Ha_vel_ivar, mask=Ha_vel_mask)
+
+    mHa_flux = ma.array( Ha_flux, mask=Ha_flux_mask + Ha_vel_mask)
+    mHa_flux_ivar = ma.array( Ha_flux_ivar, mask=Ha_flux_mask + Ha_vel_mask)
 
     mHa_sigma = ma.array( Ha_sigma, mask=Ha_vel_mask + Ha_sigma_mask)
     mHa_sigma_ivar = ma.array( Ha_sigma_ivar, mask=Ha_vel_mask + Ha_sigma_mask)
@@ -383,7 +389,8 @@ def fit_vel_map(Ha_vel,
                                                                     mHa_vel, 
                                                                     mHa_vel_ivar, 
                                                                     mHa_sigma,
-                                                                    Ha_flux, 
+                                                                    mHa_flux, 
+                                                                    mHa_flux_ivar,
                                                                     z, 
                                                                     i_center_guess, 
                                                                     j_center_guess,
@@ -548,44 +555,105 @@ def fit_vel_map(Ha_vel,
 
 
 
-def estimate_total_mass(v_max, v_max_err, R90, z):
+def estimate_total_mass(params, r, z, fit_function, gal_ID):
     '''
-    Estimate the total mass interior to each given radius from the fitted 
-    v_max parameter.
+    Estimate the total mass interior to each given radius from the parameters.
 
 
     Parameters:
     ===========
 
-    v_max : float
-        Best-fit maximum velocity for the galaxy [km/s]
+    params : list
+        Best-fit values for the given velocity function, in the order of input 
+        to the velocity function.
 
-    v_max_err : float
-        Uncertainty in the best-fit maximum velocity [km/s]
-
-    R90 : float
-        90% light radius [arcsec]
+    r : float
+        Radius at which to calculate the total mass [arcsec]
 
     z : float
         Galaxy redshift
+
+    fit_function : string
+        Represents which fit function to use to calculate the velocity at the 
+        given r.
+
+    gal_ID : string
+        <plate>-<IFU>
 
 
     Returns:
     ========
 
-    M90 : float
-        Logarithm of the total mass corresponding to the 90% light radius 
+    M, Merr : float
+        Logarithm of the total mass and error corresponding to the mass within r
         [log(Msun)]
     '''
 
 
     ############################################################################
-    # Calculate masses
+    # Convert r from arcsec to kpc
     #---------------------------------------------------------------------------
-    M90, M90_err = mass_newton(v_max, v_max_err, R90, z)
+    dist_to_galaxy_Mpc = c*z/H_0
+    dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+
+    r_kpc = dist_to_galaxy_kpc*np.tan(r*(1./60)*(1./60)*(np.pi/180))
     ############################################################################
 
-    return {'M90':np.log10(M90), 'M90_err':np.log10(M90_err)}
+
+    ############################################################################
+    # Calculate velocity at given radius
+    #---------------------------------------------------------------------------
+    hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+
+    N_samples = 10000
+
+    v_samples = np.zeros(N_samples, dtype=float)
+
+    if fit_function == 'BB':
+        v = rot_fit_BB(r_kpc, params)
+
+        try:
+
+            param_samples = np.random.multivariate_normal(mean=params, 
+                                                          cov=hess[-3:,-3:], 
+                                                          size=N_samples)
+
+            for i in range(N_samples):
+                
+                if np.all(param_samples[i] > 0):
+                    v_samples[i] = rot_fit_BB(r_kpc, param_smaples[i])
+
+            v_err = np.std(v_samples[np.isfinite(v_samples)])
+
+        except np.linalg.LinAlgError:
+            v_err = np.nan
+    
+    elif fit_function == 'tanh':
+        v = rot_fit_tanh(r_kpc, params)
+
+        param_samples = np.random.multivariate_normal(mean=params, 
+                                                      cov=hess[-2:,-2:], 
+                                                      size=N_samples)
+
+        for i in range(N_samples):
+
+            if np.all(param_samples[i] > 0):
+                v_samples[i] = rot_fit_tanh(r_kpc, param_samples[i])
+
+        v_err = np.std(v_samples[np.isfinite(v_samples)])
+    
+    else:
+        print('Fit function not known.  Please update estimate_total_mass function.')
+    ############################################################################
+
+
+    ############################################################################
+    # Calculate masses
+    #---------------------------------------------------------------------------
+    M, M_err = mass_newton(v, v_err, r_kpc)
+    ############################################################################
+
+    return {'M':np.log10(M), 'M_err':np.log10(M_err)}
 
 
 

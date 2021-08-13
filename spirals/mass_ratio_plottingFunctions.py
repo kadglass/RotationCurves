@@ -18,10 +18,14 @@ label_dict = {'Mdark_Mstar_ratio':'$M_{DM}/M_*$',
               'Mstar':'$M_*$ [$M_\odot$]',
               'rabsmag': '$M_r$',
               'Z12logOH': '12 + log(O/H)',
-              'Rmax': '$R_{max}$ [kpc]',
-              'avg_r_turn': '$R_{turn}$ [kpc]',
+              'Rmax': '$R_{max}$ [kpc/h]',
+              'avg_r_turn': '$R_{turn}$ [kpc/h]',
               'Rmax_Rturn_ratio': '$R_{max}$/$R_{turn}$', 
-              'M90_Mdisk_ratio': '$M_{90}/M_{90, disk}$'}
+              'M90_Mdisk_ratio': '$M_{90}/M_{90, disk}$',
+              'M90_map': 'log($M_{90}/M_\odot$)', 
+              'M90_disk_map': 'log($M_{90,disk}/M_\odot$)',
+              'Rturn_map': '$R_{turn}$ [kpc/h]', 
+              'Rdisk_map': '$R_{disk}$ [kpc/h]'}
 ###############################################################################
 
 

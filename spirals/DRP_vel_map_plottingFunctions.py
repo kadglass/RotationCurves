@@ -142,7 +142,8 @@ def plot_rot_curve(mHa_vel,
         Masked H-alpha velocity array
 
     mHa_vel_ivar : numpy ndarray of shape (n,n)
-        Masked array of the inverse variance of the H-alpha velocity measurements
+        Masked array of the inverse variance of the H-alpha velocity 
+        measurements
 
     best_fit_values : dictionary
         Best-fit values for the velocity map
@@ -238,7 +239,8 @@ def plot_rot_curve(mHa_vel,
                            best_fit_values['r_turn'], 
                            best_fit_values['alpha']])
     elif fit_function == 'tanh':
-        v = rot_fit_tanh(r, [best_fit_values['v_max'], best_fit_values['r_turn']])
+        v = rot_fit_tanh(r, [best_fit_values['v_max'], 
+                             best_fit_values['r_turn']])
     else:
         print('Fit function not known.  Please update plot_rot_curve function.')
     ############################################################################

@@ -96,7 +96,7 @@ def extract_data( DRP_FOLDER, gal_ID):
     
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
-        return None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None, None
 
     cube = fits.open( file_name)
 

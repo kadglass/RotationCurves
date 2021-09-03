@@ -53,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['9029-6104']
+FILE_IDS = ['9037-12703']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -238,7 +238,8 @@ for gal_ID in FILE_IDS:
                     mass_outputs = estimate_total_mass(param_outputs['v_max'], 
                                                        param_outputs['v_max_err'], 
                                                        R90, 
-                                                       z)
+                                                       z, 
+                                                       gal_ID)
                     ################################################################
 
 

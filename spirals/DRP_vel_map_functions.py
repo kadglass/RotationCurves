@@ -40,6 +40,98 @@ fit_options = {'BB': rot_fit_BB,
 
 
 
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def build_map_mask(gal_ID, 
+                   fit_flag, 
+                   mHa_vel, 
+                   mHa_flux, 
+                   mHa_flux_ivar, 
+                   mHa_sigma):
+    '''
+    Build mask for galaxy based on the fit method used.
+
+
+    Parameters
+    ==========
+
+    gal_ID : string
+        <MaNGA plate> - <MaNGA IFU>
+
+    fit_flag : float
+        Identifies the fit method used to model the velocity map.
+        - 1 : original (only Ha_vel_mask)
+        - 2 : residual (only Ha_vel_mask)
+        - 3 : continuous (Ha_vel_mask + spaxels which are separated from others)
+        - 4 : non-AGN (Ha_vel_mask + spaxels with high Ha velocity dispersion)
+        - 5 : S/N > 5 (Ha_vel_mask + spaxels with S/N < 5)
+
+    mHa_vel : numpy ndarray of shape (n,n)
+        masked H-alpha velocity map
+
+    mHa_flux : numpy ndarray of shape (n,n)
+        H-alpha flux map
+
+    mHa_flux_ivar : numpy ndarray of shape (n,n)
+        masked inverse variance map of the H-alpha flux
+
+    mHa_sigma : numpy ndarray of shape (n,n)
+        masked H-alpha velocity width map
+
+
+    Returns:
+    ========
+
+    mask : numpy boolean ndarray of shape (n,n)
+        Mask map where true values are to be masked.
+    '''
+
+
+    ############################################################################
+    # By default, the mask will just be the Ha_vel_mask
+    #---------------------------------------------------------------------------
+    bitmask = mHa_vel.mask
+    ############################################################################
+
+
+    if fit_flag == -3:
+        ########################################################################
+        # Mask spaxels that have velocities which are not continuous
+        #-----------------------------------------------------------------------
+        _,_, bitmask = find_vel_bounds(mHa_vel, gal_ID)
+        ########################################################################
+
+    elif fit_flag == -4:
+        ########################################################################
+        # Mask spaxels that have large velocity widths
+        #-----------------------------------------------------------------------
+        _, bitmask = find_sigma_bounds(mHa_sigma, gal_ID)
+        ########################################################################
+
+    elif fit_flag > 0:
+        ########################################################################
+        # Mask spaxels that have S/N smaller than fit_flag
+        #-----------------------------------------------------------------------
+        SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
+
+        bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < fit_flag)
+        ########################################################################
+
+
+    ############################################################################
+    # Convert mask into boolean array
+    #---------------------------------------------------------------------------
+    mask = bitmask > 0
+    ############################################################################
+
+    return mask
+
+
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -73,7 +165,7 @@ def find_sigma_bounds(mHa_sigma, gal_ID):
 
     bin_width = 10 # Bin the line widths in bins of 10 km/s
 
-    if gal_ID in ['8601-1902']:
+    if gal_ID in ['8601-1902', '9037-12703']:
         bin_width = 20
     elif gal_ID in ['8341-12704']:
         bin_width = 5
@@ -1252,21 +1344,25 @@ def find_vel_map(gal_ID,
         '''
 
         modified_mask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < SN_cut)
-
-        modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
-        modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
-
-        modified_mHa_vel_flat = modified_mHa_vel.compressed()
-        modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
         #-----------------------------------------------------------------------
 
+        if np.sum(modified_mask == 0) == np.sum(mHa_vel.mask == 0):
+            result_SN = result_all
+        else:
 
-        result_SN = minimize(calculate_chi2_flat, 
-                             np.concatenate([pos_guesses, vel_guesses]), 
-                             method='Powell', 
-                             args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
-                             bounds=np.concatenate([pos_bounds, vel_bounds]),
-                             options={'disp':True})
+            modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
+            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
+
+            modified_mHa_vel_flat = modified_mHa_vel.compressed()
+            modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+
+
+            result_SN = minimize(calculate_chi2_flat, 
+                                 np.concatenate([pos_guesses, vel_guesses]), 
+                                 method='Powell', 
+                                 args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                                 bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                 options={'disp':True})
         ########################################################################
         
 

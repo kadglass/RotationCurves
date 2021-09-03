@@ -10,6 +10,7 @@ START = time()
 import os
 
 import numpy as np
+import numpy.ma as ma
 
 from astropy.table import Table
 
@@ -17,11 +18,24 @@ from file_io import add_disk_columns, fillin_output_table
 
 from DRP_rotation_curve import extract_data, extract_Pipe3d_data
 
+from DRP_vel_map_functions import build_map_mask
+
 from disk_mass import calc_mass_curve, fit_mass_curve
 
+import matplotlib.pyplot as plt
+
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/')
+sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
 from rotation_curve_functions import disk_mass
+
+
+
+################################################################################
+# Constants
+#-------------------------------------------------------------------------------
+H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458 # Speed of light in units of km/s
+################################################################################
 
 
 
@@ -41,9 +55,9 @@ IMAGE_FORMAT = 'eps'
 # If RUN_ALL_GALAXIES is set to True, then the code will ignore what is in 
 # FILE_IDS
 #-------------------------------------------------------------------------------
-FILE_IDS = ['7443-12705', '9678-12701']
+FILE_IDS = ['9037-12703']
 
-RUN_ALL_GALAXIES = True
+RUN_ALL_GALAXIES = False
 ################################################################################
 
 
@@ -84,7 +98,7 @@ MASS_CURVE_MASTER_FOLDER = LOCAL_PATH + 'Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85_v5.fits'
+GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85_v6.fits'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 ################################################################################
 
@@ -151,10 +165,10 @@ for gal_ID in FILE_IDS:
     ############################################################################
     # Extract the necessary data from the .fits files.
     #---------------------------------------------------------------------------
-    _,_, map_mask, r_band,_,_ = extract_data(VEL_MAP_FOLDER, gal_ID)
+    Ha_vel, _, Ha_vel_mask, r_band,_, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, _, Ha_sigma_mask = extract_data(VEL_MAP_FOLDER, gal_ID)
     sMass_density = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
 
-    if map_mask is None or r_band is None or sMass_density is None:
+    if Ha_vel_mask is None or r_band is None or sMass_density is None:
         print('\n')
         continue
 
@@ -183,6 +197,24 @@ for gal_ID in FILE_IDS:
         center_y = galaxies_table['y0'][i_gal]
         center_y_err = galaxies_table['y0_err'][i_gal]
 
+        fit_flag = galaxies_table['fit_flag'][i_gal]
+        print(fit_flag)
+
+        ########################################################################
+        # Create mask based on fit method
+        #-----------------------------------------------------------------------
+        map_mask = build_map_mask(gal_ID, 
+                                  fit_flag, 
+                                  ma.array(Ha_vel, mask=Ha_vel_mask), 
+                                  ma.array(Ha_flux, mask=Ha_flux_mask), 
+                                  ma.array(Ha_flux_ivar, mask=Ha_flux_mask), 
+                                  ma.array(Ha_sigma, mask=Ha_sigma_mask))
+
+        plt.figure()
+        plt.imshow(map_mask)
+        plt.show()
+        ########################################################################
+
     else:
 
         axis_ratio = DRP_table['nsa_elpetro_ba'][i_DRP]
@@ -197,9 +229,16 @@ for gal_ID in FILE_IDS:
         center_y = None
         center_y_err = None
 
+        ########################################################################
+        # Galaxy did not return a successful fit, so we are just going to use 
+        # the Ha_vel map mask
+        #-----------------------------------------------------------------------
+        map_mask = Ha_vel_mask
+        ########################################################################
+
     z = galaxies_table['nsa_z'][i_gal]
 
-    R90 = galaxies_table['nsa_elpetro_th90'][i_gal]
+    R90 = galaxies_table['nsa_elpetro_th90'][i_gal] # arcsec
     ########################################################################
     
     
@@ -249,7 +288,17 @@ for gal_ID in FILE_IDS:
         # Estimate the total disk mass within the galaxy
         #-------------------------------------------------------------------
         if param_outputs is not None:
-            M90_disk, M90_disk_err = disk_mass(param_outputs, R90)
+
+            ####################################################################
+            # Convert R90 from arcsec to kpc
+            #-------------------------------------------------------------------
+            dist_to_galaxy_Mpc = c*z/H_0
+            dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+
+            R90_kpc = dist_to_galaxy_kpc*np.tan(R90*(1./60)*(1./60)*(np.pi/180))
+            ####################################################################
+
+            M90_disk, M90_disk_err = disk_mass(param_outputs, R90_kpc)
         ####################################################################
 
 

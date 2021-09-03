@@ -15,7 +15,7 @@ from Pipe3D_rotation_curve_plottingFunctions import plot_sMass_image
 from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/')
+sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
 from rotation_curve_functions import disk_vel
 
 

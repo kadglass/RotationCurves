@@ -7,7 +7,7 @@ import gc
 import matplotlib.pyplot as plt
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve')
+sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
 from rotation_curve_functions import disk_vel
 
 
@@ -102,7 +102,7 @@ def plot_fitted_disk_rot_curve(gal_ID,
     legend_ax.axis('off')
 
     textstr = '\n'.join((
-                         r'$\chi^{2}$/ndf: $%.3f$' % (chi2, ), 
+                         r'$\chi^{2}_{\nu}$: $%.3f$' % (chi2, ), 
                          r'$\Sigma_{d}$: $%.1f$ $M_{\odot}$/pc$^2$' % (fit_parameters['Sigma_disk'], ), 
                          r'$R_{d}$: $%.3f$ kpc' % (fit_parameters['R_disk'], )))
 

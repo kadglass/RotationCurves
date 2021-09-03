@@ -7,7 +7,7 @@ import astropy.units as u
 from DRP_rotation_curve_functions import calc_stellar_mass, calc_velocity
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve')
+sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
 from rotation_curve_functions import disk_vel
 
 

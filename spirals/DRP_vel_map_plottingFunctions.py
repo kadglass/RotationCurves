@@ -712,7 +712,7 @@ def plot_diagnostic_panel(r_band,
 
     plot_Ha_vel(mHa_vel, gal_ID, ax=mHa_vel_panel)
 
-    plot_Ha_vel(best_fit_map, gal_ID, ax=Ha_vel_model_panel)
+    plot_Ha_vel(best_fit_map, gal_ID, model=True, ax=Ha_vel_model_panel)
 
     panel_fig.tight_layout()
 

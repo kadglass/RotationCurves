@@ -17,8 +17,8 @@ from DRP_rotation_curve import extract_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
-#sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+#sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
+sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
@@ -212,7 +212,8 @@ for gal_ID in FILE_IDS:
                                                                       r_band_ivar, 
                                                                       axis_ratio, 
                                                                       phi_EofN_deg, 
-                                                                      z, gal_ID, 
+                                                                      z, 
+                                                                      gal_ID, 
                                                                       vel_function, 
                                                                       #IMAGE_DIR=IMAGE_DIR, 
                                                                       #IMAGE_FORMAT=IMAGE_FORMAT, 
@@ -235,10 +236,13 @@ for gal_ID in FILE_IDS:
                     ################################################################
                     # Estimate the total mass within the galaxy
                     #---------------------------------------------------------------
-                    mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                                       param_outputs['v_max_err'], 
+                    mass_outputs = estimate_total_mass([param_outputs['v_max'], 
+                                                        param_outputs['r_turn'], 
+                                                        param_outputs['alpha']], 
                                                        R90, 
-                                                       z)
+                                                       z, 
+                                                       vel_function, 
+                                                       gal_ID)
                     ################################################################
 
 

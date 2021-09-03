@@ -1157,7 +1157,7 @@ def find_vel_map(gal_ID,
         #
         # Fits all 8 parameters at once
         #-----------------------------------------------------------------------
-        print('Fitting entire map')
+        print('Fitting entire map', flush=True)
 
         result_all = minimize(calculate_chi2_flat, 
                               np.concatenate([pos_guesses, vel_guesses]), 
@@ -1171,7 +1171,7 @@ def find_vel_map(gal_ID,
         ########################################################################
         # Fit velocity map using only continuous velocity field
         #-----------------------------------------------------------------------
-        print('Fitting continuous map')
+        print('Fitting continuous map', flush=True)
         #-----------------------------------------------------------------------
         # Remove spaxels that are not part of the continuous velocity field
         #-----------------------------------------------------------------------
@@ -1216,7 +1216,7 @@ def find_vel_map(gal_ID,
         ########################################################################
         # Fit velocity field using the residual
         #-----------------------------------------------------------------------
-        print('Fitting using residual')
+        print('Fitting using residual', flush=True)
         result_residual = minimize(calculate_residual_flat, 
                                    np.concatenate([pos_guesses, vel_guesses]), 
                                    method='Powell', 
@@ -1237,7 +1237,7 @@ def find_vel_map(gal_ID,
         ########################################################################
         # Fit velocity field using only spaxels with S/N > 5
         #-----------------------------------------------------------------------
-        print('Fitting S/N > 5')
+        print('Fitting S/N > 5', flush=True)
         #-----------------------------------------------------------------------
         # Remove spaxels with S/N < 5% of the maximum S/N in the data map (up to 
         # a S/N = 1)
@@ -1273,7 +1273,7 @@ def find_vel_map(gal_ID,
         ########################################################################
         # Fit velocity map using only spaxels with small line widths
         #-----------------------------------------------------------------------
-        print('Fitting non-AGN map')
+        print('Fitting non-AGN map', flush=True)
         #-----------------------------------------------------------------------
         # Remove spaxels with large line widths
         #-----------------------------------------------------------------------
@@ -1334,7 +1334,7 @@ def find_vel_map(gal_ID,
         print(fit_chi2)
 
         if np.sum(np.isfinite(fit_chi2)) == 0:
-            print('All fit methods have bad alpha values.')
+            print('All fit methods have bad alpha values.', flush=True)
             min_pos = 0
         else:
             min_pos = np.argmin(fit_chi2)
@@ -1382,7 +1382,7 @@ def find_vel_map(gal_ID,
             np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
             #print('Hessian:', hess)
             try:
-                hess_inv = np.linalg.inv(hess)
+                hess_inv = 2*np.linalg.inv(hess)
                 fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
             except np.linalg.LinAlgError:
                 fit_params_err = np.nan*np.ones(len(result.x))

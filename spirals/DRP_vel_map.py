@@ -384,7 +384,7 @@ def fit_vel_map(Ha_vel,
     # If there is unmasked data in the data array, fit the velocity map.
     #---------------------------------------------------------------------------
     else:
-        print(gal_ID, 'fitting velocity map')
+        print(gal_ID, 'fitting velocity map', flush=True)
         param_outputs, best_fit_map, scale, fit_flag = find_vel_map(gal_ID, 
                                                                     mHa_vel, 
                                                                     mHa_vel_ivar, 
@@ -412,6 +412,7 @@ def fit_vel_map(Ha_vel,
             #-------------------------------------------------------------------
             plot_Ha_vel(mbest_fit_map, 
                         gal_ID, 
+                        model=True,
                         IMAGE_DIR=IMAGE_DIR, 
                         FOLDER_NAME='/fitted_velocity_fields/', 
                         FILENAME_SUFFIX='_fitted_vel_field.', 
@@ -615,13 +616,13 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
         try:
 
             param_samples = np.random.multivariate_normal(mean=params, 
-                                                          cov=hess[-3:,-3:], 
+                                                          cov=0.5*hess[-3:,-3:], 
                                                           size=N_samples)
 
             for i in range(N_samples):
                 
                 if np.all(param_samples[i] > 0):
-                    v_samples[i] = rot_fit_BB(r_kpc, param_smaples[i])
+                    v_samples[i] = rot_fit_BB(r_kpc, param_samples[i])
 
             v_err = np.std(v_samples[np.isfinite(v_samples)])
 
@@ -632,7 +633,7 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
         v = rot_fit_tanh(r_kpc, params)
 
         param_samples = np.random.multivariate_normal(mean=params, 
-                                                      cov=hess[-2:,-2:], 
+                                                      cov=0.5*hess[-2:,-2:], 
                                                       size=N_samples)
 
         for i in range(N_samples):

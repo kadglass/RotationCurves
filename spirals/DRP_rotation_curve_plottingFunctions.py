@@ -95,6 +95,7 @@ def plot_rband_image(r_band, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps', ax=None
 
 def plot_Ha_vel(Ha_vel, 
                 gal_ID, 
+                model=False,
                 IMAGE_DIR=None, 
                 FOLDER_NAME=None, 
                 IMAGE_FORMAT='eps', 
@@ -112,6 +113,11 @@ def plot_Ha_vel(Ha_vel,
 
     gal_ID : string
         [MaNGA plate] - [MaNGA IFU]
+        
+    model : boolean
+        If true, then what is being plotted is the model velocity map, and the 
+        title of the plot will reflect this.  If false (default), then the data 
+        is assumed to be plotted, and the title of the plot will reflect this.
 
     IMAGE_DIR : string
         Path of directory to store images
@@ -145,7 +151,11 @@ def plot_Ha_vel(Ha_vel,
         vmin_bound = -vmax_bound
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
 
-    ax.set_title( gal_ID + r' H$\alpha$ Velocity')
+    if model:
+        ax.set_title( gal_ID + r' H$\alpha$ velocity model')
+    else:
+        ax.set_title(gal_ID + r' H$\alpha$ velocity data')
+    
     Ha_vel_im = ax.imshow( Ha_vel, 
                            cmap='RdBu_r', 
                            origin='lower', 

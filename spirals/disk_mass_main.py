@@ -22,7 +22,7 @@ from DRP_vel_map_functions import build_map_mask
 
 from disk_mass import calc_mass_curve, fit_mass_curve
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import sys
 sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
@@ -57,7 +57,7 @@ IMAGE_FORMAT = 'eps'
 #-------------------------------------------------------------------------------
 FILE_IDS = ['9037-12703']
 
-RUN_ALL_GALAXIES = False
+RUN_ALL_GALAXIES = True
 ################################################################################
 
 
@@ -198,7 +198,6 @@ for gal_ID in FILE_IDS:
         center_y_err = galaxies_table['y0_err'][i_gal]
 
         fit_flag = galaxies_table['fit_flag'][i_gal]
-        print(fit_flag)
 
         ########################################################################
         # Create mask based on fit method
@@ -209,10 +208,6 @@ for gal_ID in FILE_IDS:
                                   ma.array(Ha_flux, mask=Ha_flux_mask), 
                                   ma.array(Ha_flux_ivar, mask=Ha_flux_mask), 
                                   ma.array(Ha_sigma, mask=Ha_sigma_mask))
-
-        plt.figure()
-        plt.imshow(map_mask)
-        plt.show()
         ########################################################################
 
     else:

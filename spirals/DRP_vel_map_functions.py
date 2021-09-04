@@ -1425,21 +1425,22 @@ def find_vel_map(gal_ID,
 
         alpha_max = alpha_high - 5
         
-        if result_all.x[7] < alpha_max:
+        if (result_all.x[7] < alpha_max) and (result_all.fun > 0):
             fit_chi2[0] = result_all.fun
-        if result_continuous.x[7] < alpha_max:
+        if (result_continuous.x[7] < alpha_max) and (result_continuous.fun > 0):
             fit_chi2[1] = result_continuous.fun
-        if result_SN.x[7] < alpha_max:
+        if (result_SN.x[7] < alpha_max) and (result_SN.fun > 0):
             fit_chi2[2] = result_SN.fun
-        if result_residual.x[7] < alpha_max:
+        if (result_residual.x[7] < alpha_max) and (result_residual.fun > 0):
             fit_chi2[3] = result_residual.fun
-        if result_nonAGN.x[7] < alpha_max:
+        if (result_nonAGN.x[7] < alpha_max) and (result_nonAGN.fun > 0):
             fit_chi2[4] = result_nonAGN.fun
 
         print(fit_chi2)
 
         if np.sum(np.isfinite(fit_chi2)) == 0:
-            print('All fit methods have bad alpha values.', flush=True)
+            print('All fit methods have bad alpha values and/or negative chi2.', 
+                  flush=True)
             min_pos = 0
         else:
             min_pos = np.argmin(fit_chi2)

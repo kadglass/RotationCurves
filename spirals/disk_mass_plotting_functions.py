@@ -93,7 +93,7 @@ def plot_fitted_disk_rot_curve(gal_ID,
     ax.xaxis.set_ticks_position('both')
 
     ax.set_title( gal_ID + ' Fitted Disk Rotation Curve')
-    ax.set_xlabel('$r_{depro}$ [kpc/h]')
+    ax.set_xlabel('$r$ [kpc/h]')
     ax.set_ylabel('$v_{*}$ [km/s]')
 
     legend_ax.get_xaxis().set_visible(False)

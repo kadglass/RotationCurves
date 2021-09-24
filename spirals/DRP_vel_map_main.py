@@ -53,7 +53,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8724-12701']
+FILE_IDS = ['8335-6101']
 
 RUN_ALL_GALAXIES = False
 ################################################################################

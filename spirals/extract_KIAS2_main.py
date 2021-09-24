@@ -15,7 +15,7 @@ from extract_KIAS2_functions import match_by_index
 ###############################################################################
 # Data columns to pull from the KIAS-VAGC and add to the other data file
 #------------------------------------------------------------------------------
-columns_to_add = ['u_r']
+columns_to_add = ['SFR', 'sSFR']
 #column_units = ['']
 ###############################################################################
 
@@ -28,7 +28,8 @@ KIAS_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/kias1033_5_MPAJHU
 
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_10_smooth2p27.txt'
 #MASTER_FILE_NAME = '/Users/kellydouglass/Desktop/Pipe3D-master_file_vflag_10_smooth2p27_N2O2_noWords.txt'
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+#MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+MASTER_FILE_NAME = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_v6.txt'
 
 master_file_format = 'ascii.commented_header'
 ###############################################################################

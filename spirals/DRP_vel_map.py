@@ -52,6 +52,8 @@ from DRP_vel_map_plottingFunctions import plot_rot_curve, \
 #-------------------------------------------------------------------------------
 H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458 # Speed of light in units of km/s
+
+q0 = 0.2 # Nominal disk thickness
 ################################################################################
 
 
@@ -283,7 +285,13 @@ def fit_vel_map(Ha_vel,
     # Set the initial guess for the inclination angle equal that given by the 
     # measured axis ratio.
     #---------------------------------------------------------------------------
-    inclination_angle_guess = np.arccos(axis_ratio)
+    cosi2 = (axis_ratio**2 - q0**2)/(1 - q0**2)
+
+    if cosi2 < 0:
+        cosi2 = 0
+
+    inclination_angle_guess = np.arccos(np.sqrt(cosi2))
+    #inclination_angle_guess = np.arccos(axis_ratio)
     #print(axis_ratio, inclination_angle_guess)
     ############################################################################
 

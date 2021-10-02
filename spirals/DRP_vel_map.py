@@ -28,7 +28,10 @@ from astropy.table import Table, Column
 
 from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
 
-from DRP_vel_map_functions import find_vel_map, mass_newton, find_phi
+from DRP_vel_map_functions import find_vel_map, \
+                                  mass_newton, \
+                                  find_phi, \
+                                  build_map_mask
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
                                                  plot_Ha_vel
@@ -49,6 +52,8 @@ from DRP_vel_map_plottingFunctions import plot_rot_curve, \
 #-------------------------------------------------------------------------------
 H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458 # Speed of light in units of km/s
+
+q0 = 0.2 # Nominal disk thickness
 ################################################################################
 
 
@@ -253,7 +258,7 @@ def fit_vel_map(Ha_vel,
     elif gal_ID == '8447-9102':
         center_guess = (32,32)
     elif gal_ID in ['8940-12701', '8941-12703', '7958-12703', '8950-12705', 
-                    '9488-12702', '8333-12702']:
+                    '9488-12702', '8333-12702', '9181-12701']:
         center_guess = (37,37)
 
     #print(center_guess)
@@ -280,7 +285,13 @@ def fit_vel_map(Ha_vel,
     # Set the initial guess for the inclination angle equal that given by the 
     # measured axis ratio.
     #---------------------------------------------------------------------------
-    inclination_angle_guess = np.arccos(axis_ratio)
+    cosi2 = (axis_ratio**2 - q0**2)/(1 - q0**2)
+
+    if cosi2 < 0:
+        cosi2 = 0
+
+    inclination_angle_guess = np.arccos(np.sqrt(cosi2))
+    #inclination_angle_guess = np.arccos(axis_ratio)
     #print(axis_ratio, inclination_angle_guess)
     ############################################################################
 
@@ -295,7 +306,7 @@ def fit_vel_map(Ha_vel,
     if gal_ID in ['8134-6102']:
         phi_guess += 0.25*np.pi
 
-    elif gal_ID in ['8932-12704', '8252-6103']:
+    elif gal_ID in ['8932-12704', '8252-6103', '9500-6102']:
         phi_guess -= 0.25*np.pi
 
     elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102', 
@@ -313,14 +324,14 @@ def fit_vel_map(Ha_vel,
     elif gal_ID in ['9029-12705', '8137-3701', '8618-3704', '8323-12701', 
                     '8942-3703', '8333-12701', '8615-6103', '9486-3704', 
                     '8937-1902', '9095-3704', '8466-1902', '9508-3702', 
-                    '8727-3703', '8341-12704', '8655-6103']:
+                    '8727-3703', '8341-12704', '8655-6103', '8335-6101']:
         phi_guess += np.pi
 
     elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703', 
                     '8624-1902', '8948-12702', '8443-6102', '8259-1901']:
         phi_guess += 1.5*np.pi
 
-    elif gal_ID in ['8241-12705', '8326-6102']:
+    elif gal_ID in ['8241-12705', '8326-6102', '9505-6103', '8256-6104']:
         phi_guess += 1.75*np.pi
 
     elif gal_ID in ['8655-1902', '7960-3701', '9864-9101', '8588-3703']:
@@ -403,7 +414,14 @@ def fit_vel_map(Ha_vel,
             ####################################################################
             # Mask best-fit map
             #-------------------------------------------------------------------
-            mbest_fit_map = ma.array(best_fit_map, mask=mHa_vel.mask)
+            best_mask = build_map_mask(gal_ID, 
+                                       fit_flag, 
+                                       mHa_vel, 
+                                       mHa_flux, 
+                                       mHa_flux_ivar, 
+                                       mHa_sigma)
+
+            mbest_fit_map = ma.array(best_fit_map, mask=best_mask)
             ####################################################################
 
 
@@ -474,9 +492,9 @@ def fit_vel_map(Ha_vel,
 
 
             ####################################################################
-            # Plot H-alpha velocity field with redshift subtracted.
+            # Plot H-alpha velocity field with the systemic velocity subtracted.
             #-------------------------------------------------------------------
-            plot_Ha_vel(mHa_vel - param_outputs['v_sys'], 
+            plot_Ha_vel(ma.array(mHa_vel, mask=best_mask) - param_outputs['v_sys'], 
                         gal_ID, 
                         IMAGE_DIR=IMAGE_DIR, 
                         FOLDER_NAME='/masked_Ha_vel/', 
@@ -491,14 +509,16 @@ def fit_vel_map(Ha_vel,
             ####################################################################
             # Plot 1D rotation curve with best-fit
             #-------------------------------------------------------------------
-            plot_rot_curve(mHa_vel, 
-                           mHa_vel_ivar,
-                           param_outputs, 
-                           scale,
-                           gal_ID, 
-                           fit_function,
-                           IMAGE_DIR=IMAGE_DIR, 
-                           IMAGE_FORMAT=IMAGE_FORMAT)
+            Rmax = plot_rot_curve(ma.array(mHa_vel, mask=best_mask), 
+                                  ma.array(mHa_vel_ivar, mask=best_mask),
+                                  param_outputs, 
+                                  scale,
+                                  gal_ID, 
+                                  fit_function,
+                                  IMAGE_DIR=IMAGE_DIR, 
+                                  IMAGE_FORMAT=IMAGE_FORMAT)
+
+            param_outputs['Rmax'] = Rmax
 
             if IMAGE_DIR is None:
                 plt.show()
@@ -528,8 +548,8 @@ def fit_vel_map(Ha_vel,
             #   - the best-fit rotation curve along with the mass rotation curves
             #-------------------------------------------------------------------
             plot_diagnostic_panel(r_band, 
-                                  mHa_vel, 
-                                  mHa_vel_ivar, 
+                                  ma.array(mHa_vel, mask=best_mask), 
+                                  ma.array(mHa_vel_ivar, mask=best_mask), 
                                   mbest_fit_map,
                                   param_outputs,
                                   scale, 

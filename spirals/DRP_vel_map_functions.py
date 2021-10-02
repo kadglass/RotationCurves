@@ -23,6 +23,8 @@ H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458 # Speed of light in units of km/s
 G = 4.30091E-3 # Gravitation constant in units of (km/s)^2 pc/Msun
 
+q0 = 0.2
+
 MANGA_FIBER_DIAMETER = 2*(1/60)*(1/60)*(np.pi/180) # angular fiber diameter (2") in radians
 MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
 ################################################################################
@@ -1498,10 +1500,15 @@ def find_vel_map(gal_ID,
             #-------------------------------------------------------------------
             # Unpack results
             #-------------------------------------------------------------------
+            ba = np.sqrt(np.cos(result.x[1])**2*(1 - q0**2) + q0**2)
+            ba_err = (fit_params_err[1]/np.sqrt(ba))*(1 - q0**2)*np.sin(result.x[1])*np.cos(result.x[1])
+
             best_fit_values = {'v_sys': result.x[0],
                                'v_sys_err': fit_params_err[0],
-                               'ba': np.cos(result.x[1]),
-                               'ba_err': np.cos(fit_params_err[1]),
+                               'ba': ba, 
+                               'ba_err': ba_err, 
+                               #'ba': np.cos(result.x[1]),
+                               #'ba_err': np.cos(fit_params_err[1]),
                                'x0': result.x[2],
                                'x0_err': fit_params_err[2],
                                'y0': result.x[3],

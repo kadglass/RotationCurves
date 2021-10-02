@@ -235,8 +235,8 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
         popt, pconv = curve_fit(disk_vel, 
                                 data_table['radius'], 
                                 data_table['star_vel'], 
-                                p0=param_guesses)#,
-                                #sigma=data_table['star_vel_err'])
+                                p0=param_guesses,
+                                sigma=data_table['star_vel_err'])
 
         #-----------------------------------------------------------------------
         # Determine uncertainties in the fitted parameters

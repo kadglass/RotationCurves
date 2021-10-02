@@ -31,7 +31,7 @@ mpl.rcParams['ytick.color'] = COLOR
 #-------------------------------------------------------------------------------
 data_directory = ''
 
-data_filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_noWords_v5.txt'
+data_filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_noWords_v6.txt'
 
 data = Table.read(data_directory + data_filename, 
                   format='ascii.commented_header')
@@ -64,13 +64,28 @@ data['V90_kms'] = rot_fit_BB(data['R90_kpc'],
 
 
 ################################################################################
+# Calculate the mass ratio
+#-------------------------------------------------------------------------------
+data['M90_Mdisk_ratio'] = 10**(data['M90_map'] - data['M90_disk_map'])
+################################################################################
+
+
+
+
+################################################################################
 # Sample criteria
 #-------------------------------------------------------------------------------
 bad_boolean = np.logical_or.reduce([data['M90_map'] == -99, 
                                     data['M90_disk_map'] == -99, 
                                     data['alpha_map'] > 99, 
                                     data['ba_map'] > 0.998, 
-                                    data['V90_kms']/data['Vmax_map'] < 0.9])
+                                    data['V90_kms']/data['Vmax_map'] < 0.9, 
+                                    (data['Tidal'] & (data['DL_merge'] > 0.97)), 
+                                    data['map_frac_unmasked'] < 0.05, 
+                                    (data['map_frac_unmasked'] > 0.13) & (data['DRP_map_smoothness'] > 1.96), 
+                                    (data['map_frac_unmasked'] > 0.07) & (data['DRP_map_smoothness'] > 2.9), 
+                                    (data['map_frac_unmasked'] > -0.0638*data['DRP_map_smoothness'] + 0.255) & (data['DRP_map_smoothness'] > 1.96), 
+                                    data['M90_Mdisk_ratio'] > 1050])
 
 sample = data[~bad_boolean]
 ################################################################################
@@ -106,36 +121,36 @@ tSize = 14 # text size
 
 fig = plt.figure()
 
-plt.errorbar(Rdata['rabsmag'], 
-             Rdata['Vmax_map'], 
+plt.errorbar(np.log10(Rdata['Vmax_map']), 
+             Rdata['rabsmag'], 
              #yerr=Rdata['Vmax_err_map'], 
              fmt='r.', 
              fillstyle='none', 
              label='Red sequence')
 
-plt.errorbar(Bdata['rabsmag'], 
-             Bdata['Vmax_map'], 
+plt.errorbar(np.log10(Bdata['Vmax_map']), 
+             Bdata['rabsmag'], 
              #yerr=Bdata['Vmax_err_map'], 
              fmt='b+', 
              label='Blue cloud')
 
-plt.errorbar(GVdata['rabsmag'], 
-             GVdata['Vmax_map'], 
+plt.errorbar(np.log10(GVdata['Vmax_map']), 
+             GVdata['rabsmag'], 
              #yerr=GVdata['Vmax_err_map'], 
              fmt='g*', 
              label='Green valley')
 
 #plt.plot(sample['rabsmag'], sample['Vmax_map'], '.')
 
-plt.xlim((-17,-23))
-plt.ylim((30,7000))
+plt.ylim((-17,-23))
+plt.xlim((1.5,3.75))
 
-plt.yscale('log')
+#plt.xscale('log')
 
-plt.xlabel('$M_r$', fontsize=tSize)
-plt.ylabel('$V_{max}$ [km/s]', fontsize=tSize)
+plt.ylabel('$M_r$', fontsize=tSize)
+plt.xlabel('log($V_{max}$ [km/s])', fontsize=tSize)
 
-plt.legend(fontsize=tSize)
+plt.legend(fontsize=tSize-2)
 
 fig.patch.set_facecolor('none')
 
@@ -146,10 +161,10 @@ ax.tick_params(labelsize=tSize)#, length=10., width=3.)
 plt.tight_layout()
 
 #plt.show()
-plt.savefig(data_directory + 'Images/Tully-Fisher_CMD_V90_v5.eps', 
+plt.savefig(data_directory + 'Images/Tully-Fisher_CMD_v6.eps', 
             format='eps', 
             #transparent=True,
-            dpi=300)
+            dpi=120)
 ################################################################################
 
 

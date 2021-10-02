@@ -11,9 +11,10 @@ import numpy as np
 #-------------------------------------------------------------------------------
 #master_filename = '/Users/kellydouglass/Desktop/Pipe3D-master_file_vflag_10_smooth2p27_N2O2_noWords.txt'
 #master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
-master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_v3.txt'
+#master_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_v3.txt'
+master_filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_v5.txt'
 
-map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v5_diskFit.fits'
+map_fit_filename = 'DRP_vel_map_results_BB_smooth_lt_1p85_v6_diskFit.fits'
 ################################################################################
 
 
@@ -60,7 +61,8 @@ master_colnames = ['ba_map', 'ba_err_map',
                    'DRP_map_smoothness', 
                    'NSA_elpetro_th90', 
                    'chi2_map', 'chi2_disk_map', 
-                   'map_fit_flag']
+                   'map_fit_flag', 
+                   'map_frac_unmasked']
 map_fit_colnames = ['ba', 'ba_err', 
                     'phi', 'phi_err', 
                     'v_sys', 'v_sys_err', 
@@ -69,14 +71,16 @@ map_fit_colnames = ['ba', 'ba_err',
                     'v_max', 'v_max_err', 
                     'alpha', 'alpha_err', 
                     'r_turn', 'r_turn_err', 
-                    'M90', 'M90_err', 
+                    'M', 'M_err', 
+                    #'M90', 'M90_err', 
                     'Sigma_disk', 'Sigma_disk_err', 
                     'R_disk', 'R_disk_err', 
                     'M90_disk', 'M90_disk_err', 
                     'smoothness_score', 
                     'nsa_elpetro_th90', 
                     'chi2', 'chi2_disk', 
-                    'fit_flag']
+                    'fit_flag', 
+                    'frac_unmasked']
 '''
 col_units = [None, None, 
              u.deg, u.deg, 
@@ -143,7 +147,7 @@ for i in range(Ngal):
 ################################################################################
 # Save updated master table
 #-------------------------------------------------------------------------------
-master_table.write(master_filename[:-5] + '5.txt', 
+master_table.write(master_filename[:-5] + '6.txt', 
                    #master_filename[:-4] + '_mapFit.txt', 
                    format='ascii.commented_header', #'ascii.ecsv', 
                    overwrite=True)

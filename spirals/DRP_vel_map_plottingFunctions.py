@@ -287,6 +287,8 @@ def plot_rot_curve(mHa_vel,
         gc.collect()
         ########################################################################
 
+    return ma.max(ma.abs(rm_deproj))
+
 
 
 

@@ -59,7 +59,8 @@ from Pipe3D_rotation_curve_plottingFunctions import plot_vband_image, \
 ###############################################################################
 
 def extract_data( file_name):
-    """Open the MaNGA .fits file and extract data.
+    """
+    Open the MaNGA .fits file and extract data.
 
 
     PARAMETERS
@@ -101,7 +102,6 @@ def extract_data( file_name):
     gal_dec : float
         declination of galaxy in units of degrees
     """
-
 
     main_file = fits.open( file_name)
 

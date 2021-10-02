@@ -55,9 +55,9 @@ IMAGE_FORMAT = 'eps'
 # If RUN_ALL_GALAXIES is set to True, then the code will ignore what is in 
 # FILE_IDS
 #-------------------------------------------------------------------------------
-FILE_IDS = ['9037-12703']
+FILE_IDS = ['8714-12705']
 
-RUN_ALL_GALAXIES = True
+RUN_ALL_GALAXIES = False
 ################################################################################
 
 

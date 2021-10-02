@@ -1,7 +1,6 @@
 '''
-Plot the Tully-Fisher relation
+Plot the baryonic Tully-Fisher relation (M* v. V)
 '''
-
 
 ################################################################################
 # Import modules
@@ -94,6 +93,21 @@ sample = data[~bad_boolean]
 
 
 ################################################################################
+# Adjust Vmax values by galaxy thickness
+#-------------------------------------------------------------------------------
+q0 = 0.2
+
+cosi2 = (sample['ba_map']**2 - q0**2)/(1 - q0**2)
+
+cosi2[cosi2 < 0] = 0
+
+sample['Vmax_map_corrected'] = sample['Vmax_map']*np.sin(np.arccos(sample['ba_map']))/np.sqrt(1 - cosi2)
+################################################################################
+
+
+
+
+################################################################################
 # Separate galaxies by their CMD classification
 #-------------------------------------------------------------------------------
 # Green valley
@@ -114,57 +128,85 @@ Rdata = sample[rboolarray]
 
 
 ################################################################################
-# Plot Tully-Fisher relation
+# Best-fits from other papers
+#-------------------------------------------------------------------------------
+logM = np.arange(8, 13, 1)
+
+AvilaReese08 = -0.65 + 0.27*logM
+AquinoOrtiz18 = -1.00 + 0.30*logM
+AquinoOrtiz20 = -1.17 + 0.31*logM
+################################################################################
+
+
+
+
+################################################################################
+# Plot the baryonic Tully-Fisher relation (M* v. V)
 #-------------------------------------------------------------------------------
 # Formatting
 tSize = 14 # text size
 
 fig = plt.figure()
 
-plt.errorbar(np.log10(Rdata['Vmax_map']), 
-             Rdata['rabsmag'], 
+plt.errorbar(np.log10(Rdata['Vmax_map_corrected']), 
+             #np.log10(Rdata['Vmax_map']), 
+             #np.log10(Rdata['V90_kms']), 
+             #Rdata['M90_disk_map'], 
+             np.log10(Rdata['NSA_Mstar']), 
              #yerr=Rdata['Vmax_err_map'], 
              fmt='r.', 
              fillstyle='none', 
              label='Red sequence')
 
-plt.errorbar(np.log10(Bdata['Vmax_map']), 
-             Bdata['rabsmag'], 
+plt.errorbar(np.log10(Bdata['Vmax_map_corrected']), 
+             #np.log10(Bdata['Vmax_map']), 
+             #np.log10(Bdata['V90_kms']), 
+             #Bdata['M90_disk_map'], 
+             np.log10(Bdata['NSA_Mstar']), 
              #yerr=Bdata['Vmax_err_map'], 
              fmt='b+', 
              label='Blue cloud')
 
-plt.errorbar(np.log10(GVdata['Vmax_map']), 
-             GVdata['rabsmag'], 
+plt.errorbar(np.log10(GVdata['Vmax_map_corrected']), 
+             #np.log10(GVdata['Vmax_map']), 
+             #np.log10(GVdata['V90_kms']), 
+             #GVdata['M90_disk_map'], 
+             np.log10(GVdata['NSA_Mstar']), 
              #yerr=GVdata['Vmax_err_map'], 
              fmt='g*', 
              label='Green valley')
 
-#plt.plot(sample['rabsmag'], sample['Vmax_map'], '.')
+# Avila-Reese08
+plt.plot(AvilaReese08, logM, '--', c='gray', label='Avila-Reese et al. (2008)')
 
-plt.ylim((-17,-23))
+# Aquino-Ortiz18
+plt.plot(AquinoOrtiz18, logM, 'k:', label='Aquino-Ortiz et al. (2018)')
+
+# Aquino-Ortiz20
+#plt.plot(AquinoOrtiz20, logM, '-.', c='lightgray', 
+#         label='Aquino-Ortiz et al. (2020)')
+
+plt.ylim((8,12))
 plt.xlim((1.5,3.75))
 
 #plt.xscale('log')
 
-plt.ylabel('$M_r$', fontsize=tSize)
+plt.ylabel(r'log($M_*/M_\odot$)', fontsize=tSize)
 plt.xlabel('log($V_{max}$ [km/s])', fontsize=tSize)
 
-plt.legend(fontsize=tSize-2)
+plt.legend(fontsize=tSize)
 
 fig.patch.set_facecolor('none')
 
 ax = plt.gca()
-ax.tick_params(labelsize=tSize)#, length=10., width=3.)
+ax.tick_params(labelsize=tSize-2)#, length=10., width=3.)
 #ax.set_facecolor('white')
 
 plt.tight_layout()
 
-#plt.show()
-plt.savefig(data_directory + 'Images/Tully-Fisher_CMD_v6.eps', 
-            format='eps', 
+plt.show()
+#plt.savefig(data_directory + 'Images/bTFR_CMD_v6.eps', 
+#            format='eps', 
             #transparent=True,
-            dpi=120)
+#            dpi=120)
 ################################################################################
-
-

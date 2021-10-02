@@ -1,5 +1,5 @@
 '''
-Plot the Tully-Fisher relation
+Plot the TFR and the bTFR in a single figure window
 '''
 
 
@@ -114,12 +114,30 @@ Rdata = sample[rboolarray]
 
 
 ################################################################################
-# Plot Tully-Fisher relation
+# Best-fits from other papers
+#-------------------------------------------------------------------------------
+logM = np.arange(8, 13, 1)
+
+AvilaReese08 = -0.65 + 0.27*logM
+AquinoOrtiz18 = -1.00 + 0.30*logM
+AquinoOrtiz20 = -1.17 + 0.31*logM
+################################################################################
+
+
+
+
+################################################################################
+# Plot Tully-Fisher relations
 #-------------------------------------------------------------------------------
 # Formatting
 tSize = 14 # text size
 
 fig = plt.figure()
+
+#-------------------------------------------------------------------------------
+# TFR
+#-------------------------------------------------------------------------------
+plt.subplot(122)
 
 plt.errorbar(np.log10(Rdata['Vmax_map']), 
              Rdata['rabsmag'], 
@@ -138,6 +156,7 @@ plt.errorbar(np.log10(GVdata['Vmax_map']),
              GVdata['rabsmag'], 
              #yerr=GVdata['Vmax_err_map'], 
              fmt='g*', 
+             markersize=4, 
              label='Green valley')
 
 #plt.plot(sample['rabsmag'], sample['Vmax_map'], '.')
@@ -150,18 +169,73 @@ plt.xlim((1.5,3.75))
 plt.ylabel('$M_r$', fontsize=tSize)
 plt.xlabel('log($V_{max}$ [km/s])', fontsize=tSize)
 
-plt.legend(fontsize=tSize-2)
-
-fig.patch.set_facecolor('none')
-
 ax = plt.gca()
 ax.tick_params(labelsize=tSize)#, length=10., width=3.)
 #ax.set_facecolor('white')
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# Baryonic TFR
+#-------------------------------------------------------------------------------
+plt.subplot(121)
+
+RS = plt.errorbar(np.log10(Rdata['Vmax_map']), 
+                  Rdata['M90_disk_map'], 
+                  #yerr=Rdata['Vmax_err_map'], 
+                  fmt='r.', 
+                  fillstyle='none', 
+                  label='Red sequence')
+
+BC = plt.errorbar(np.log10(Bdata['Vmax_map']), 
+                  Bdata['M90_disk_map'], 
+                  #yerr=Bdata['Vmax_err_map'], 
+                  fmt='b+', 
+                  label='Blue cloud')
+
+GV = plt.errorbar(np.log10(GVdata['Vmax_map']), 
+                  GVdata['M90_disk_map'], 
+                  #yerr=GVdata['Vmax_err_map'], 
+                  fmt='g*', 
+                  markersize=4, 
+                  label='Green valley')
+
+# Avila-Reese08
+AR08, = plt.plot(AvilaReese08, logM, '--', c='gray', label='Avila-Reese et al. (2008)')
+
+# Aquino-Ortiz18
+#AO18, = plt.plot(AquinoOrtiz18, logM, 'k:', label='Aquino-Ortiz et al. (2018)')
+
+# Aquino-Ortiz20
+AO20, = plt.plot(AquinoOrtiz20, logM, '-.', c='lightgray', 
+                 label='Aquino-Ortiz et al. (2020)')
+
+plt.ylim((8,12))
+plt.xlim((1.5,3.75))
+
+#plt.xscale('log')
+
+plt.ylabel(r'log($M_{90,disk}/M_\odot$)', fontsize=tSize)
+plt.xlabel('log($V_{max}$ [km/s])', fontsize=tSize)
+
+plt.legend(handles=[BC, GV, RS, AR08, AO18], 
+           fontsize=tSize-4, 
+           ncol=2, 
+           loc='upper left', 
+           bbox_to_anchor=(0, 1.25, 2.4, 0.102), 
+           mode='expand', 
+           borderaxespad=0)
+
+ax = plt.gca()
+ax.tick_params(labelsize=tSize)#, length=10., width=3.)
+#-------------------------------------------------------------------------------
+
+fig.patch.set_facecolor('none')
 
 plt.tight_layout()
 
 #plt.show()
-plt.savefig(data_directory + 'Images/Tully-Fisher_CMD_v6.eps', 
+plt.savefig(data_directory + 'Images/Tully-Fisher_both_CMD_v6.eps', 
             format='eps', 
             #transparent=True,
             dpi=120)

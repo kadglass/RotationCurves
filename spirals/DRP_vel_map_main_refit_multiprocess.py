@@ -348,7 +348,7 @@ for i in range(len(NSA_table)):
 ################################################################################
 # Create a list of galaxy IDs for which to extract a rotation curve.
 #-------------------------------------------------------------------------------
-FILE_IDS = 
+FILE_IDS = ['8333-12702']
 
 N_files = len(FILE_IDS)
 
@@ -489,7 +489,7 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('DRP_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.fits', 
+fits.write('DRP_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.fits', 
                 format='fits', overwrite=True)
 ################################################################################
 

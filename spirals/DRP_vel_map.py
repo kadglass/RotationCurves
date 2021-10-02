@@ -253,7 +253,7 @@ def fit_vel_map(Ha_vel,
     elif gal_ID == '8447-9102':
         center_guess = (32,32)
     elif gal_ID in ['8940-12701', '8941-12703', '7958-12703', '8950-12705', 
-                    '9488-12702']:
+                    '9488-12702', '8333-12702']:
         center_guess = (37,37)
 
     #print(center_guess)

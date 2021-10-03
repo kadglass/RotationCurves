@@ -354,7 +354,7 @@ def find_phi(center_coords, phi_angle, vel_map):
     
     checkpoint_masked = True
     
-    while checkpoint_masked:
+    while checkpoint_masked and not vel_map.mask.all():
         delta_x = int(center_coords[1]*f)
         delta_y = int(delta_x/np.tan(phi))
         semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
@@ -370,11 +370,11 @@ def find_phi(center_coords, phi_angle, vel_map):
             checkpoint_masked = False
         else:
             f *= 0.9
-            
-    if vel_map[tuple(semi_major_axis_spaxel)] - v_sys < 0:
-        phi_adjusted = phi + np.pi
-    else:
+    
+    if vel_map.mask.all() or vel_map[tuple(semi_major_axis_spaxel)] - v_sys >= 0:
         phi_adjusted = phi
+    else:
+        phi_adjusted = phi + np.pi
             
     return phi_adjusted
 

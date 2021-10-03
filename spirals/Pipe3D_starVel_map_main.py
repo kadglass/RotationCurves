@@ -48,7 +48,7 @@ vel_function = 'BB'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8440-12704']
+FILE_IDS = ['8552-3702']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -226,14 +226,16 @@ for gal_ID in FILE_IDS:
             
             print(gal_ID, "velocity map fit", fit_time)
             ####################################################################
+            
 
             ####################################################################
             # Extract the necessary data from the NSA table.
             #-------------------------------------------------------------------
             i_NSA = NSA_index[NSA_ID]
-
+            
             R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
             ####################################################################
+            
 
             if param_outputs is not None:
                 ################################################################
@@ -247,6 +249,8 @@ for gal_ID in FILE_IDS:
                                                    vel_function, 
                                                    gal_ID)
                 ################################################################
+            else:
+                mass_outputs = None
 
 
             if RUN_ALL_GALAXIES:
@@ -254,11 +258,6 @@ for gal_ID in FILE_IDS:
                 # Write the best-fit values and calculated parameters to a text 
                 # file in ascii format.
                 #---------------------------------------------------------------
-                DRP_table = fillin_output_table(DRP_table, 
-                                                map_smoothness, 
-                                                i_DRP, 
-                                                col_name='smoothness_score')
-                                                
                 DRP_table = fillin_output_table(DRP_table, 
                                                 R90, 
                                                 i_DRP, 
@@ -268,9 +267,11 @@ for gal_ID in FILE_IDS:
                     DRP_table = fillin_output_table(DRP_table, 
                                                     param_outputs, 
                                                     i_DRP)
+                    
                     DRP_table = fillin_output_table(DRP_table, 
                                                     mass_outputs, 
                                                     i_DRP)
+                    
                     DRP_table = fillin_output_table(DRP_table, 
                                                     fit_flag, 
                                                     i_DRP, 
@@ -316,7 +317,6 @@ if RUN_ALL_GALAXIES:
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
     print('There were', num_masked_gal, 'galaxies that were completely masked.')
-    print('There were', num_not_smooth, 'galaxies without smooth velocity maps.')
 ################################################################################
 
 

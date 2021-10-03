@@ -345,21 +345,21 @@ def fit_vel_map(Ha_vel,
 
 
     ############################################################################
-    # Find the global max and global min of 'masked_Ha_vel' to use in graphical
-    # analysis.
+    # Find the global max and global min of the masked velocity map to use in 
+    # graphical analysis.
     #
-    # NOTE: If the entire data array is masked, 'global_max' and 'global_min'
+    # NOTE: If the entire array is masked, 'global_max' and 'global_min'
     #       cannot be calculated. It has been found that if the
-    #       'inclination_angle' is 0 degrees, the entire 'Ha_vel' array is
-    #       masked. An if-statement tests this case, and sets 'unmasked_data'
-    #       to False if there is no max/min in the array.
+    #       'inclination_angle' is 0 degrees, the entire array is masked. An 
+    #       if-statement tests this case, and sets 'unmasked_data' to False if 
+    #       there is no max/min in the array.
     #---------------------------------------------------------------------------
     global_max = ma.max(mHa_vel)
     global_min = ma.min(mHa_vel)
 
     unmasked_data = True
 
-    if np.isnan(global_max):
+    if np.isnan(global_max) or (global_max is ma.masked):
         unmasked_data = False
         global_max = 0.1
         global_min = -0.1
@@ -367,23 +367,14 @@ def fit_vel_map(Ha_vel,
 
 
     ############################################################################
-    # If 'unmasked_data' was set to False because all of the 'Ha_vel' data is
-    # masked after correcting for the angle of inclination, set all of the 
-    # best-fit values to be nan.
+    # If 'unmasked_data' was set to False because the entire velocity map is
+    # masked after correcting for the angle of inclination, set the output to 
+    # None.
     #---------------------------------------------------------------------------
     if not unmasked_data:
-        param_outputs = {'v_sys': np.nan,  'v_sys_err': np.nan,
-                         'ba': np.nan,     'ba_err': np.nan,
-                         'x0': np.nan,     'x0_err': np.nan,
-                         'y0': np.nan,     'y0_err': np.nan,
-                         'phi': np.nan,    'phi_err': np.nan, 
-                         'r_turn': np.nan, 'r_turn_err': np.nan, 
-                         'v_max': np.nan,  'v_max_err': np.nan, 
-                         'chi2': np.nan}
+        param_outputs = None
 
-        if fit_function == 'BB':
-            param_outputs['alpha'] = np.nan
-            param_outputs['alpha_err'] = np.nan
+        fit_flag = np.nan
 
         num_masked_gal += 1
 

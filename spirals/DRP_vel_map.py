@@ -354,8 +354,8 @@ def fit_vel_map(Ha_vel,
     #       masked. An if-statement tests this case, and sets 'unmasked_data'
     #       to False if there is no max/min in the array.
     #---------------------------------------------------------------------------
-    global_max = np.max(mHa_vel)
-    global_min = np.min(mHa_vel)
+    global_max = ma.max(mHa_vel)
+    global_min = ma.min(mHa_vel)
 
     unmasked_data = True
 

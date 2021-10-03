@@ -103,7 +103,67 @@ def add_disk_columns(data_table):
 
 
     return data_table
+    
+    
+################################################################################
+# Initialize output table for stellar velocity map fit
+#-------------------------------------------------------------------------------
+def add_star_columns(data_table, fit_function):
+    '''
+    Add additional columns to the table.
 
+
+    PARAMETERS
+    ==========
+
+    data_table : astropy table
+        Table of galaxies with various data already included.
+
+    fit_function : string
+        Determines which function to use for the velocity.  Options are 'BB' and 
+        'tanh'.
+
+
+    RETURNS
+    =======
+
+    data_table : astropy table
+        Original data_table with additional columns
+    '''
+
+    N = len(data_table)
+
+    data_table['v_sys_star'] = np.nan
+    data_table['v_sys_err_star'] = np.nan
+
+    data_table['ba_star'] = np.nan
+    data_table['ba_err_star'] = np.nan
+
+    data_table['x0_star'] = np.nan
+    data_table['x0_err_star'] = np.nan
+
+    data_table['y0_star'] = np.nan
+    data_table['y0_err_star'] = np.nan
+
+    data_table['phi_star'] = np.nan
+    data_table['phi_err_star'] = np.nan
+
+    data_table['r_turn_star'] = np.nan*np.ones(N, dtype=float)
+    data_table['r_turn_err_star'] = np.nan*np.ones(N, dtype=float)
+
+    data_table['v_max_star'] = np.nan*np.ones(N, dtype=float)
+    data_table['v_max_err_star'] = np.nan*np.ones(N, dtype=float)
+    
+    data_table['chi2_star'] = np.nan
+
+    if fit_function == 'BB':
+        data_table['alpha_star'] = np.nan*np.ones(N, dtype=float)
+        data_table['alpha_err_star'] = np.nan*np.ones(N, dtype=float)
+    elif fit_function != 'tanh':
+        print('This fit_function is not known.  Please update add_columns function.')
+
+
+    return data_table
 
 
 
@@ -114,7 +174,7 @@ def add_disk_columns(data_table):
 
 
 
-def fillin_output_table(output_table, data_to_add, row_index, col_name=None):
+def fillin_output_table(output_table, data_to_add, row_index, col_name=None, col_suffix=''):
     '''
     Add data values to table.
 
@@ -138,6 +198,11 @@ def fillin_output_table(output_table, data_to_add, row_index, col_name=None):
         float (and not a dictionary).
 
         Default value is None - data_to_add is a dictionary.
+        
+    col_suffix : string
+        Suffix to add onto the end of all column names.
+        
+        Default is an empty string
 
 
     RETURNS
@@ -156,10 +221,10 @@ def fillin_output_table(output_table, data_to_add, row_index, col_name=None):
 
         for field in data_to_add:
 
-            if field not in output_table.colnames:
-                output_table[field] = np.nan
+            if field+col_suffix not in output_table.colnames:
+                output_table[field+col_suffix] = np.nan
 
-            output_table[field][row_index] = data_to_add[field]
+            output_table[field+col_suffix][row_index] = data_to_add[field]
 
     else:
 

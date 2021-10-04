@@ -257,9 +257,11 @@ def fit_vel_map(Ha_vel,
         center_guess = (27,27)
     elif gal_ID == '8447-9102':
         center_guess = (32,32)
-    elif gal_ID in ['8940-12701', '8941-12703', '7958-12703', '8950-12705', 
-                    '9488-12702', '9181-12701']:
+    elif gal_ID in ['8940-12701', '8941-12703', '8950-12705', '9488-12702', 
+                    '9181-12701']:
         center_guess = (37,37)
+    elif gal_ID in ['7958-12703']:
+        center_guess = (39,39)
 
     #print(center_guess)
     
@@ -274,7 +276,7 @@ def fit_vel_map(Ha_vel,
     #---------------------------------------------------------------------------
     sys_vel_guess = mHa_vel[center_guess]
 
-    if gal_ID == '8940-12701':
+    if (sys_vel_guess is ma.masked) or (gal_ID == '8940-12701'):
         sys_vel_guess = 0.
 
     #print(sys_vel_guess)

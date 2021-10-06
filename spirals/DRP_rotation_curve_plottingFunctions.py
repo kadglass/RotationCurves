@@ -2,6 +2,7 @@ import os
 import gc
 
 import numpy as np
+import numpy.ma as ma
 
 #import matplotlib
 #matplotlib.use('TKAgg')
@@ -93,26 +94,30 @@ def plot_rband_image(r_band, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps', ax=None
 
 
 
-def plot_Ha_vel(Ha_vel, 
-                gal_ID, 
-                model=False,
-                IMAGE_DIR=None, 
-                FOLDER_NAME=None, 
-                IMAGE_FORMAT='eps', 
-                FILENAME_SUFFIX=None, 
-                ax=None):
+def plot_vel(vel, 
+             gal_ID, 
+             V_type='Ha', 
+             model=False,
+             IMAGE_DIR=None, 
+             FOLDER_NAME=None, 
+             IMAGE_FORMAT='eps', 
+             FILENAME_SUFFIX=None, 
+             ax=None):
     '''
-    Creates a plot of the H-alpha velocity map.
+    Creates a plot of the velocity map.
 
 
     Parameters:
     ===========
 
-    Ha_vel : numpy array of shape (n,n)
-        H-alpha velocity map
+    vel : numpy array of shape (n,n)
+        velocity map
 
     gal_ID : string
         [MaNGA plate] - [MaNGA IFU]
+
+    V_type : string
+        Velocity field type.  Default is 'Ha' = H-alpha.
         
     model : boolean
         If true, then what is being plotted is the model velocity map, and the 
@@ -140,31 +145,52 @@ def plot_Ha_vel(Ha_vel,
         fig, ax = plt.subplots()
 
 
-    ###########################################################################
-    minimum = np.min( Ha_vel)
-    maximum = np.max( Ha_vel)
+    ############################################################################
+    # Determine limits of color scale
+    #---------------------------------------------------------------------------
+    minimum = ma.min(vel)
+    maximum = ma.max(vel)
+
     if minimum > 0:
         vmax_bound = maximum
         vmin_bound = 0
     else:
         vmax_bound = np.max( [np.abs(minimum), np.abs(maximum)])
         vmin_bound = -vmax_bound
+
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
+    ############################################################################
 
+
+    ############################################################################
+    # Create plot title
+    #---------------------------------------------------------------------------
     if model:
-        ax.set_title( gal_ID + r' H$\alpha$ velocity model')
+        map_type = 'model'
     else:
-        ax.set_title(gal_ID + r' H$\alpha$ velocity data')
-    
-    Ha_vel_im = ax.imshow( Ha_vel, 
-                           cmap='RdBu_r', 
-                           origin='lower', 
-                           vmin = vmin_bound, 
-                           vmax = vmax_bound)
+        map_type = 'data'
 
-    cbar = plt.colorbar( Ha_vel_im, ax=ax, ticks=cbar_ticks)
+    if V_type == 'Ha':
+        vel_type = r' H$\alpha$'
+    else:
+        vel_type = ' stellar'
+
+    ax.set_title(gal_ID + vel_type + ' velocity ' + map_type)
+    ############################################################################
+    
+
+    ############################################################################
+    # Create plot
+    #---------------------------------------------------------------------------
+    vel_im = ax.imshow( vel, 
+                        cmap='RdBu_r', 
+                        origin='lower', 
+                        vmin=vmin_bound, 
+                        vmax=vmax_bound)
+
+    cbar = plt.colorbar( vel_im, ax=ax, ticks=cbar_ticks)
     cbar.ax.tick_params( direction='in')
-    cbar.set_label('$v_{rot}$ [km/s]')
+    cbar.set_label('$v$ [km/s]')
 
     ax.tick_params( axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')
@@ -200,7 +226,7 @@ def plot_Ha_vel(Ha_vel,
         plt.cla()
         plt.clf()
         plt.close()
-        del cbar, Ha_vel_im
+        del cbar, vel_im
         gc.collect()
         ########################################################################
 
@@ -212,7 +238,11 @@ def plot_Ha_vel(Ha_vel,
 
 
 
-def plot_rot_curve(gal_ID, data_table, IMAGE_DIR=None, IMAGE_FORMAT='eps', ax=None):
+def plot_rot_curve(gal_ID, 
+                   data_table, 
+                   IMAGE_DIR=None, 
+                   IMAGE_FORMAT='eps', 
+                   ax=None):
     '''
     Plot galaxy rotation curves
 

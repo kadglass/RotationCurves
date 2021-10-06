@@ -10,7 +10,11 @@ from DRP_vel_map_functions import deproject_spaxel
 
 from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
 
-from DRP_rotation_curve_plottingFunctions import plot_rband_image, plot_Ha_vel
+from DRP_rotation_curve_plottingFunctions import plot_rband_image, plot_vel
+
+
+
+q0 = 0.2
 
 
 
@@ -122,14 +126,15 @@ def plot_Ha_sigma(Ha_sigma,
 ################################################################################
 
 
-def plot_rot_curve(mHa_vel, 
-                   mHa_vel_ivar,
+def plot_rot_curve(mvel, 
+                   mvel_ivar,
                    best_fit_values, 
                    scale,
                    gal_ID, 
                    fit_function,
                    IMAGE_DIR=None, 
                    IMAGE_FORMAT='eps',
+                   FILENAME_SUFFIX=None, 
                    ax=None):
     '''
     Plot the galaxy rotation curve.
@@ -138,12 +143,11 @@ def plot_rot_curve(mHa_vel,
     PARAMETERS
     ==========
 
-    mHa_vel : numpy ndarray of shape (n,n)
-        Masked H-alpha velocity array
+    mvel : numpy ndarray of shape (n,n)
+        Masked velocity array
 
-    mHa_vel_ivar : numpy ndarray of shape (n,n)
-        Masked array of the inverse variance of the H-alpha velocity 
-        measurements
+    mvel_ivar : numpy ndarray of shape (n,n)
+        Masked array of the inverse variance of the velocity measurements
 
     best_fit_values : dictionary
         Best-fit values for the velocity map
@@ -168,6 +172,11 @@ def plot_rot_curve(mHa_vel,
 
         Default is 'eps'
 
+    FILENAME_SUFFIX : string
+        Suffix to append to gal_ID to create image filename
+
+        Default is None (no suffix added)
+
     ax : matplotlib.pyplot figure axis object
         Axis handle on which to create plot
     '''
@@ -180,7 +189,13 @@ def plot_rot_curve(mHa_vel,
     ############################################################################
     # Convert axis ratio to angle of inclination
     #---------------------------------------------------------------------------
-    i_angle = np.arccos(best_fit_values['ba'])
+    cosi2 = (best_fit_values['ba']**2 - q0**2)/(1 - q0**2)
+
+    if cosi2 < 0:
+        cosi2 = 0
+
+    i_angle = np.arccos(np.sqrt(cosi2))
+    #i_angle = np.arccos(best_fit_values['ba'])
     ############################################################################
 
 
@@ -194,7 +209,7 @@ def plot_rot_curve(mHa_vel,
     ############################################################################
     # Deproject all data values in the given velocity map
     #---------------------------------------------------------------------------
-    vel_array_shape = mHa_vel.shape
+    vel_array_shape = mvel.shape
 
     r_deproj = np.zeros(vel_array_shape)
     v_deproj = np.zeros(vel_array_shape)
@@ -220,12 +235,12 @@ def plot_rot_curve(mHa_vel,
     r_deproj *= scale
 
     # Deproject velocity values
-    v_deproj = (mHa_vel - best_fit_values['v_sys'])/np.abs(np.cos(theta))
+    v_deproj = (mvel - best_fit_values['v_sys'])/np.abs(np.cos(theta))
     v_deproj /= np.sin(i_angle)
 
     # Apply mask to arrays
-    rm_deproj = ma.array(r_deproj, mask=mHa_vel.mask)
-    vm_deproj = ma.array(v_deproj, mask=mHa_vel.mask)
+    rm_deproj = ma.array(r_deproj, mask=mvel.mask)
+    vm_deproj = ma.array(v_deproj, mask=mvel.mask)
     ############################################################################
 
 
@@ -258,8 +273,8 @@ def plot_rot_curve(mHa_vel,
     ax.tick_params(axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('Deprojected radius [kpc/h]')
-    ax.set_ylabel('Rotational velocity [km/s]')
+    ax.set_xlabel('$r$ [kpc/h]')
+    ax.set_ylabel('$v$ [km/s]')
     ############################################################################
 
 
@@ -274,7 +289,7 @@ def plot_rot_curve(mHa_vel,
         ########################################################################
         # Save figure
         #-----------------------------------------------------------------------
-        plt.savefig(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function + '/' + gal_ID + '_rot_curve_' + fit_function + '.' + IMAGE_FORMAT,
+        plt.savefig(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function + '/' + gal_ID + '_rot_curve_' + fit_function + FILENAME_SUFFIX + '.' + IMAGE_FORMAT,
                     format=IMAGE_FORMAT)
         ########################################################################
 
@@ -314,10 +329,10 @@ def plot_residual(model_map,
     ==========
 
     model_map : numpy array of shape (n,n)
-        Model H-alpha velocity map [km/s]
+        Model velocity map [km/s]
 
     data_map : numpy array of shape (n,n)
-        Measured H-alpha velocity map [km/s]
+        Measured velocity map [km/s]
 
     gal_ID : string
         [MaNGA plate] - [MaNGA IFU]
@@ -427,10 +442,10 @@ def plot_residual_norm(model_map,
     ==========
 
     model_map : numpy array of shape (n,n)
-        Model H-alpha velocity map [km/s]
+        Model velocity map [km/s]
 
     data_map : numpy array of shape (n,n)
-        Measured H-alpha velocity map [km/s]
+        Measured velocity map [km/s]
 
     gal_ID : string
         [MaNGA plate] - [MaNGA IFU]
@@ -541,13 +556,13 @@ def plot_chi2(model_map,
     ==========
 
     model_map : numpy array of shape (n,n)
-        Model H-alpha velocity map [km/s]
+        Model velocity map [km/s]
 
     data_map : numpy array of shape (n,n)
-        Measured H-alpha velocity map [km/s]
+        Measured velocity map [km/s]
 
     ivar_map : numpy array of shape (n,n)
-        Measured inverse variances of the H-alpha velocity map [s/km]^2
+        Measured inverse variances of the velocity map [s/km]^2
 
     gal_ID : string
         [MaNGA plate] - [MaNGA IFU]
@@ -642,19 +657,19 @@ def plot_chi2(model_map,
 
 
 def plot_diagnostic_panel(r_band, 
-                          mHa_vel, 
-                          mHa_vel_ivar, 
+                          mvel, 
+                          mvel_ivar, 
                           best_fit_map,
                           best_fit_values,
                           scale,
                           gal_ID, 
                           fit_function,
+                          V_type='Ha', 
                           IMAGE_DIR=None, 
                           IMAGE_FORMAT='eps'):
     '''
     Plot a two-by-two paneled image containing the entire rgb image, the masked 
-    H-alpha velocity array, the masked H-alpha model velocity array, and the 
-    rotation curve.
+    velocity array, the masked model velocity array, and the rotation curve.
 
 
     PARAMETERS
@@ -663,14 +678,14 @@ def plot_diagnostic_panel(r_band,
     r_band : numpy array of shape (n,n)
         r-band flux data
 
-    mHa_vel : numpy ndarray of shape (n,n)
-        Masked H-alpha velocity array
+    mvel : numpy ndarray of shape (n,n)
+        Masked velocity array
 
-    mHa_vel_ivar : numpy ndarray of shape (n,n)
-        Masked array of the inverse variance of the H-alpha velocity measurements
+    mvel_ivar : numpy ndarray of shape (n,n)
+        Masked array of the inverse variance of the velocity measurements
 
     best_fit_map : numpy ndarray of shape (n,n)
-        Masked best-fit model H-alpha velocity array
+        Masked best-fit model velocity array
 
     best_fit_values : dictionary
         Best-fit values for the velocity map
@@ -685,6 +700,12 @@ def plot_diagnostic_panel(r_band,
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
 
+    V_type : string
+        Identifies whether the velocity map data is from gas (usually the 
+        H-alpha emission) or from stars.
+
+        Default is 'Ha'
+
     IMAGE_DIR : string
         Path of directory in which to store plot.
 
@@ -697,24 +718,30 @@ def plot_diagnostic_panel(r_band,
     '''
 
     panel_fig, ((r_band_panel, rot_curve_panel),
-                (mHa_vel_panel, Ha_vel_model_panel)) = plt.subplots(2,2)
+                (mvel_panel, vel_model_panel)) = plt.subplots(2,2)
+    
     panel_fig.set_figheight(10)
     panel_fig.set_figwidth(10)
+
     plt.suptitle(gal_ID + ' diagnostic panel', y=1.05, fontsize=16)
 
     plot_rband_image(r_band, gal_ID, ax=r_band_panel)
 
-    plot_rot_curve(mHa_vel, 
-                   mHa_vel_ivar, 
+    plot_rot_curve(mvel, 
+                   mvel_ivar, 
                    best_fit_values, 
                    scale, 
                    gal_ID, 
                    fit_function, 
                    ax=rot_curve_panel)
 
-    plot_Ha_vel(mHa_vel, gal_ID, ax=mHa_vel_panel)
+    plot_vel(mvel, gal_ID, V_type=V_type, ax=mvel_panel)
 
-    plot_Ha_vel(best_fit_map, gal_ID, model=True, ax=Ha_vel_model_panel)
+    plot_vel(best_fit_map, 
+             gal_ID, 
+             V_type=V_type, 
+             model=True, 
+             ax=vel_model_panel)
 
     panel_fig.tight_layout()
 
@@ -730,7 +757,7 @@ def plot_diagnostic_panel(r_band,
         ########################################################################
         # Save figure
         #-----------------------------------------------------------------------
-        plt.savefig(IMAGE_DIR + '/diagnostic_panels/' + gal_ID + '_vel_map_diagnostic_panel.' + IMAGE_FORMAT,
+        plt.savefig(IMAGE_DIR + '/diagnostic_panels/' + gal_ID + '_' + V_type + '_vel_map_diagnostic_panel.' + IMAGE_FORMAT,
                     format=IMAGE_FORMAT)
         ########################################################################
 
@@ -740,7 +767,7 @@ def plot_diagnostic_panel(r_band,
         plt.cla()
         plt.clf()
         plt.close(panel_fig)
-        del panel_fig, r_band_panel, rot_curve_panel, mHa_vel_panel, Ha_vel_model_panel
+        del panel_fig, r_band_panel, rot_curve_panel, mvel_panel, vel_model_panel
         gc.collect()
         ########################################################################
 

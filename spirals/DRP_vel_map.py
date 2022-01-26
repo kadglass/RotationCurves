@@ -34,7 +34,7 @@ from DRP_vel_map_functions import find_vel_map, \
                                   build_map_mask
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
-                                                 plot_Ha_vel
+                                                 plot_vel
 
 from DRP_vel_map_plottingFunctions import plot_rot_curve, \
                                           plot_diagnostic_panel, \
@@ -66,9 +66,9 @@ q0 = 0.2 # Nominal disk thickness
 ################################################################################
 
 
-def fit_vel_map(Ha_vel, 
-                Ha_vel_ivar, 
-                Ha_vel_mask, 
+def fit_vel_map(vel, 
+                vel_ivar, 
+                vel_mask, 
                 Ha_sigma, 
                 Ha_sigma_ivar, 
                 Ha_sigma_mask, 
@@ -82,6 +82,7 @@ def fit_vel_map(Ha_vel,
                 z, 
                 gal_ID,
                 fit_function, 
+                V_type='Ha', 
                 IMAGE_DIR=None, 
                 IMAGE_FORMAT='eps', 
                 num_masked_gal=0):
@@ -93,14 +94,14 @@ def fit_vel_map(Ha_vel,
     Parameters:
     ===========
 
-    Ha_vel : numpy array of shape (n,n)
-        H-alpha velocity field data
+    vel : numpy array of shape (n,n)
+        Velocity map to be fit [km/s]
 
-    Ha_vel_ivar : numpy array of shape (n,n)
-        Inverse variance in the H-alpha velocity field data
+    vel_ivar : numpy array of shape (n,n)
+        Inverse variance in the velocity map
 
-    Ha_vel_mask : numpy array of shape (n,n)
-        Bitmask for the H-alpha velocity map
+    vel_mask : numpy array of shape (n,n)
+        Bitmask for the velocity map
 
     Ha_sigma : numpy array of shape (n,n)
         H-alpha line width data
@@ -146,6 +147,9 @@ def fit_vel_map(Ha_vel,
         Determines which function to use for the velocity.  Options are 'BB' and 
         'tanh'.
 
+    V_type : string
+        Type of velocity map being fit.  Used for plot titles, file names, etc.
+
     IMAGE_DIR : string
         File path to which pictures of the fitted rotation curves are saved.  
         Default value is None (do not save images).
@@ -177,26 +181,26 @@ def fit_vel_map(Ha_vel,
     ############################################################################
     # Apply mask to all data arrays
     #---------------------------------------------------------------------------
-    num_masked_spaxels = np.sum(Ha_vel_mask) - np.sum(r_band == 0)
+    num_masked_spaxels = np.sum(vel_mask) - np.sum(r_band == 0)
     frac_masked_spaxels = num_masked_spaxels/np.sum(r_band != 0)
 
-    mr_band = ma.array( r_band, mask=Ha_vel_mask)
-    mr_band_ivar = ma.array( r_band_ivar, mask=Ha_vel_mask)
+    mr_band = ma.array( r_band, mask=vel_mask)
+    mr_band_ivar = ma.array( r_band_ivar, mask=vel_mask)
 
-    mHa_vel = ma.array( Ha_vel, mask=Ha_vel_mask)
-    mHa_vel_ivar = ma.array( Ha_vel_ivar, mask=Ha_vel_mask)
+    mvel = ma.array( vel, mask=vel_mask)
+    mvel_ivar = ma.array( vel_ivar, mask=vel_mask)
 
-    mHa_flux = ma.array( Ha_flux, mask=Ha_flux_mask + Ha_vel_mask)
-    mHa_flux_ivar = ma.array( Ha_flux_ivar, mask=Ha_flux_mask + Ha_vel_mask)
+    mHa_flux = ma.array( Ha_flux, mask=Ha_flux_mask + vel_mask)
+    mHa_flux_ivar = ma.array( Ha_flux_ivar, mask=Ha_flux_mask + vel_mask)
 
-    mHa_sigma = ma.array( Ha_sigma, mask=Ha_vel_mask + Ha_sigma_mask)
-    mHa_sigma_ivar = ma.array( Ha_sigma_ivar, mask=Ha_vel_mask + Ha_sigma_mask)
+    mHa_sigma = ma.array( Ha_sigma, mask=vel_mask + Ha_sigma_mask)
+    mHa_sigma_ivar = ma.array( Ha_sigma_ivar, mask=vel_mask + Ha_sigma_mask)
     '''
     #---------------------------------------------------------------------------
     # Show the mask.  Yellow points represent masked data points.
     #---------------------------------------------------------------------------
-    plt.figure(1)
-    plt.imshow( Ha_vel_mask)
+    plt.figure()
+    plt.imshow(vel_mask)
     plt.show()
     plt.close()
     '''
@@ -217,16 +221,17 @@ def fit_vel_map(Ha_vel,
         plt.show()
     '''
     #---------------------------------------------------------------------------
-    # Plot H-alpha velocity field before systemic redshift subtraction.  Galaxy 
+    # Plot velocity field before systemic redshift subtraction.  Galaxy 
     # velocities vary from file to file, so vmin and vmax will have to be 
     # manually adjusted for each galaxy before reshift subtraction.
     #---------------------------------------------------------------------------
-    plot_Ha_vel(Ha_vel, 
-                gal_ID, 
-                IMAGE_DIR=IMAGE_DIR, 
-                FOLDER_NAME='/unmasked_Ha_vel/', 
-                IMAGE_FORMAT=IMAGE_FORMAT, 
-                FILENAME_SUFFIX='_Ha_vel_raw.')
+    plot_vel(vel, 
+             gal_ID, 
+             V_type=V_type, 
+             IMAGE_DIR=IMAGE_DIR, 
+             FOLDER_NAME='/unmasked_' + V_type + '_vel/', 
+             IMAGE_FORMAT=IMAGE_FORMAT, 
+             FILENAME_SUFFIX='_' + V_type + '_vel_raw.')
     '''
     if IMAGE_DIR is None:
         plt.show()
@@ -274,7 +279,7 @@ def fit_vel_map(Ha_vel,
     # Set the initial guess for the systemic velocity to be equal to the 
     # velocity at the initially-guessed center spaxel.
     #---------------------------------------------------------------------------
-    sys_vel_guess = mHa_vel[center_guess]
+    sys_vel_guess = mvel[center_guess]
 
     if (sys_vel_guess is ma.masked) or (gal_ID == '8940-12701'):
         sys_vel_guess = 0.
@@ -302,7 +307,7 @@ def fit_vel_map(Ha_vel,
     # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it 
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
-    phi_guess = find_phi(center_guess, phi_EofN_deg, mHa_vel)
+    phi_guess = find_phi(center_guess, phi_EofN_deg, mvel)
 
 
     if gal_ID in ['8134-6102']:
@@ -356,8 +361,8 @@ def fit_vel_map(Ha_vel,
     #       if-statement tests this case, and sets 'unmasked_data' to False if 
     #       there is no max/min in the array.
     #---------------------------------------------------------------------------
-    global_max = ma.max(mHa_vel)
-    global_min = ma.min(mHa_vel)
+    global_max = ma.max(mvel)
+    global_min = ma.min(mvel)
 
     unmasked_data = True
 
@@ -390,8 +395,8 @@ def fit_vel_map(Ha_vel,
     else:
         print(gal_ID, 'fitting velocity map', flush=True)
         param_outputs, best_fit_map, scale, fit_flag = find_vel_map(gal_ID, 
-                                                                    mHa_vel, 
-                                                                    mHa_vel_ivar, 
+                                                                    mvel, 
+                                                                    mvel_ivar, 
                                                                     mHa_sigma,
                                                                     mHa_flux, 
                                                                     mHa_flux_ivar,
@@ -409,7 +414,7 @@ def fit_vel_map(Ha_vel,
             #-------------------------------------------------------------------
             best_mask = build_map_mask(gal_ID, 
                                        fit_flag, 
-                                       mHa_vel, 
+                                       mvel, 
                                        mHa_flux, 
                                        mHa_flux_ivar, 
                                        mHa_sigma)
@@ -419,15 +424,16 @@ def fit_vel_map(Ha_vel,
 
 
             ####################################################################
-            # Plot the best-fit H-alpha velocity field
+            # Plot the best-fit velocity field
             #-------------------------------------------------------------------
-            plot_Ha_vel(mbest_fit_map, 
-                        gal_ID, 
-                        model=True,
-                        IMAGE_DIR=IMAGE_DIR, 
-                        FOLDER_NAME='/fitted_velocity_fields/', 
-                        FILENAME_SUFFIX='_fitted_vel_field.', 
-                        IMAGE_FORMAT=IMAGE_FORMAT)
+            plot_vel(mbest_fit_map, 
+                     gal_ID, 
+                     V_type=V_type, 
+                     model=True,
+                     IMAGE_DIR=IMAGE_DIR, 
+                     FOLDER_NAME='/fitted_velocity_fields/', 
+                     FILENAME_SUFFIX='_fitted_' + V_type + '_vel_field.', 
+                     IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
                 plt.show()
@@ -438,11 +444,11 @@ def fit_vel_map(Ha_vel,
             # Plot the residual velocity map between the best-fit and the data
             #-------------------------------------------------------------------
             plot_residual(mbest_fit_map, 
-                          mHa_vel,
+                          mvel,
                           gal_ID, 
                           IMAGE_DIR=IMAGE_DIR, 
                           FOLDER_NAME='/residuals/', 
-                          FILENAME_SUFFIX='_residual.', 
+                          FILENAME_SUFFIX='_' + V_type + '_residual.', 
                           IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -455,11 +461,11 @@ def fit_vel_map(Ha_vel,
             # the data
             #-------------------------------------------------------------------
             plot_residual_norm(mbest_fit_map, 
-                               mHa_vel,
+                               mvel,
                                gal_ID, 
                                IMAGE_DIR=IMAGE_DIR, 
                                FOLDER_NAME='/residuals_norm/', 
-                               FILENAME_SUFFIX='_residual_norm.', 
+                               FILENAME_SUFFIX='_' + V_type + '_residual_norm.', 
                                IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -471,12 +477,12 @@ def fit_vel_map(Ha_vel,
             # Plot the chi2 map of the best-fit model
             #-------------------------------------------------------------------
             plot_chi2(mbest_fit_map, 
-                      mHa_vel,
-                      mHa_vel_ivar, 
+                      mvel,
+                      mvel_ivar, 
                       gal_ID, 
                       IMAGE_DIR=IMAGE_DIR, 
                       FOLDER_NAME='/chi2/', 
-                      FILENAME_SUFFIX='_chi2.', 
+                      FILENAME_SUFFIX='_' + V_type + '_chi2.', 
                       IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -485,14 +491,15 @@ def fit_vel_map(Ha_vel,
 
 
             ####################################################################
-            # Plot H-alpha velocity field with the systemic velocity subtracted.
+            # Plot velocity field with the systemic velocity subtracted.
             #-------------------------------------------------------------------
-            plot_Ha_vel(ma.array(mHa_vel, mask=best_mask) - param_outputs['v_sys'], 
-                        gal_ID, 
-                        IMAGE_DIR=IMAGE_DIR, 
-                        FOLDER_NAME='/masked_Ha_vel/', 
-                        FILENAME_SUFFIX='_Ha_vel_field.', 
-                        IMAGE_FORMAT=IMAGE_FORMAT)
+            plot_vel(ma.array(mvel, mask=best_mask) - param_outputs['v_sys'], 
+                     gal_ID, 
+                     V_type=V_type, 
+                     IMAGE_DIR=IMAGE_DIR, 
+                     FOLDER_NAME='/masked_' + V_type + '_vel/', 
+                     FILENAME_SUFFIX='_' + V_type + '_vel_field.', 
+                     IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
                 plt.show()
@@ -502,14 +509,15 @@ def fit_vel_map(Ha_vel,
             ####################################################################
             # Plot 1D rotation curve with best-fit
             #-------------------------------------------------------------------
-            Rmax = plot_rot_curve(ma.array(mHa_vel, mask=best_mask), 
-                                  ma.array(mHa_vel_ivar, mask=best_mask),
+            Rmax = plot_rot_curve(ma.array(mvel, mask=best_mask), 
+                                  ma.array(mvel_ivar, mask=best_mask),
                                   param_outputs, 
                                   scale,
                                   gal_ID, 
                                   fit_function,
                                   IMAGE_DIR=IMAGE_DIR, 
-                                  IMAGE_FORMAT=IMAGE_FORMAT)
+                                  IMAGE_FORMAT=IMAGE_FORMAT, 
+                                  FILENAME_SUFFIX='_' + V_type)
 
             param_outputs['Rmax'] = Rmax
 
@@ -536,18 +544,19 @@ def fit_vel_map(Ha_vel,
             ####################################################################
             # Plot a two by two paneled image containging 
             #   - the r-band image
-            #   - the masked H-alpha velocity array, 
-            #   - the best-fit H-alpha velocity array, 
-            #   - the best-fit rotation curve along with the mass rotation curves
+            #   - the masked velocity array, 
+            #   - the best-fit velocity array, 
+            #   - the best-fit rotation curve
             #-------------------------------------------------------------------
             plot_diagnostic_panel(r_band, 
-                                  ma.array(mHa_vel, mask=best_mask), 
-                                  ma.array(mHa_vel_ivar, mask=best_mask), 
+                                  ma.array(mvel, mask=best_mask), 
+                                  ma.array(mvel_ivar, mask=best_mask), 
                                   mbest_fit_map,
                                   param_outputs,
                                   scale, 
                                   gal_ID, 
                                   fit_function,
+                                  V_type=V_type, 
                                   IMAGE_DIR=IMAGE_DIR, 
                                   IMAGE_FORMAT=IMAGE_FORMAT)
 

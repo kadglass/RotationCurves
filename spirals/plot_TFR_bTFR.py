@@ -117,10 +117,14 @@ Rdata = sample[rboolarray]
 # Best-fits from other papers
 #-------------------------------------------------------------------------------
 logM = np.arange(8, 13, 1)
+v = np.logspace(1.5, 3.75, 20)
 
-AvilaReese08 = -0.65 + 0.27*logM
-AquinoOrtiz18 = -1.00 + 0.30*logM
-AquinoOrtiz20 = -1.17 + 0.31*logM
+AvilaReese08 = -0.650 + 0.274*logM
+
+Ferrero17_M = 8.63e8*((v/50)**4.1)*np.exp(-(v/50)**0.432)
+
+AquinoOrtiz18 = -0.41 + 0.25*logM
+#AquinoOrtiz20 = -1.17 + 0.31*logM
 ################################################################################
 
 
@@ -185,12 +189,14 @@ RS = plt.errorbar(np.log10(Rdata['Vmax_map']),
                   #yerr=Rdata['Vmax_err_map'], 
                   fmt='r.', 
                   fillstyle='none', 
+                  zorder=0, 
                   label='Red sequence')
 
 BC = plt.errorbar(np.log10(Bdata['Vmax_map']), 
                   Bdata['M90_disk_map'], 
                   #yerr=Bdata['Vmax_err_map'], 
                   fmt='b+', 
+                  zorder=1, 
                   label='Blue cloud')
 
 GV = plt.errorbar(np.log10(GVdata['Vmax_map']), 
@@ -198,17 +204,24 @@ GV = plt.errorbar(np.log10(GVdata['Vmax_map']),
                   #yerr=GVdata['Vmax_err_map'], 
                   fmt='g*', 
                   markersize=4, 
+                  zorder=2, 
                   label='Green valley')
 
 # Avila-Reese08
-AR08, = plt.plot(AvilaReese08, logM, '--', c='gray', label='Avila-Reese et al. (2008)')
+AR08, = plt.plot(AvilaReese08, logM, '--', c='lightgray', zorder=3, 
+                 label='Avila-Reese et al. (2008)')
+
+# Ferrero17
+F17, = plt.plot(np.log10(v), np.log10(Ferrero17_M), 'k-.', zorder=5,
+                label='Ferrero et al. (2017)')
 
 # Aquino-Ortiz18
-#AO18, = plt.plot(AquinoOrtiz18, logM, 'k:', label='Aquino-Ortiz et al. (2018)')
+AO18, = plt.plot(AquinoOrtiz18, logM, ':', c='gray', zorder=4, 
+                 label='Aquino-Ortiz et al. (2018)')
 
 # Aquino-Ortiz20
-AO20, = plt.plot(AquinoOrtiz20, logM, '-.', c='lightgray', 
-                 label='Aquino-Ortiz et al. (2020)')
+#AO20, = plt.plot(AquinoOrtiz20, logM, '-.', c='lightgray', 
+#                 label='Aquino-Ortiz et al. (2020)')
 
 plt.ylim((8,12))
 plt.xlim((1.5,3.75))
@@ -218,7 +231,7 @@ plt.xlim((1.5,3.75))
 plt.ylabel(r'log($M_{90,disk}/M_\odot$)', fontsize=tSize)
 plt.xlabel('log($V_{max}$ [km/s])', fontsize=tSize)
 
-plt.legend(handles=[BC, GV, RS, AR08, AO18], 
+plt.legend(handles=[BC, GV, RS, AR08, F17, AO18], 
            fontsize=tSize-4, 
            ncol=2, 
            loc='upper left', 

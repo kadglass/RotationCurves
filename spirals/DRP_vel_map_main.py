@@ -43,6 +43,11 @@ map_smoothness_max = 1.85
 
 # Velocity function to use (options are 'BB' or 'tanh')
 vel_function = 'BB'
+#vel_function = 'tanh'
+
+# Velocity map to use
+#V_type = 'Ha'
+V_type = 'star'
 ################################################################################
 
 
@@ -162,7 +167,17 @@ for gal_ID in FILE_IDS:
         ########################################################################
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data( VEL_MAP_FOLDER, gal_ID)
+        if V_type == 'Ha':
+            maps = extract_data(VEL_MAP_FOLDER, 
+                                gal_ID, 
+                                ['Ha_vel', 'Ha_flux', 'Ha_sigma', 'r_band'])
+        elif V_type == 'star':
+            maps = extract_data(VEL_MAP_FOLDER, 
+                                gal_ID, 
+                                ['star_vel', 'Ha_flux', 'Ha_sigma', 'r_band'])
+        else:
+            print('Unknown velocity data type (V_type).')
+            continue
 
         print( gal_ID, "extracted")
         ########################################################################
@@ -171,15 +186,21 @@ for gal_ID in FILE_IDS:
         ########################################################################
         # Calculate degree of smoothness of velocity map
         #-----------------------------------------------------------------------
-        map_smoothness = how_smooth( Ha_vel, Ha_vel_mask)
+        can_fit = True
 
-        map_smoothness_5sigma = how_smooth(Ha_vel, 
-                                           np.logical_or(Ha_vel_mask > 0, 
-                                                         np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5))
+        if V_type == 'Ha':
+            map_smoothness = how_smooth(maps['Ha_vel'], maps['Ha_vel_mask'])
+
+            map_smoothness_5sigma = how_smooth(maps['Ha_vel'], 
+                                               np.logical_or(maps['Ha_vel_mask'] > 0, 
+                                                             np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar'])) < 5))
+
+            if (map_smoothness > map_smoothness_max) and (map_smoothness_5sigma > map_smoothness_max):
+                can_fit = False
         ########################################################################
 
 
-        if map_smoothness <= map_smoothness_max or map_smoothness_5sigma <= map_smoothness_max:
+        if can_fit:
             ####################################################################
             # Extract the necessary data from the DRP table.
             #-------------------------------------------------------------------
@@ -199,22 +220,23 @@ for gal_ID in FILE_IDS:
                 #---------------------------------------------------------------
                 start = datetime.datetime.now()
                 
-                param_outputs, num_masked_gal, fit_flag = fit_vel_map(Ha_vel, 
-                                                                      Ha_vel_ivar, 
-                                                                      Ha_vel_mask, 
-                                                                      Ha_sigma, 
-                                                                      Ha_sigma_ivar, 
-                                                                      Ha_sigma_mask, 
-                                                                      Ha_flux, 
-                                                                      Ha_flux_ivar, 
-                                                                      Ha_flux_mask, 
-                                                                      r_band, 
-                                                                      r_band_ivar, 
+                param_outputs, num_masked_gal, fit_flag = fit_vel_map(maps[V_type + '_vel'],
+                                                                      maps[V_type + '_vel_ivar'], 
+                                                                      maps[V_type + '_vel_mask'], 
+                                                                      maps['Ha_sigma'], 
+                                                                      maps['Ha_sigma_ivar'], 
+                                                                      maps['Ha_sigma_mask'], 
+                                                                      maps['Ha_flux'], 
+                                                                      maps['Ha_flux_ivar'], 
+                                                                      maps['Ha_flux_mask'], 
+                                                                      maps['r_band'], 
+                                                                      maps['r_band_ivar'], 
                                                                       axis_ratio, 
                                                                       phi_EofN_deg, 
                                                                       z, 
                                                                       gal_ID, 
                                                                       vel_function, 
+                                                                      V_type=V_type, 
                                                                       #IMAGE_DIR=IMAGE_DIR, 
                                                                       #IMAGE_FORMAT=IMAGE_FORMAT, 
                                                                       num_masked_gal=num_masked_gal)
@@ -251,10 +273,11 @@ for gal_ID in FILE_IDS:
                     # Write the best-fit values and calculated parameters to a 
                     # text file in ascii format.
                     #-----------------------------------------------------------
-                    DRP_table = fillin_output_table(DRP_table, 
-                                                    map_smoothness, 
-                                                    i_DRP, 
-                                                    col_name='smoothness_score')
+                    if V_type == 'Ha':
+                        DRP_table = fillin_output_table(DRP_table, 
+                                                        map_smoothness, 
+                                                        i_DRP, 
+                                                        col_name='smoothness_score')
                                                     
                     DRP_table = fillin_output_table(DRP_table, 
                                                     R90, 
@@ -281,7 +304,10 @@ for gal_ID in FILE_IDS:
                     # Print output to terminal if not analyzing all galaxies
                     #-----------------------------------------------------------
                     print(DRP_table[['plateifu','nsa_z','nsa_elpetro_ba','nsa_elpetro_phi']][i_DRP])
-                    print('Smoothness score:', map_smoothness)
+
+                    if V_type == 'Ha':
+                        print('Smoothness score:', map_smoothness)
+
                     print(param_outputs)
                     print(mass_outputs)
                     print('Fit flag:', fit_flag)
@@ -296,8 +322,11 @@ for gal_ID in FILE_IDS:
             num_not_smooth += 1
 
             if RUN_ALL_GALAXIES:
-                DRP_table = fillin_output_table(DRP_table, map_smoothness, i_DRP, col_name='smoothness_score')
-            else:
+                DRP_table = fillin_output_table(DRP_table, 
+                                                map_smoothness, 
+                                                i_DRP, 
+                                                col_name='smoothness_score')
+            elif V_type == 'Ha':
                 print('Smoothness score:', map_smoothness)
                 print('5-sigma smoothness score:', map_smoothness_5sigma)
 
@@ -313,7 +342,13 @@ for gal_ID in FILE_IDS:
 # Save the output_table
 #-------------------------------------------------------------------------------
 if RUN_ALL_GALAXIES:
-    DRP_table.write('DRP_vel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt', 
+
+    if V_type == 'Ha':
+        out_filename = 'DRP_HaVel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt'
+    else:
+        out_filename = 'DRP_starVel_map_resutls_' + fit_function + '.txt'
+
+    DRP_table.write(out_filename, 
                     format='ascii.commented_header', 
                     overwrite=True)
 ################################################################################

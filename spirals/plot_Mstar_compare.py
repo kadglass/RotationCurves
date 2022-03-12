@@ -110,15 +110,39 @@ good_galaxies = data[~bad_boolean]
 
 
 ################################################################################
+# Separate galaxies by their CMD classification
+#-------------------------------------------------------------------------------
+# Green valley
+gboolarray = good_galaxies['CMD_class'] == 2
+
+# Blue cloud
+bboolarray = good_galaxies['CMD_class'] == 1
+
+# Red sequence
+rboolarray = good_galaxies['CMD_class'] == 3
+
+GVdata = good_galaxies[gboolarray]
+Bdata = good_galaxies[bboolarray]
+Rdata = good_galaxies[rboolarray]
+################################################################################
+
+
+
+
+################################################################################
 # Compare M90_disk and M* from Pipe3D
 #-------------------------------------------------------------------------------
 tSize=14
 
 plt.figure(tight_layout=True)
 
-plt.plot(good_galaxies['P3D_logMstar'], good_galaxies['M90_disk_map'], '.', 
-         alpha=0.2)
-plt.plot([5,12], [5,12], 'k:')
+plt.plot(Rdata['P3D_logMstar'], Rdata['M90_disk_map'], 'r.', fillstyle='none', 
+         label='Red sequence')
+plt.plot(Bdata['P3D_logMstar'], Bdata['M90_disk_map'], 'b+', 
+         label='Blue cloud')
+plt.plot(GVdata['P3D_logMstar'], GVdata['M90_disk_map'], 'g*', markersize=4, 
+         label='Green valley')
+plt.plot([5,12], [5,12], 'k:', label='$y = x$')
 
 plt.xlim(7,12)
 plt.ylim(7,12)
@@ -129,8 +153,10 @@ plt.ylabel('log($M_d(R_{90})/M_\odot$) [this work]', fontsize=tSize)
 ax = plt.gca()
 ax.tick_params(labelsize=tSize)
 
+plt.legend(fontsize=tSize-4)
+
 #plt.show()
-plt.savefig('Images/M90disk_MstarP3D_compare.eps', format='eps', dpi=120)
+plt.savefig('Images/M90disk_MstarP3D_compare_v6.eps', format='eps', dpi=120)
 ################################################################################
 
 

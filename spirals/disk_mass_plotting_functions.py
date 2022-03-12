@@ -58,13 +58,45 @@ def plot_fitted_disk_rot_curve(gal_ID,
 
 
     ############################################################################
+    # Calculate the functional form of the curve
+    #---------------------------------------------------------------------------
+    r_depro = np.linspace(0, data_table['radius'][-1], 10000)
+
+    v = disk_vel(r_depro, 
+                 fit_parameters['Sigma_disk'], 
+                 fit_parameters['R_disk'])
+    ############################################################################
+
+
+    ############################################################################
+    # Generate the uncertainty range of the best-fit
+    #---------------------------------------------------------------------------
+    cov = np.load('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy')
+
+    N_samples = 10000
+
+    random_sample = np.random.multivariate_normal(mean=[fit_parameters['Sigma_disk'], 
+                                                        fit_parameters['R_disk']], 
+                                                  cov=cov, 
+                                                  size=N_samples)
+
+    # Remove bad samples (those with negative values for any of the parameters)
+    is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0)
+    good_randoms = random_sample[is_good_random, :]
+
+    for i in range(len(r_depro)):
+        # Calculate the values of the curve at this location
+        y_sample = disk_vel(r_depro[i], good_randoms[:,0], good_randoms[:,1])
+
+    stdevs = np.std(y_sample, axis=0)
+    ############################################################################
+
+
+    ############################################################################
     # Plot the fitted disk rotation curve along with its error bars.  In 
     # addition, several statistics about the goodness of fit are displayed in 
     # the lower right side of the figure.
     #---------------------------------------------------------------------------
-    # x-axis range
-    r_depro = np.linspace(0, data_table['radius'][-1], 10000)
-
     # Plot formating
     marker_size = 4
     errorbar_cap_thickness = 1
@@ -84,9 +116,9 @@ def plot_fitted_disk_rot_curve(gal_ID,
                       fit_parameters['R_disk']], r_depro), 
             'c:')
     '''
-    ax.plot(r_depro, 
-            disk_vel(r_depro, fit_parameters['Sigma_disk'], fit_parameters['R_disk']), 
-            'c:')
+    ax.plot(r_depro, v, 'c')
+
+    ax.fill_between(r_depro, v - stdevs, v + stdevs, facecolor='aliceblue')
 
     ax.tick_params( axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')

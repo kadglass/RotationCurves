@@ -241,6 +241,8 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
         #-----------------------------------------------------------------------
         # Determine uncertainties in the fitted parameters
         #-----------------------------------------------------------------------
+        np.save('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy', pconv)
+
         perr = np.sqrt(np.diag(pconv))
         #-----------------------------------------------------------------------
 

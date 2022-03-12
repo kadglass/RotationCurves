@@ -46,8 +46,8 @@ vel_function = 'BB'
 #vel_function = 'tanh'
 
 # Velocity map to use
-#V_type = 'Ha'
-V_type = 'star'
+V_type = 'Ha'
+#V_type = 'star'
 ################################################################################
 
 
@@ -58,7 +58,7 @@ V_type = 'star'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8440-12704']
+FILE_IDS = ['8985-9102']
 
 RUN_ALL_GALAXIES = False
 ################################################################################

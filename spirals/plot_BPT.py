@@ -7,12 +7,23 @@ Plot the BPT diagram
 # Import modules
 #-------------------------------------------------------------------------------
 from astropy.table import Table
+import astropy.constants as const
 
 import numpy as np
 
 from extract_KIAS2_functions import match_by_index
+from dark_matter_mass_v1 import rot_fit_BB
 
 import matplotlib.pyplot as plt
+################################################################################
+
+
+
+
+################################################################################
+# Constants
+#-------------------------------------------------------------------------------
+H0 = 100
 ################################################################################
 
 
@@ -23,7 +34,8 @@ import matplotlib.pyplot as plt
 #-------------------------------------------------------------------------------
 data_directory = ''
 
-data_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+#data_filename = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+data_filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_noWords_v6.txt'
 
 data = Table.read(data_directory + data_filename, 
                   format='ascii.commented_header')
@@ -41,12 +53,43 @@ flux = Table.read(flux_directory + flux_filename,
 
 
 ################################################################################
+# Calculate velocity at R90
+#-------------------------------------------------------------------------------
+dist_to_galaxy_Mpc = (const.c.to('km/s')*data['NSA_redshift']/H0).value
+dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+
+data['R90_kpc'] = dist_to_galaxy_kpc*np.tan(data['NSA_elpetro_th90']*(1./60)*(1./60)*(np.pi/180))
+
+data['V90_kms'] = rot_fit_BB(data['R90_kpc'], 
+                             [data['Vmax_map'], data['Rturn_map'], data['alpha_map']])
+################################################################################
+
+
+
+
+################################################################################
+# Calculate mass ratio
+#-------------------------------------------------------------------------------
+data['M90_Mdisk_ratio'] = 10**(data['M90_map'] - data['M90_disk_map'])
+################################################################################
+
+
+
+
+################################################################################
 # Sample criteria
 #-------------------------------------------------------------------------------
 bad_boolean = np.logical_or.reduce([data['M90_map'] == -99, 
                                     data['M90_disk_map'] == -99, 
                                     data['alpha_map'] > 99, 
-                                    data['ba_map'] > 0.998]) 
+                                    data['ba_map'] > 0.998, 
+                                    data['V90_kms']/data['Vmax_map'] < 0.9, 
+                                    (data['Tidal'] & (data['DL_merge'] > 0.97)), 
+                                    data['map_frac_unmasked'] < 0.05, 
+                                    (data['map_frac_unmasked'] > 0.13) & (data['DRP_map_smoothness'] > 1.96), 
+                                    (data['map_frac_unmasked'] > 0.07) & (data['DRP_map_smoothness'] > 2.9), 
+                                    (data['map_frac_unmasked'] > -0.0638*data['DRP_map_smoothness'] + 0.255) & (data['DRP_map_smoothness'] > 1.96), 
+                                    data['M90_Mdisk_ratio'] > 1050]) 
                                     #data['Z12logOH'] > 0])
 
 sample = data[~bad_boolean]
@@ -128,6 +171,8 @@ Ke01 = 1.19 + 0.61/(N2Ha - 0.47)
 ################################################################################
 # Plot BPT diagram, colored by CMD
 #-------------------------------------------------------------------------------
+tSize = 14
+
 plt.figure()
 
 plt.plot(np.log10(Rdata['N2_Halpha']), 
@@ -152,15 +197,18 @@ plt.plot(N2Ha[N2Ha < 0], Ka03, 'k:', label='Kauffmann et al. (2003)')
 plt.ylim([-1.5, 1.5])
 plt.xlim([-1.4, 0.5])
 
-plt.xlabel(r'log([NII]/H$\alpha$)')
-plt.ylabel(r'log([OIII]/H$\beta$)')
+plt.xlabel(r'log([NII]/H$\alpha$)', fontsize=tSize)
+plt.ylabel(r'log([OIII]/H$\beta$)', fontsize=tSize)
 
-plt.legend()
+ax = plt.gca()
+ax.tick_params(labelsize=tSize)
+
+plt.legend(fontsize=tSize-4)
 
 plt.tight_layout()
 
-plt.show()
-#plt.savefig(data_directory + 'Images/BPT_v5.eps', format='eps', dpi=300)
+#plt.show()
+plt.savefig(data_directory + 'Images/BPT_v6.eps', format='eps', dpi=120)
 ################################################################################
 
 
@@ -199,15 +247,18 @@ plt.plot(N2Ha[N2Ha < 0], Ka03, 'k:', label='Kauffmann et al. (2003)')
 plt.ylim([-1.5, 1.5])
 plt.xlim([-1.4, 0.5])
 
-plt.xlabel(r'log([NII]/H$\alpha$)')
-plt.ylabel(r'log([OIII]/H$\beta$)')
+plt.xlabel(r'log([NII]/H$\alpha$)', fontsize=tSize)
+plt.ylabel(r'log([OIII]/H$\beta$)', fontsize=tSize)
 
-plt.legend()
+ax = plt.gca()
+ax.tick_params(labelsize=tSize)
+
+plt.legend(fontsize=tSize-4)
 
 plt.tight_layout()
 
 plt.show()
-#plt.savefig(data_directory + 'Images/BPT_v5.eps', format='eps', dpi=300)
+#plt.savefig(data_directory + 'Images/BPT_v5.eps', format='eps', dpi=120)
 ################################################################################
 
 

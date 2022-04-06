@@ -4,7 +4,7 @@
 import datetime
 START = datetime.datetime.now()
 
-import glob, os.path, warnings
+import os.path, warnings
 
 import numpy as np
 
@@ -94,21 +94,8 @@ def process_1_galaxy(job_queue, i,
             
             print('Worker', i, 'returned successfully', datetime.datetime.now(), flush=True)
             return
-            
-            
-        ########################################################################
-        # Extract the necessary data from the .fits files.
-        #-----------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar = extract_data(VEL_MAP_FOLDER, gal_ID)
-
-        if Ha_vel is None:
-            output_tuple = (None, None, None, None, None)
-            return_queue.put(output_tuple)
-            continue
         
-        print( gal_ID, "extracted", flush=True)
-        ########################################################################
-
+        
         ########################################################################
         # Extract the necessary data from the NSA table.
         #-----------------------------------------------------------------------
@@ -116,16 +103,52 @@ def process_1_galaxy(job_queue, i,
         
         NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
         ########################################################################
+        
+        
+        ########################################################################
+        # Confirm that object is a galaxy target
+        #-----------------------------------------------------------------------
+        if DRP_table['mngtarg1'][i_DRP] <= 0:
+            
+            print(gal_ID, 'is not a galaxy target.\n', flush=True)
+            
+            output_tuple = (None, None, None, None, None, None)
+            return_queue.put(output_tuple)
+            
+            continue
+        ########################################################################
+        
+            
+        ########################################################################
+        # Extract the necessary data from the .fits files.
+        #-----------------------------------------------------------------------
+        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data(VEL_MAP_FOLDER, gal_ID)
+
+        if Ha_vel is None:
+        
+            print('No data for', gal_ID, '\n', flush=True)
+            
+            output_tuple = (None, None, None, None, None, None)
+            return_queue.put(output_tuple)
+            
+            continue
+        
+        print( gal_ID, "extracted", flush=True)
+        ########################################################################
 
 
         ########################################################################
         # Calculate degree of smoothness of velocity map
         #-----------------------------------------------------------------------
         map_smoothness = how_smooth( Ha_vel, Ha_vel_mask)
+        
+        map_smoothness_5sigma = how_smooth(Ha_vel, 
+                                           np.logical_or(Ha_vel_mask > 0, 
+                                                         np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5))
         ########################################################################
 
 
-        if map_smoothness <= map_smoothness_max:
+        if map_smoothness <= map_smoothness_max or map_smoothness_5sigma <= map_smoothness_max:
             ####################################################################
             # Extract the necessary data from the DRP table.
             #-------------------------------------------------------------------
@@ -144,18 +167,25 @@ def process_1_galaxy(job_queue, i,
                 start = datetime.datetime.now()
                 
                 try:
-                    param_outputs, masked_gal_flag = fit_vel_map( Ha_vel, 
-                                                              Ha_vel_ivar, 
-                                                              Ha_vel_mask, 
-                                                              r_band, 
-                                                              r_band_ivar, 
-                                                              axis_ratio, 
-                                                              phi_EofN_deg, 
-                                                              z, gal_ID, 
-                                                              vel_function, 
-                                                              IMAGE_DIR=IMAGE_DIR, 
-                                                              IMAGE_FORMAT=IMAGE_FORMAT, 
-                                                              )
+                    param_outputs, masked_gal_flag, fit_flag = fit_vel_map(Ha_vel, 
+                                                                           Ha_vel_ivar, 
+                                                                           Ha_vel_mask, 
+                                                                           Ha_sigma, 
+                                                                           Ha_sigma_ivar, 
+                                                                           Ha_sigma_mask, 
+                                                                           Ha_flux, 
+                                                                           Ha_flux_ivar, 
+                                                                           Ha_flux_mask, 
+                                                                           r_band, 
+                                                                           r_band_ivar, 
+                                                                           axis_ratio, 
+                                                                           phi_EofN_deg, 
+                                                                           z, 
+                                                                           gal_ID, 
+                                                                           vel_function, 
+                                                                           IMAGE_DIR=IMAGE_DIR, 
+                                                                           IMAGE_FORMAT=IMAGE_FORMAT
+                                                                           )
                 except:
                     print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', 
                           flush=True)
@@ -179,10 +209,13 @@ def process_1_galaxy(job_queue, i,
                 R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
                 
                 if param_outputs is not None:
-                    mass_outputs = estimate_total_mass(param_outputs['v_max'], 
-                                                       param_outputs['v_max_err'], 
+                    mass_outputs = estimate_total_mass([param_outputs['v_max'], 
+                                                        param_outputs['r_turn'], 
+                                                        param_outputs['alpha']], 
                                                        R90, 
-                                                       z)
+                                                       z, 
+                                                       vel_function, 
+                                                       gal_ID)
                 ################################################################
                 
             else:
@@ -194,6 +227,7 @@ def process_1_galaxy(job_queue, i,
                 
                 param_outputs = None
                 mass_outputs = None
+                fit_flag = None
                 R90 = None
 
         else:
@@ -204,6 +238,7 @@ def process_1_galaxy(job_queue, i,
 
             param_outputs = None
             mass_outputs = None
+            fit_flag = None
             
             if NSA_ID >= 0:
                 R90 = NSA_table['ELPETRO_TH90_R'][NSA_index[NSA_ID]]
@@ -216,7 +251,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Add output values to return queue
         #-----------------------------------------------------------------------
-        output_tuple = (map_smoothness, param_outputs, mass_outputs, R90, i_DRP)
+        output_tuple = (map_smoothness, param_outputs, mass_outputs, fit_flag, R90, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
 
@@ -404,7 +439,7 @@ while num_processed < num_tasks:
     # Write the best-fit values and calculated parameters to a text file in 
     # ascii format.
     #---------------------------------------------------------------------------
-    map_smoothness, param_outputs, mass_outputs, R90, i_DRP = return_tuple
+    map_smoothness, param_outputs, mass_outputs, fit_flag, R90, i_DRP = return_tuple
     
     #print('Writing', i_DRP, flush=True)
 
@@ -423,6 +458,10 @@ while num_processed < num_tasks:
     if param_outputs is not None:
         DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
         DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
+        DRP_table = fillin_output_table(DRP_table, 
+                                        fit_flag, 
+                                        i_DRP, 
+                                        col_name='fit_flag')
     ############################################################################
     
     num_processed += 1

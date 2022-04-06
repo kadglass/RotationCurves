@@ -749,10 +749,11 @@ def calc_stellar_mass( mass, sMass_density_array, annulus_spaxels):
     #---------------------------------------------------------------------------
     for spaxel in sMass_density_array[ annulus_spaxels]:
         try:
-            mass += spaxel.physical
-
+            if np.isfinite(spaxel.physical):
+                mass += spaxel.physical
         except AttributeError:
-            pass
+            if np.isfinite(spaxel):
+                mass += spaxel
     ############################################################################
 
     return mass

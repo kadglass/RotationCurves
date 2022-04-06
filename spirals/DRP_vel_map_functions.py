@@ -10,6 +10,8 @@ from scipy.optimize import minimize
 
 from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
 
+import matplotlib.pyplot as plt
+
 
 
 
@@ -20,6 +22,8 @@ from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
 H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458 # Speed of light in units of km/s
 G = 4.30091E-3 # Gravitation constant in units of (km/s)^2 pc/Msun
+
+q0 = 0.2
 
 MANGA_FIBER_DIAMETER = 2*(1/60)*(1/60)*(np.pi/180) # angular fiber diameter (2") in radians
 MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
@@ -35,6 +39,275 @@ fit_options = {'BB': rot_fit_BB,
               }
 ################################################################################
 
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def build_map_mask(gal_ID, 
+                   fit_flag, 
+                   mHa_vel, 
+                   mHa_flux, 
+                   mHa_flux_ivar, 
+                   mHa_sigma):
+    '''
+    Build mask for galaxy based on the fit method used.
+
+
+    Parameters
+    ==========
+
+    gal_ID : string
+        <MaNGA plate> - <MaNGA IFU>
+
+    fit_flag : float
+        Identifies the fit method used to model the velocity map.
+        - 1 : original (only Ha_vel_mask)
+        - 2 : residual (only Ha_vel_mask)
+        - 3 : continuous (Ha_vel_mask + spaxels which are separated from others)
+        - 4 : non-AGN (Ha_vel_mask + spaxels with high Ha velocity dispersion)
+        - 5 : S/N > 5 (Ha_vel_mask + spaxels with S/N < 5)
+
+    mHa_vel : numpy ndarray of shape (n,n)
+        masked H-alpha velocity map
+
+    mHa_flux : numpy ndarray of shape (n,n)
+        H-alpha flux map
+
+    mHa_flux_ivar : numpy ndarray of shape (n,n)
+        masked inverse variance map of the H-alpha flux
+
+    mHa_sigma : numpy ndarray of shape (n,n)
+        masked H-alpha velocity width map
+
+
+    Returns:
+    ========
+
+    mask : numpy boolean ndarray of shape (n,n)
+        Mask map where true values are to be masked.
+    '''
+
+
+    ############################################################################
+    # By default, the mask will just be the Ha_vel_mask
+    #---------------------------------------------------------------------------
+    bitmask = mHa_vel.mask
+    ############################################################################
+
+
+    if fit_flag == -3:
+        ########################################################################
+        # Mask spaxels that have velocities which are not continuous
+        #-----------------------------------------------------------------------
+        _,_, bitmask = find_vel_bounds(mHa_vel, gal_ID)
+        ########################################################################
+
+    elif fit_flag == -4:
+        ########################################################################
+        # Mask spaxels that have large velocity widths
+        #-----------------------------------------------------------------------
+        _, bitmask = find_sigma_bounds(mHa_sigma, gal_ID)
+        ########################################################################
+
+    elif fit_flag > 0:
+        ########################################################################
+        # Mask spaxels that have S/N smaller than fit_flag
+        #-----------------------------------------------------------------------
+        SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
+
+        bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < fit_flag)
+        ########################################################################
+
+
+    ############################################################################
+    # Convert mask into boolean array
+    #---------------------------------------------------------------------------
+    mask = bitmask > 0
+    ############################################################################
+
+    return mask
+
+
+
+################################################################################
+################################################################################
+################################################################################
+def find_sigma_bounds(mHa_sigma, gal_ID):
+    '''
+    Locate the maximum line width of Ha that is continuously linked to the 
+    smallest line width (normally around 0) found in the line width map.
+
+
+    PARAMETERS
+    ==========
+
+    mHa_sigma : masked ndarray of shape (n,n)
+        Masked H-alpha line width map, in units of km/s
+
+    gal_ID : string
+        <MaNGA plate>-<MaNGA IFU>
+
+
+    RETURNS
+    =======
+
+    max_sigma : float
+        The maximum line width of this continous distribution (in units of 
+        km/s).
+
+    modified_mask : boolean ndarray of shape (n,n)
+        Values of true correspond to masked locations (either already masked, or 
+        with line widths larger than the determined line width maximum).
+    '''
+
+    bin_width = 10 # Bin the line widths in bins of 10 km/s
+
+    if gal_ID in ['8601-1902', '9037-12703', '8724-12701', '9088-12702', 
+                  '8551-12703', '8452-12703', '7960-12704', '8481-12705', 
+                  '10001-12705', '8319-12705', '9869-12705', '9045-1901', 
+                  '8446-1901', '8555-1901', '8551-1901', '8158-1901', 
+                  '8453-1901', '8244-1902', '9888-3701', '8335-3701', 
+                  '8261-3701', '8552-3702', '8725-3703', '8999-3704', 
+                  '9501-3704', '8257-6101', '8483-6101', '8244-6101', 
+                  '8131-6101', '8338-6103', '8985-6104', '8935-6104', 
+                  '8591-6104', '8944-6104', '8239-9101', '8154-9101', 
+                  '8320-9101', '8086-9102', '8081-9102', '9184-9102']:
+        bin_width = 20
+    elif gal_ID in ['8341-12704']:
+        bin_width = 5
+
+    sigma_extreme = ma.max(mHa_sigma) # Maximum line width in the map
+
+    sigma_bin_counts, sigma_bin_edges = np.histogram(mHa_sigma.compressed(), 
+                                                     bins=np.arange(0, 
+                                                                    sigma_extreme + bin_width, 
+                                                                    bin_width))
+    ############################################################################
+    # Find the smallest-width bin with counts
+    #---------------------------------------------------------------------------
+    low_bin = 0
+
+    while low_bin < len(sigma_bin_counts) and sigma_bin_counts[low_bin] == 0:
+        low_bin += 1
+    ############################################################################
+
+
+    ############################################################################
+    # Find the highest bin in which data is connected back to this lowest bin
+    #---------------------------------------------------------------------------
+    max_bin = low_bin + 1
+
+    while max_bin < len(sigma_bin_counts) and sigma_bin_counts[max_bin] > 0:
+        max_bin += 1
+
+    max_sigma = sigma_bin_edges[max_bin]
+    ############################################################################
+
+
+    ############################################################################
+    # Build the new mask, masking out all spaxels with line widths larger than 
+    # max_sigma.
+    #---------------------------------------------------------------------------
+    bad_sigma = mHa_sigma > max_sigma
+
+    new_mask = np.logical_or(mHa_sigma.mask > 0, bad_sigma)
+    ############################################################################
+
+    return max_sigma, new_mask
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+def find_vel_bounds(mHa_vel, gal_ID):
+    '''
+    Locate the minimum and maximum velocities of the velocity distribution that 
+    is continuously linked to the most common velocity (normally around 0) 
+    found in the velocity map.
+
+
+    PARAMETERS
+    ==========
+
+    mHa_vel : masked ndarray of shape (n,n)
+        Masked H-alpha velocity map, in units of km/s
+
+    gal_ID : string
+        <MaNGA plate>-<MaNGA IFU>
+
+
+    RETURNS
+    =======
+
+    min_vel, max_vel : float
+        The minimum and maximum velocities of this continous distribution (in 
+        units of km/s).
+
+    modified_mask : boolean ndarray of shape (n,n)
+        Values of true correspond to masked locations (either already masked, or 
+        with velocities outside of the determined velocity range).
+    '''
+
+    bin_width = 10 # Bin the velocity in bins of 10 km/s
+
+    if gal_ID in ['8150-12703', '8980-1902', '8261-6104']:
+        bin_width = 5
+
+    vel_extreme = ma.max(ma.abs(mHa_vel)) # Maximum velocity in the map
+
+    vel_bin_counts, vel_bin_edges = np.histogram(mHa_vel.compressed(), 
+                                                 bins=np.arange(-vel_extreme, 
+                                                                vel_extreme + bin_width, 
+                                                                bin_width))
+
+    ############################################################################
+    # Find the bin with the most counts
+    #---------------------------------------------------------------------------
+    center_bin = np.argmax(vel_bin_counts)
+    ############################################################################
+
+
+    ############################################################################
+    # Find the highest bin in which data is connected back to this central bin
+    #---------------------------------------------------------------------------
+    max_bin = center_bin + 1
+
+    while max_bin < len(vel_bin_counts) and vel_bin_counts[max_bin] > 0:
+        max_bin += 1
+
+    max_vel = vel_bin_edges[max_bin]
+    ############################################################################
+
+
+    ############################################################################
+    # Find the lowest bin in which data is connected back to the central bin
+    #---------------------------------------------------------------------------
+    min_bin = center_bin - 1
+
+    while vel_bin_counts[min_bin] > 0 and min_bin > 0:
+        min_bin -= 1
+
+    min_vel = vel_bin_edges[min_bin]
+    ############################################################################
+
+
+    ############################################################################
+    # Build the new mask, masking out all spaxels with velocities outside the 
+    # range (min_vel, max_vel).
+    #---------------------------------------------------------------------------
+    bad_vel = np.logical_or(mHa_vel < min_vel, mHa_vel > max_vel)
+
+    new_mask = np.logical_or(mHa_vel.mask > 0, bad_vel)
+    ############################################################################
+
+    return min_vel, max_vel, new_mask
 
 
 
@@ -73,12 +346,15 @@ def find_phi(center_coords, phi_angle, vel_map):
     
     # Convert phi_angle to radians
     phi = phi_angle*np.pi/180.
+
+    # Extract "systemic" velocity (velocity at center spaxel)
+    v_sys = vel_map[center_coords]
     
     f = 0.4
     
     checkpoint_masked = True
     
-    while checkpoint_masked:
+    while checkpoint_masked and not vel_map.mask.all():
         delta_x = int(center_coords[1]*f)
         delta_y = int(delta_x/np.tan(phi))
         semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
@@ -94,11 +370,11 @@ def find_phi(center_coords, phi_angle, vel_map):
             checkpoint_masked = False
         else:
             f *= 0.9
-            
-    if vel_map[tuple(semi_major_axis_spaxel)] < 0:
-        phi_adjusted = phi + np.pi
-    else:
+    
+    if vel_map.mask.all() or vel_map[tuple(semi_major_axis_spaxel)] - v_sys >= 0:
         phi_adjusted = phi
+    else:
+        phi_adjusted = phi + np.pi
             
     return phi_adjusted
 
@@ -417,12 +693,82 @@ def calculate_chi2_flat(params,
     # Calculate chi2 of current fit
     #---------------------------------------------------------------------------
     chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
+    #chi2 = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
     chi2_norm = chi2/(len(flat_vel_map) - len(params))
     ############################################################################
 
 
     return chi2_norm
+################################################################################
+
+
+
+
+def calculate_residual_flat(params, 
+                            flat_vel_map, 
+                            map_mask,
+                            pix_scale, 
+                            fit_function):
+    '''
+    residual of the velocity map
+
+
+    PARAMETERS
+    ==========
+
+    params : list
+        List of fit parameters
+
+    flat_vel_map : numpy array of shape (n,)
+        Flattened array of unmasked measured velocities
+        
+    map_mask : numpy array of shape (m,m)
+        Bit mask for map.  Values of 0 are valid, all others are bad.
+
+    pix_scale : float
+        Scale of each pixel (to convert from pixel units to kpc)
+
+    fit_function : string
+        Determines which function to use for the velocity.  Options are 'BB' and 
+        'tanh'.
+
+
+    RETURNS
+    =======
+
+    residual_norm : float
+        Residual value of the current value of the params normalized by the 
+        number of data points (minus the number of free parameters)
+    '''
+
+    ############################################################################
+    # Create fitted velocity map based on the values in params
+    #---------------------------------------------------------------------------
+    vel_map_model = model_vel_map(params, map_mask.shape, pix_scale, fit_function)
+    ############################################################################
+    
+    
+    ############################################################################
+    # Flatten both the mask and model, and remove all elements from the model 
+    # which are masked.
+    #---------------------------------------------------------------------------
+    mvel_map_model = ma.array(vel_map_model, mask=map_mask)
+    
+    flat_vel_map_model = mvel_map_model.compressed()
+    ############################################################################
+
+
+    ############################################################################
+    # Calculate residual of current fit
+    #---------------------------------------------------------------------------
+    residual = np.sum((flat_vel_map_model - flat_vel_map)**2)
+
+    residual_norm = residual/(len(flat_vel_map) - len(params))
+    ############################################################################
+
+
+    return residual_norm
 ################################################################################
 
 
@@ -689,6 +1035,9 @@ def vel_nlogL_BB(vel_params, pos_params, pix_scale, vel_map, vel_map_ivar):
 def find_vel_map(gal_ID, 
                  mHa_vel, 
                  mHa_vel_ivar, 
+                 mHa_sigma, 
+                 mHa_flux, 
+                 mHa_flux_ivar,
                  z, 
                  i_center_guess, 
                  j_center_guess,
@@ -703,11 +1052,23 @@ def find_vel_map(gal_ID,
     PARAMETERS
     ==========
 
+    gal_ID : string
+        <plate>-<IFU>
+
     mHa_vel : numpy array of shape (n,n)
-        H-alpha velocity field data
+        Masked H-alpha velocity field data
 
     Ha_vel_ivar : numpy array of shape (n,n)
-        Inverse variance in the H-alpha velocity field data
+        Masked inverse variance in the H-alpha velocity field data
+
+    mHa_sigma : numpy array of shape (n,n)
+        Masked H-alpha line width data
+
+    mHa_flux : numpy array of shape (n,n)
+        Masked H-alpha flux field data
+
+    mHa_flux_ivar : numpy array of shape (n,n)
+        Masked inverse variance of the H-alpha flux field data
 
     z : float
         Redshift of galaxy
@@ -762,7 +1123,7 @@ def find_vel_map(gal_ID,
     # Use the maximum velocity in the data as the initial guess for the maximum 
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
-    v_max_index = np.unravel_index(ma.argmax(np.abs(mHa_vel)), mHa_vel.shape)
+    v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
     v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
 
     #print("v_max_guess:", v_max_guess)
@@ -793,7 +1154,7 @@ def find_vel_map(gal_ID,
 
     # Orientation angle
     phi_low = 0
-    phi_high = 2*np.pi
+    phi_high = 2*np.pi + 0.1
     phi_bounds = (phi_low, phi_high)
 
     # Maximum velocity [km/s]
@@ -835,11 +1196,11 @@ def find_vel_map(gal_ID,
         # Alpha
         alpha_guess = 2
         alpha_low = 0.001
-        alpha_high = 15
+        alpha_high = 100
         alpha_bounds = (alpha_low, alpha_high)
 
         # Parameter guesses
-        vel_guesses = [np.abs(v_max_guess), \
+        vel_guesses = [v_max_guess, \
                        r_turn_guess_kpc, \
                        alpha_guess]
         pos_guesses = [sys_vel_guess, \
@@ -860,7 +1221,7 @@ def find_vel_map(gal_ID,
     elif fit_function == 'tanh':
 
         # Parameter guesses
-        vel_guesses = [np.abs(v_max_guess), r_turn_guess_kpc]
+        vel_guesses = [v_max_guess, r_turn_guess_kpc]
         pos_guesses = [sys_vel_guess, \
                        inclination_angle_guess, \
                        i_center_guess, \
@@ -886,7 +1247,6 @@ def find_vel_map(gal_ID,
     ############################################################################
     #---------------------------------------------------------------------------
     try:
-        
         ########################################################################
         # Flatten maps
         #-----------------------------------------------------------------------
@@ -900,21 +1260,210 @@ def find_vel_map(gal_ID,
         #
         # Fits all 8 parameters at once
         #-----------------------------------------------------------------------
+        print('Fitting entire map', flush=True)
+
+        result_all = minimize(calculate_chi2_flat, 
+                              np.concatenate([pos_guesses, vel_guesses]), 
+                              method='Powell', 
+                              args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                              bounds=np.concatenate([pos_bounds, vel_bounds]),
+                              options={'disp':True})
+        ########################################################################
+        
+        
+        ########################################################################
+        # Fit velocity map using only continuous velocity field
+        #-----------------------------------------------------------------------
+        print('Fitting continuous map', flush=True)
+        #-----------------------------------------------------------------------
+        # Remove spaxels that are not part of the continuous velocity field
+        #-----------------------------------------------------------------------
+        min_vel, max_vel, modified_mask = find_vel_bounds(mHa_vel, gal_ID)
+        #-----------------------------------------------------------------------
+
+        if np.sum(modified_mask == 0) == np.sum(mHa_vel.mask == 0):
+            result_continuous = result_all
+        else:
+            #-------------------------------------------------------------------
+            # Update velocity field
+            #-------------------------------------------------------------------
+            modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
+            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
+
+            modified_mHa_vel_flat = modified_mHa_vel.compressed()
+            modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+            #-------------------------------------------------------------------
+
+            #-------------------------------------------------------------------
+            # Update maximum velocity initial guess
+            #-------------------------------------------------------------------
+            v_max_guess = ma.max(ma.abs(modified_mHa_vel)/np.sin(inclination_angle_guess))
+
+            #print(v_max_guess)
+
+            vel_guesses[0] = v_max_guess
+            #-------------------------------------------------------------------
+
+            #-------------------------------------------------------------------
+            # Refit galaxy
+            #-------------------------------------------------------------------
+            result_continuous = minimize(calculate_chi2_flat, 
+                                         np.concatenate([pos_guesses, vel_guesses]), 
+                                         method='Powell', 
+                                         args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                                         bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                         options={'disp':True})
+        ########################################################################
+        
+        
+        ########################################################################
+        # Fit velocity field using the residual
+        #-----------------------------------------------------------------------
+        print('Fitting using residual', flush=True)
+        result_residual = minimize(calculate_residual_flat, 
+                                   np.concatenate([pos_guesses, vel_guesses]), 
+                                   method='Powell', 
+                                   args=(mHa_vel_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                                   bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                   options={'disp':True})
+
+        # Calculate chi2 of the fit
+        result_residual.fun = calculate_chi2_flat(result_residual.x, 
+                                                  mHa_vel_flat, 
+                                                  mHa_vel_ivar_flat, 
+                                                  mHa_vel.mask, 
+                                                  pix_scale_factor, 
+                                                  fit_function)
+        ########################################################################
+        
+        
+        ########################################################################
+        # Fit velocity field using only spaxels with S/N > 5
+        #-----------------------------------------------------------------------
+        print('Fitting S/N > 5', flush=True)
+        #-----------------------------------------------------------------------
+        # Remove spaxels with S/N < 5% of the maximum S/N in the data map (up to 
+        # a S/N = 1)
+        #-----------------------------------------------------------------------
+        SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
+
+        SN_cut = 5
         '''
-        result = minimize(calculate_chi2,
-                          np.concatenate([pos_guesses, vel_guesses]),
-                          method='Powell',#'L-BFGS-B',
-                          args=(mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function),
-                          bounds=np.concatenate([pos_bounds, vel_bounds]), 
-                          options={'disp':True}
-                          )
+        SN_cut = 0.05*np.max(SN)
+        if SN_cut > 1:
+            SN_cut = 1
         '''
-        result = minimize(calculate_chi2_flat, 
-                          np.concatenate([pos_guesses, vel_guesses]), 
-                          method='Powell', 
-                          args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
-                          bounds=np.concatenate([pos_bounds, vel_bounds]),
-                          options={'disp':True})
+
+        modified_mask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < SN_cut)
+        #-----------------------------------------------------------------------
+
+        if np.sum(modified_mask == 0) == np.sum(mHa_vel.mask == 0):
+            result_SN = result_all
+        else:
+
+            modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask)
+            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask)
+
+            modified_mHa_vel_flat = modified_mHa_vel.compressed()
+            modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+
+
+            result_SN = minimize(calculate_chi2_flat, 
+                                 np.concatenate([pos_guesses, vel_guesses]), 
+                                 method='Powell', 
+                                 args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                                 bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                 options={'disp':True})
+        ########################################################################
+        
+
+        ########################################################################
+        # Fit velocity map using only spaxels with small line widths
+        #-----------------------------------------------------------------------
+        print('Fitting non-AGN map', flush=True)
+        #-----------------------------------------------------------------------
+        # Remove spaxels with large line widths
+        #-----------------------------------------------------------------------
+        max_sigma, modified_mask_sigma = find_sigma_bounds(mHa_sigma, gal_ID)
+        #-----------------------------------------------------------------------
+
+        if np.sum(modified_mask_sigma == 0) == np.sum(mHa_vel.mask == 0):
+            result_nonAGN = result_all
+        else:
+            #-------------------------------------------------------------------
+            # Update velocity field
+            #-------------------------------------------------------------------
+            modified_mHa_vel = ma.array(mHa_vel.data, mask=modified_mask_sigma)
+            modified_mHa_vel_ivar = ma.array(mHa_vel_ivar.data, mask=modified_mask_sigma)
+
+            modified_mHa_vel_flat = modified_mHa_vel.compressed()
+            modified_mHa_vel_ivar_flat = modified_mHa_vel_ivar.compressed()
+            #-------------------------------------------------------------------
+
+            #-------------------------------------------------------------------
+            # Update maximum velocity initial guess
+            #-------------------------------------------------------------------
+            v_max_guess = ma.max(ma.abs(modified_mHa_vel)/np.sin(inclination_angle_guess))
+
+            vel_guesses[0] = v_max_guess
+            #-------------------------------------------------------------------
+
+            #-------------------------------------------------------------------
+            # Refit galaxy
+            #-------------------------------------------------------------------
+            result_nonAGN = minimize(calculate_chi2_flat, 
+                                     np.concatenate([pos_guesses, vel_guesses]), 
+                                     method='Powell', 
+                                     args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask_sigma, pix_scale_factor, fit_function),
+                                     bounds=np.concatenate([pos_bounds, vel_bounds]),
+                                     options={'disp':True})
+        ########################################################################
+
+
+        ########################################################################
+        # Choose the best fit (the one with the lowest chi2)
+        #-----------------------------------------------------------------------
+        fit_chi2 = np.inf*np.ones(5)
+
+        alpha_max = alpha_high - 5
+        
+        if result_all.x[7] < alpha_max:
+            fit_chi2[0] = result_all.fun
+        if result_continuous.x[7] < alpha_max:
+            fit_chi2[1] = result_continuous.fun
+        if result_SN.x[7] < alpha_max:
+            fit_chi2[2] = result_SN.fun
+        if result_residual.x[7] < alpha_max:
+            fit_chi2[3] = result_residual.fun
+        if result_nonAGN.x[7] < alpha_max:
+            fit_chi2[4] = result_nonAGN.fun
+
+        print(fit_chi2)
+
+        if np.sum(np.isfinite(fit_chi2)) == 0:
+            print('All fit methods have bad alpha values.', flush=True)
+            min_pos = 0
+        else:
+            min_pos = np.argmin(fit_chi2)
+
+        if min_pos == 0:
+            fit_flag = -1
+            result = result_all
+        elif min_pos == 1:
+            fit_flag = -3
+            result = result_continuous
+        elif min_pos == 2:
+            fit_flag = SN_cut
+            result = result_SN
+        elif min_pos == 3:
+            fit_flag = -2
+            result = result_residual
+        else:
+            fit_flag = -4
+            result = result_nonAGN
+        ########################################################################
+
+
 
         if result.success:
             print('Successful velocity fit!', flush=True)
@@ -935,8 +1484,12 @@ def find_vel_map(gal_ID,
             #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
             hessian = ndt.Hessian(calculate_chi2_flat)
             hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
+
+            # Save Hessian matrix (for uncertainty calculations)
+            np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
+            #print('Hessian:', hess)
             try:
-                hess_inv = np.linalg.inv(hess)
+                hess_inv = 2*np.linalg.inv(hess)
                 fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
             except np.linalg.LinAlgError:
                 fit_params_err = np.nan*np.ones(len(result.x))
@@ -946,10 +1499,15 @@ def find_vel_map(gal_ID,
             #-------------------------------------------------------------------
             # Unpack results
             #-------------------------------------------------------------------
+            ba = np.sqrt(np.cos(result.x[1])**2*(1 - q0**2) + q0**2)
+            ba_err = (fit_params_err[1]/np.sqrt(ba))*(1 - q0**2)*np.sin(result.x[1])*np.cos(result.x[1])
+
             best_fit_values = {'v_sys': result.x[0],
                                'v_sys_err': fit_params_err[0],
-                               'ba': np.cos(result.x[1]),
-                               'ba_err': np.cos(fit_params_err[1]),
+                               'ba': ba, 
+                               'ba_err': ba_err, 
+                               #'ba': np.cos(result.x[1]),
+                               #'ba_err': np.cos(fit_params_err[1]),
                                'x0': result.x[2],
                                'x0_err': fit_params_err[2],
                                'y0': result.x[3],
@@ -975,14 +1533,16 @@ def find_vel_map(gal_ID,
             print('Fit did not converge.', flush=True)
             best_fit_values = None
             best_fit_map = None
+            fit_flag = None
         ########################################################################
     except RuntimeError:
         best_fit_values = None
         best_fit_map = None
+        fit_flag = None
     ############################################################################
         
 
-    return best_fit_values, best_fit_map, pix_scale_factor
+    return best_fit_values, best_fit_map, pix_scale_factor, fit_flag
 
 
 
@@ -994,7 +1554,7 @@ def find_vel_map(gal_ID,
 
 
 
-def mass_newton(v,v_err,r,z):
+def mass_newton(v,v_err,r):
     '''
     Calculate the mass within radius r orbiting with a velocity v.
 
@@ -1009,10 +1569,7 @@ def mass_newton(v,v_err,r,z):
         Uncertainty in the velocity [km/s]
 
     r : float
-        Radius within which to calculate the mass [arcsec]
-
-    z : float
-        Galaxy redshift
+        Radius within which to calculate the mass [kpc]
 
 
     RETURNS
@@ -1026,10 +1583,7 @@ def mass_newton(v,v_err,r,z):
     ############################################################################
     # Convert radius to pc
     #---------------------------------------------------------------------------
-    dist_to_galaxy_Mpc = c*z/H_0
-    dist_to_galaxy_pc = dist_to_galaxy_Mpc*1000000
-
-    r_pc = dist_to_galaxy_pc*np.tan(r*(1/60)*(1/60)*(np.pi/180))
+    r_pc = r*1000
     ############################################################################
 
 

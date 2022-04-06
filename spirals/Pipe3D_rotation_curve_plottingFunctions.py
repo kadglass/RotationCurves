@@ -2,6 +2,7 @@ import os
 import gc
 
 import numpy as np
+import numpy.ma as ma
 
 import matplotlib
 matplotlib.use('TKAgg')
@@ -147,7 +148,8 @@ def plot_sMass_image(sMass,
 
 
     ###########################################################################
-    sMass_cbar_ticks = np.linspace(  0, sMass.max(), 7)
+    sMass_max = ma.max(sMass)
+    sMass_cbar_ticks = np.linspace(  0, sMass_max, 7)
 
     for val, i in zip( sMass_cbar_ticks, range( len( sMass_cbar_ticks))):
         val = '%.3f' % val
@@ -159,7 +161,7 @@ def plot_sMass_image(sMass,
     ax.set_title( gal_ID + ' stellar mass density')
     sMass_im = ax.imshow( sMass, origin='lower')
 
-    cbar = plt.colorbar( sMass_im, ax=ax, ticks = np.linspace(  0, sMass.max(), 6))
+    cbar = plt.colorbar( sMass_im, ax=ax, ticks = sMass_cbar_ticks)
     cbar.ax.tick_params( direction='in', color='white')
     cbar.set_label(r'stellar mass density [log($M/M_\odot$)]')
 

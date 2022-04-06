@@ -44,7 +44,7 @@ from DRP_rotation_curve_functions import build_mask, \
                                          put_data_in_QTable
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
-                                                 plot_Ha_vel, \
+                                                 plot_vel, \
                                                  plot_rot_curve, \
                                                  plot_mass_curve, \
                                                  plot_diagnostic_panel
@@ -56,7 +56,7 @@ from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
 ################################################################################
 ################################################################################
 
-def extract_data( DRP_FOLDER, gal_ID):
+def extract_data( DRP_FOLDER, gal_ID, which_maps):
     """
     Open the MaNGA .fits file and extract data.
 
@@ -70,25 +70,25 @@ def extract_data( DRP_FOLDER, gal_ID):
     gal_ID : string
         '[PLATE]-[IFUID]' of the galaxy
 
+    which_maps : list
+        Contains a list of the maps to return.  Can include:
+          - Ha_vel
+          - r_band
+          - Ha_flux
+          - Ha_sigma
+          - star_vel
+
     
     RETURNS
     =======
-    
-    Ha_vel : n-D numpy array
-        H-alpha velocity field in units of km/s
 
-    Ha_vel_ivar : n-D numpy array
-        Inverse variance in the H-alpha velocity field in units of 1/(km/s)^2
-
-    Ha_vel_mask : n-D numpy array
-        Bitmask for the H-alpha velocity field
-
-    r_band : n-D numpy array
-        r-band flux in units of 1E-17 erg/s/cm^2/ang/spaxel
-
-    r_band_ivar : n-D numpy array
-        Inverse variance in the r-band flux in units of 
-        1/(1E-17 erg/s/cm^2/ang/spaxel)^2
+    maps : dictionary
+        Dictionary of maps.  Can include:
+          - Ha_vel, _ivar, _mask: H-alpha velocity [km/s]
+          - r_band, _ivar: r-band flux [1e-17 erg/s/cm^2/ang/spaxel]
+          - Ha_flux, _ivar, _mask: H-alpha flux [1e-17 erg/s/cm^2/ang/spaxel]
+          - Ha_sigma, _ivar, _mask: Velocity dispersion in H-alpha [km/s]
+          - star_vel, _ivar, _mask: Stellar velocity [km/s]
     """
 
     [plate, IFU] = gal_ID.split('-')
@@ -96,20 +96,39 @@ def extract_data( DRP_FOLDER, gal_ID):
     
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
-        return None, None, None, None, None
+        return None
 
     cube = fits.open( file_name)
 
-    r_band = cube['SPX_MFLUX'].data
-    r_band_ivar = cube['SPX_MFLUX_IVAR'].data
+    maps = {}
+
+    if 'r_band' in which_maps:
+        maps['r_band'] = cube['SPX_MFLUX'].data
+        maps['r_band_ivar'] = cube['SPX_MFLUX_IVAR'].data
+
+    if 'Ha_flux' in which_maps:
+        maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[18]
+        maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[18]
+        maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[18]
     
-    Ha_vel = cube['EMLINE_GVEL'].data[18]
-    Ha_vel_ivar = cube['EMLINE_GVEL_IVAR'].data[18]
-    Ha_vel_mask = cube['EMLINE_GVEL_MASK'].data[18]
+    if 'Ha_vel' in which_maps:
+        maps['Ha_vel'] = cube['EMLINE_GVEL'].data[18]
+        maps['Ha_vel_ivar'] = cube['EMLINE_GVEL_IVAR'].data[18]
+        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[18]
+
+    if 'Ha_sigma' in which_maps:
+        maps['Ha_sigma'] = cube['EMLINE_GSIGMA'].data[18]
+        maps['Ha_sigma_ivar'] = cube['EMLINE_GSIGMA_IVAR'].data[18]
+        maps['Ha_sigma_mask'] = cube['EMLINE_GSIGMA_MASK'].data[18]
+
+    if 'star_vel' in which_maps:
+        maps['star_vel'] = cube['STELLAR_VEL'].data
+        maps['star_vel_ivar'] = cube['STELLAR_VEL_IVAR'].data
+        maps['star_vel_mask'] = cube['STELLAR_VEL_MASK'].data
 
     cube.close()
 
-    return Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar
+    return maps
 
 
 ###############################################################################
@@ -141,6 +160,10 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
 
     [plate, IFU] = gal_ID.split('-')
     pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+
+    if not os.path.isfile(pipe3d_filename):
+        print(gal_ID, 'Pipe3d data file does not exist.')
+        return None
 
     main_file = fits.open( pipe3d_filename)
     ssp = main_file[1].data

@@ -266,7 +266,6 @@ def find_vel_bounds(mHa_vel, gal_ID):
                                                  bins=np.arange(-vel_extreme, 
                                                                 vel_extreme + bin_width, 
                                                                 bin_width))
-
     ############################################################################
     # Find the bin with the most counts
     #---------------------------------------------------------------------------
@@ -289,7 +288,10 @@ def find_vel_bounds(mHa_vel, gal_ID):
     ############################################################################
     # Find the lowest bin in which data is connected back to the central bin
     #---------------------------------------------------------------------------
-    min_bin = center_bin - 1
+    if center_bin == 0:
+        min_bin = 0
+    else:
+        min_bin = center_bin - 1
 
     while vel_bin_counts[min_bin] > 0 and min_bin > 0:
         min_bin -= 1

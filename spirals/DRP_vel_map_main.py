@@ -58,7 +58,7 @@ V_type = 'Ha'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8985-9102']
+FILE_IDS = ['9037-9102']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -162,7 +162,7 @@ for gal_ID in FILE_IDS:
 
     i_DRP = DRP_index[gal_ID]
 
-    if DRP_table['mngtarg1'][i_DRP] > 0:
+    if (DRP_table['mngtarg1'][i_DRP] > 0) or (gal_ID in ['9037-9102']):
     
         ########################################################################
         # Extract the necessary data from the .fits files.

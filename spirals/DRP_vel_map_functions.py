@@ -473,7 +473,10 @@ def deproject_spaxel(coords, center, phi, i_angle):
     delta = np.subtract(coords, center)
 
     # x-direction distance relative to the semi-major axis
-    dx_prime = (delta[1]*np.cos(phi) + delta[0]*np.sin(phi))/np.cos(i_angle)
+    if i_angle < 0.5*np.pi:
+        dx_prime = (delta[1]*np.cos(phi) + delta[0]*np.sin(phi))/np.cos(i_angle)
+    else:
+        dx_prime = 0.
 
     # y-direction distance relative to the semi-major axis
     dy_prime = (-delta[1]*np.sin(phi) + delta[0]*np.cos(phi))
@@ -1126,9 +1129,11 @@ def find_vel_map(gal_ID,
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
     v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
-    v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
+    v_max_guess = ma.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
 
+    #print('v_max index:', v_max_index)
     #print("v_max_guess:", v_max_guess)
+    #print('i_angle guess:', inclination_angle_guess)
     ############################################################################
 
 

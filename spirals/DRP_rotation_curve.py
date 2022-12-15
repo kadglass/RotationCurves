@@ -93,7 +93,7 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
 
     [plate, IFU] = gal_ID.split('-')
     file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
-    
+
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
         return None

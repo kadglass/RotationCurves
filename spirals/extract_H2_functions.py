@@ -76,7 +76,7 @@ def galaxies_dict_SDSS(ref_table):
     '''
 
 
-    # Initialize dictionary to store (plate, IFU) and row index
+    # Initialize dictionary to store (plate, MJD, fiber) and row index
     ref_dict = {}
 
 

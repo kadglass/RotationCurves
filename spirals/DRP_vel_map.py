@@ -310,7 +310,7 @@ def fit_vel_map(vel,
     phi_guess = find_phi(center_guess, phi_EofN_deg, mvel)
 
 
-    if gal_ID in ['8134-6102']:
+    if gal_ID in ['8134-6102', '9864-6102']:
         phi_guess += 0.25*np.pi
 
     elif gal_ID in ['8932-12704', '8252-6103', '9500-6102']:

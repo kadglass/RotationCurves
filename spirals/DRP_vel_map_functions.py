@@ -1146,17 +1146,23 @@ def find_vel_map(gal_ID,
     sys_vel_bounds = (sys_vel_low, sys_vel_high)
 
     # Inclination angle
-    inclination_angle_low = 0
-    inclination_angle_high = 0.5*np.pi
+    #inclination_angle_low = 0
+    #inclination_angle_high = 0.5*np.pi
+    inclination_angle_low = np.max([0, inclination_angle_guess - 0.1])
+    inclination_angle_high = np.min([0.5*np.pi, inclination_angle_guess + 0.1])
     inclination_angle_bounds = (inclination_angle_low, inclination_angle_high)
 
     # Center coordinates
     i_center_low = i_center_guess - 10
     i_center_high = i_center_guess + 10
+    #i_center_low = i_center_guess - 5
+    #i_center_high = i_center_guess + 5
     i_center_bounds = (i_center_low, i_center_high)
 
     j_center_low = j_center_guess - 10
     j_center_high = j_center_guess + 10
+    #j_center_low = j_center_guess - 5
+    #j_center_high = j_center_guess + 5
     j_center_bounds = (j_center_low, j_center_high)
 
     # Orientation angle

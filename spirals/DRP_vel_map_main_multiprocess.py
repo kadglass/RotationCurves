@@ -23,7 +23,8 @@ from DRP_rotation_curve import extract_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+#sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+sys.path.insert(1, '/scratch/kdougla7/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 #warnings.simplefilter('ignore', np.RankWarning)
@@ -302,11 +303,13 @@ IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 if not os.path.isdir( IMAGE_DIR):
     os.makedirs( IMAGE_DIR)
 
-MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
+#MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
+MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr16/manga/spectro/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 
-NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
+#NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
+NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
 ################################################################################
 
 
@@ -386,12 +389,16 @@ for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
 
+    if i > 10:
+        num_tasks = 12
+        break
+
 
 print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
-for i in range(12):
+for i in range(2):
 
     p = Process(target=process_1_galaxy, args=(job_queue, i, 
                                                return_queue, 

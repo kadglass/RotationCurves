@@ -229,7 +229,7 @@ def open_map(cube_filename, map_name):
 
         # Data
         star_sigma = np.sqrt(cube[map_name].data**2 
-                             - cube['STELLAR_SIGMACORR'].data**2)
+                             - cube['STELLAR_SIGMACORR'].data[0]**2)
 
         # Mask extension
         star_sigma_mask_extension = cube['STELLAR_SIGMA'].header['QUALDATA']

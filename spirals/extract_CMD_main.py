@@ -12,7 +12,8 @@ CMD_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/kias1033_5_MPAJHU_
 
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_10_smooth2p27.txt'
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_noWords.txt'
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+#MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+MASTER_FILE_NAME = 'DRP-dr17_vflag_BB_smooth2_mapFit_morph_AJLaBarca.txt'
 ###############################################################################
 
 

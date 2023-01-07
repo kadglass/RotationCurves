@@ -66,7 +66,7 @@ def match_abundance( master_table, Z_ref_table, method=None):
             master_table[abund_field][i] = Z_ref_table['Z12logOH'][ref_dict[galaxy_ID]]
         else:
             print("NO MATCHES FOUND FOR GALAXY",
-                  str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_fiberID'][i]))
+                  str( master_table['MaNGA_plate'][i]) + '-' + str( master_table['MaNGA_IFU'][i]))
     #--------------------------------------------------------------------------
 
     return master_table

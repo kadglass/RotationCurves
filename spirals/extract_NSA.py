@@ -58,7 +58,8 @@ def galaxies_dict(ref_table):
 #data_filename = 'master_file_vflag_10.txt'
 #data_filename = 'master_file_vflag_10_smooth2-27.txt'
 #data_filename = 'DRPall-master_file.txt'
-data_filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_v6.txt'
+#data_filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_v6.txt'
+data_filename = 'DRP-dr17_vflag_BB_smooth2_mapFit_AJLaBarca.txt'
 
 # File name of NSA catalog
 NSA_filename = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
@@ -88,11 +89,11 @@ NSA_data = Table.read(NSA_filename, format='fits')
 # INITIALIZE NEW COLUMNS
 #-------------------------------------------------------------------------------
 #data_table['rabsmag'] = np.zeros(N)
-#data_table['u_r'] = -99.*np.ones(N)
-#data_table['plate'] = np.zeros(N, dtype=int)
-#data_table['MJD'] = np.zeros(N, dtype=int)
-#data_table['fiberID'] = np.zeros(N, dtype=int)
-data_table['NSA_elpetro_th50'] = np.zeros(N)
+data_table['u_r'] = -99.*np.ones(N)
+data_table['NSA_plate'] = np.zeros(N, dtype=int)
+data_table['NSA_MJD'] = np.zeros(N, dtype=int)
+data_table['NSA_fiberID'] = np.zeros(N, dtype=int)
+#data_table['NSA_elpetro_th50'] = np.zeros(N)
 ################################################################################
 
 
@@ -116,10 +117,10 @@ ref_dict = galaxies_dict(NSA_data)
 #-------------------------------------------------------------------------------
 N_missing = 0
 
-for i in range(len(data_table)):
+for i in range(N):
 
-    index = data_table['NSA_index'][i]
-    #index = data_table['NSAID'][i]
+    #index = data_table['NSA_index'][i]
+    index = data_table['NSAID'][i]
     galaxy_ID = (index)
 
     if galaxy_ID in ref_dict:
@@ -129,20 +130,22 @@ for i in range(len(data_table)):
         absmag_array = NSA_data['ABSMAG'][ref_dict[galaxy_ID]]
         data_table['rabsmag'][i] = absmag_array[0][4] # SDSS r-band
         '''
-        '''
         absmag_array = NSA_data['ELPETRO_ABSMAG'][ref_dict[galaxy_ID]]
-        data_table['rabsmag'][i] = absmag_array[4] # SDSS r-band
+        #data_table['rabsmag'][i] = absmag_array[4] # SDSS r-band
+        data_table['u_r'][i] = absmag_array[2] - absmag_array[4]
 
+        '''
         # Array of petrosian flux values for this galaxy (FNugriz)
         flux_array = NSA_data['ELPETRO_FLUX'][ref_dict[galaxy_ID]]
         data_table['u_r'][i] = -2.5*np.log10(flux_array[2]/flux_array[4])
         '''
-        '''
-        data_table['plate'][i] = NSA_data['PLATE'][ ref_dict[ galaxy_ID]]
-        data_table['MJD'][i] = NSA_data['MJD'][ ref_dict[ galaxy_ID]]
-        data_table['fiberID'][i] = NSA_data['FIBERID'][ ref_dict[ galaxy_ID]]
+        
+        data_table['NSA_plate'][i] = NSA_data['PLATE'][ref_dict[galaxy_ID]]
+        data_table['NSA_MJD'][i] = NSA_data['MJD'][ref_dict[galaxy_ID]]
+        data_table['NSA_fiberID'][i] = NSA_data['FIBERID'][ref_dict[galaxy_ID]]
         '''
         data_table['NSA_elpetro_th50'][i] = NSA_data['ELPETRO_TH50_R'][ref_dict[galaxy_ID]]
+        '''
     else:
         N_missing += 1
 ################################################################################

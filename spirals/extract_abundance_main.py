@@ -18,14 +18,16 @@ method = None
 ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/kias1033_5_P-MJD-F_MPAJHU_ZdustOS_stellarMass_BPT_SFR_NSA_correctVflag.txt'
 #ABUNDANCE_FILE_NAME = '/Users/kellydouglass/Documents/Drexel/Research/Programs/MartiniMethods/comp_Z_Martini_' + method + '_kias1033_5_Martini_MPAJHU_flux_oii_dustCorr.txt'
 
-MASTER_FILE_NAME = 'master_file_vflag_10.txt'
+#MASTER_FILE_NAME = 'master_file_vflag_10.txt'
+MASTER_FILE_NAME = 'DRP-dr17_vflag_BB_smooth2_mapFit_AJLaBarca.txt'
 ###############################################################################
 
 
 ###############################################################################
 # Read in the 'master_table.'
 #------------------------------------------------------------------------------
-master_table = QTable.read( MASTER_FILE_NAME, format='ascii.ecsv')
+#master_table = QTable.read( MASTER_FILE_NAME, format='ascii.ecsv')
+master_table = Table.read(MASTER_FILE_NAME, format='ascii.commented_header')
 ###############################################################################
 
 
@@ -46,7 +48,10 @@ master_table = match_abundance( master_table, abundance_table, method)
 ###############################################################################
 # Write the 'master_table.'
 #------------------------------------------------------------------------------
-master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
+#master_table.write( MASTER_FILE_NAME, format='ascii.ecsv', overwrite=True)
+master_table.write(MASTER_FILE_NAME, 
+                   format='ascii.commented_header', 
+                   overwrite=True)
 ###############################################################################
 
 

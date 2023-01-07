@@ -16,7 +16,8 @@ from extract_H2_functions import match_H2_MASCOT, match_H2_ALMaQUEST, match_H2_x
 #DATA_PIPELINE = 'Pipe3D'
 DATA_PIPELINE = 'DRP'
 
-MASTER_FILE_NAME = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_SK_v6.txt'
+#MASTER_FILE_NAME = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_SK_v6.txt'
+MASTER_FILE_NAME = 'DRP-dr17_vflag_BB_smooth2_mapFit_morph_AJLaBarca.txt'
 ################################################################################
 
 

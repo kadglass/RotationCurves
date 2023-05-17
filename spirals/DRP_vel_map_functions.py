@@ -700,11 +700,12 @@ def calculate_chi2_flat(params,
     chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
     #chi2 = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
-    chi2_norm = chi2/(len(flat_vel_map) - len(params))
+    #chi2_norm = chi2/(len(flat_vel_map) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    #return chi2_norm
+    return chi2
 ################################################################################
 
 
@@ -1281,6 +1282,9 @@ def find_vel_map(gal_ID,
                               args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
                               bounds=np.concatenate([pos_bounds, vel_bounds]),
                               options={'disp':True})
+
+        # Calculate the normalized chi2 for the fit
+        result_all.fun /= (len(mHa_vel_flat) - len(result_all.x))
         ########################################################################
         
         
@@ -1326,6 +1330,9 @@ def find_vel_map(gal_ID,
                                          args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
                                          bounds=np.concatenate([pos_bounds, vel_bounds]),
                                          options={'disp':True})
+
+            # Calculate normalize chi2 of fit
+            result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x))
         ########################################################################
         
         
@@ -1347,6 +1354,9 @@ def find_vel_map(gal_ID,
                                                   mHa_vel.mask, 
                                                   pix_scale_factor, 
                                                   fit_function)
+
+        # Calculate normalized chi2 of the fit
+        result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x))
         ########################################################################
         
         
@@ -1387,6 +1397,9 @@ def find_vel_map(gal_ID,
                                  args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
                                  bounds=np.concatenate([pos_bounds, vel_bounds]),
                                  options={'disp':True})
+
+            # Calculate normalized chi2 of fit
+            result_SN.fun /= (len(modified_mHa_vel_flat) - len(result_SN.x))
         ########################################################################
         
 
@@ -1430,11 +1443,16 @@ def find_vel_map(gal_ID,
                                      args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask_sigma, pix_scale_factor, fit_function),
                                      bounds=np.concatenate([pos_bounds, vel_bounds]),
                                      options={'disp':True})
+
+            # Calculate normalized chi2 of fit
+            result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x))
         ########################################################################
 
 
         ########################################################################
         # Choose the best fit (the one with the lowest chi2)
+        # 
+        # This needs to be based on the normalized chi2.
         #-----------------------------------------------------------------------
         fit_chi2 = np.inf*np.ones(5)
 

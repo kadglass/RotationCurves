@@ -2,7 +2,7 @@
 import numpy as np
 import numpy.ma as ma
 
-import numdifftools as ndt
+#import numdifftools as ndt
 
 from skimage.filters import gaussian
 

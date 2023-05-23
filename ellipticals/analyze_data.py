@@ -55,9 +55,11 @@ def median_err(ivar):
 
     N = ivar.size
 
-    mean_ivar = np.sum(ivar)
+    mean_ivar = N*np.sum(ivar)
 
-    med_err = np.sqrt(np.pi*(2*N + 1)/(4*N*mean_ivar))
+    med_ivar = mean_ivar*2*(N - 1)/(np.pi*N)
+
+    med_err = np.sqrt(1/med_ivar)
 
     return med_err
 ################################################################################
@@ -348,9 +350,12 @@ def virial_mass(star_sigma, star_sigma_err, r_half, r_half_err):
     #---------------------------------------------------------------------------
     Mvir_err = Mvir*np.sqrt( (4*star_sigma_err*star_sigma_err/(star_sigma*star_sigma)) \
                + (r_half_err*r_half_err/(r_half*r_half)))
+
+    # Convert kg to Msun
+    Mvir_Msun_err = Mvir_err/Msun
     ############################################################################
 
-    return Mvir_Msun, Mvir_err
+    return Mvir_Msun, Mvir_Msun_err
 ################################################################################
 
 
@@ -392,6 +397,8 @@ def determine_masses(IDs, directory):
     DRPall = fits.open(drp_filename)
 
     DRPall_table = DRPall[1].data
+
+    DRPall.close()
     ############################################################################
 
 
@@ -465,6 +472,13 @@ def determine_masses(IDs, directory):
     #---------------------------------------------------------------------------
     mass_table = Table()
 
+    mass_table['MaNGA_plate'] = [int(plate) for (plate, IFU) in IDs]
+    mass_table['MaNGA_IFU'] = [int(IFU) for (plate, IFU) in IDs]
+    mass_table['plateifu'] = [plate + '-' + IFU for (plate, IFU) in IDs]
+    mass_table['vdisp_star'] = vel_disp
+    mass_table['vdisp_star_err'] = vel_disp_err
+    mass_table['rhalf_m'] = r_half
+    mass_table['rhalf_m_err'] = r_half_err
     mass_table['Mtot'] = Mtot
     mass_table['Mtot_err'] = Mtot_err
     mass_table['Mdark'] = Mdark

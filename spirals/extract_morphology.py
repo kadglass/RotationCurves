@@ -18,7 +18,8 @@ from extract_morphology_functions import match_morph_visual, \
 #-------------------------------------------------------------------------------
 DATA_PIPELINE = 'DRP'
 
-MASTER_FILENAME = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_v5.txt'
+#MASTER_FILENAME = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_v5.txt'
+MASTER_FILENAME = 'DRP-dr17_vflag_BB_smooth2_mapFit_AJLaBarca.txt'
 ################################################################################
 
 
@@ -53,7 +54,7 @@ master_table = match_morph_dl(master_table)
 ################################################################################
 # Save the master table
 #-------------------------------------------------------------------------------
-master_table.write(MASTER_FILENAME[:-6] + 'morph_' + MASTER_FILENAME[-6:], 
+master_table.write(MASTER_FILENAME[:-13] + 'morph_' + MASTER_FILENAME[-13:], 
                    #format='ascii.ecsv', 
                    format='ascii.commented_header', 
                    overwrite=True)

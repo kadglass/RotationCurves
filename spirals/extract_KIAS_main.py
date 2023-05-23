@@ -18,7 +18,8 @@ INDEX_FILE_NAME = '/Users/kellydouglass/Documents/Research/data/kias1033_5_MPAJH
 
 #MASTER_FILE_NAME = 'master_file_vflag_10.txt'
 #MASTER_FILE_NAME = 'DRPall-master_file.txt'
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+#MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_HIdr2_noWords_v5.txt'
+MASTER_FILE_NAME = 'DRP-dr17_vflag_BB_smooth2_mapFit_AJLaBarca.txt'
 
 master_file_format = 'ascii.commented_header'
 ###############################################################################
@@ -45,7 +46,7 @@ index_table = Table.read( INDEX_FILE_NAME, format='ascii.commented_header')
 # Match to the 'master_table' according to 'NSA_plate', 'NSA_MJD', and 
 # 'NSA_fiberID'
 #------------------------------------------------------------------------------
-columns_to_add = ['imc', 'aimc', 'cd']
+columns_to_add = ['index', 'imc', 'aimc', 'cd']
 
 master_table = PMJDF_match( master_table, index_table, columns_to_add)
 ###############################################################################

@@ -46,8 +46,8 @@ vel_function = 'BB'
 #vel_function = 'tanh'
 
 # Velocity map to use
-#V_type = 'Ha'
-V_type = 'star'
+V_type = 'Ha'
+#V_type = 'star'
 ################################################################################
 
 
@@ -58,7 +58,7 @@ V_type = 'star'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8440-12704']
+FILE_IDS = ['8555-12703']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -162,7 +162,7 @@ for gal_ID in FILE_IDS:
 
     i_DRP = DRP_index[gal_ID]
 
-    if DRP_table['mngtarg1'][i_DRP] > 0:
+    if (DRP_table['mngtarg1'][i_DRP] > 0) or (gal_ID in ['9037-9102']):
     
         ########################################################################
         # Extract the necessary data from the .fits files.

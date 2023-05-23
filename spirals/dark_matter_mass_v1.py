@@ -161,6 +161,7 @@ def logL_BB(params, r, v, v_err):
     lambda1 = rot_fit_BB(r, params)
     lambda1[lambda1 <= 0] = np.finfo( dtype=np.float64).tiny
 
+    # Note (2/20/23): This should probably have a -0.5 out in front of it
     return np.sum( ((v - lambda1)/v_err)**2 + np.log(2*np.pi*np.array(v_err)**2))
 
 

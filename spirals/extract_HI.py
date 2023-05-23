@@ -21,7 +21,8 @@ DATA_PIPELINE = 'DRP'
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_chi10_alpha10_smooth2p27.txt'
 #MASTER_FILE_NAME = 'DRPall-master_file.txt'
 #MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit.txt'
-MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_v3.txt'
+#MASTER_FILE_NAME = 'Pipe3D-master_file_vflag_BB_minimize_chi10_smooth2p27_mapFit_N2O2_v3.txt'
+MASTER_FILE_NAME = 'DRP-dr17_vflag_BB_smooth2_mapFit_morph_H2_AJLaBarca.txt'
 ###############################################################################
 
 

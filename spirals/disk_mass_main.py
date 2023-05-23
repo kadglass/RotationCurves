@@ -55,7 +55,7 @@ IMAGE_FORMAT = 'eps'
 # If RUN_ALL_GALAXIES is set to True, then the code will ignore what is in 
 # FILE_IDS
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8714-12705']
+FILE_IDS = ['8997-9102']
 
 RUN_ALL_GALAXIES = False
 ################################################################################
@@ -165,10 +165,12 @@ for gal_ID in FILE_IDS:
     ############################################################################
     # Extract the necessary data from the .fits files.
     #---------------------------------------------------------------------------
-    Ha_vel, _, Ha_vel_mask, r_band,_, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, _, Ha_sigma_mask = extract_data(VEL_MAP_FOLDER, gal_ID)
+    maps = extract_data(VEL_MAP_FOLDER, 
+                        gal_ID, 
+                        ['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
     sMass_density = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
 
-    if Ha_vel_mask is None or r_band is None or sMass_density is None:
+    if maps is None or sMass_density is None:
         print('\n')
         continue
 
@@ -204,10 +206,10 @@ for gal_ID in FILE_IDS:
         #-----------------------------------------------------------------------
         map_mask = build_map_mask(gal_ID, 
                                   fit_flag, 
-                                  ma.array(Ha_vel, mask=Ha_vel_mask), 
-                                  ma.array(Ha_flux, mask=Ha_flux_mask), 
-                                  ma.array(Ha_flux_ivar, mask=Ha_flux_mask), 
-                                  ma.array(Ha_sigma, mask=Ha_sigma_mask))
+                                  ma.array(maps['Ha_vel'], mask=maps['Ha_vel_mask']), 
+                                  ma.array(maps['Ha_flux'], mask=maps['Ha_flux_mask']), 
+                                  ma.array(maps['Ha_flux_ivar'], mask=maps['Ha_flux_mask']), 
+                                  ma.array(maps['Ha_sigma'], mask=maps['Ha_sigma_mask']))
         ########################################################################
 
     else:
@@ -228,7 +230,7 @@ for gal_ID in FILE_IDS:
         # Galaxy did not return a successful fit, so we are just going to use 
         # the Ha_vel map mask
         #-----------------------------------------------------------------------
-        map_mask = Ha_vel_mask
+        map_mask = maps['Ha_vel_mask']
         ########################################################################
 
     z = galaxies_table['nsa_z'][i_gal]
@@ -244,7 +246,7 @@ for gal_ID in FILE_IDS:
     start = time()
     
     mass_data_table = calc_mass_curve(sMass_density, 
-                                      r_band, 
+                                      maps['r_band'], 
                                       map_mask, 
                                       center_x,
                                       center_y,

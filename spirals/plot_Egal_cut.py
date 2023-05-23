@@ -15,6 +15,8 @@ import numpy as np
 from dark_matter_mass_v1 import rot_fit_BB
 
 import matplotlib.pyplot as plt
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle, Polygon
 ################################################################################
 
 
@@ -83,13 +85,49 @@ good_galaxies = data[~bad_boolean]
 
 
 ################################################################################
+# Separate galaxies by their CMD classification
+#-------------------------------------------------------------------------------
+# Green valley
+gboolarray = good_galaxies['CMD_class'] == 2
+
+# Blue cloud
+bboolarray = good_galaxies['CMD_class'] == 1
+
+# Red sequence
+rboolarray = good_galaxies['CMD_class'] == 3
+
+GVdata = good_galaxies[gboolarray]
+Bdata = good_galaxies[bboolarray]
+Rdata = good_galaxies[rboolarray]
+################################################################################
+
+
+
+
+################################################################################
 # Plot
 #-------------------------------------------------------------------------------
 tSize = 14
 
-plt.figure(tight_layout=True)
+fig, ax = plt.subplots(1)
 
-plt.plot(good_galaxies['DRP_map_smoothness'], good_galaxies['map_frac_unmasked'], '.')
+remove1 = Rectangle((1.96,0.13), 3.6-1.96, 0.45)
+remove2 = Rectangle((2.9, 0.07), 3.6-2.9, 0.13-0.07)
+remove3 = Polygon(np.array([[1.96, 0.13], [2.9, 0.07], [2.9, 0.13]]), True)
+
+pc = PatchCollection([remove1, remove2, remove3], 
+                     facecolor='mistyrose', 
+                     #alpha=0.1, 
+                     edgecolor='none')
+
+ax.add_collection(pc)
+
+plt.plot(Rdata['DRP_map_smoothness'], Rdata['map_frac_unmasked'], 'r.', 
+         fillstyle='none', label='Red sequence')
+plt.plot(Bdata['DRP_map_smoothness'], Bdata['map_frac_unmasked'], 'b+', 
+         label='Blue cloud')
+plt.plot(GVdata['DRP_map_smoothness'], GVdata['map_frac_unmasked'], 'g*', 
+         markersize=4, label='Green valley')
 
 plt.vlines(1.96, 0.13, 0.6, colors='k')
 plt.hlines(0.07, 2.9, 3.6, colors='k')
@@ -101,8 +139,15 @@ plt.ylim(0.04, 0.55)
 plt.xlabel('smoothness score', fontsize=tSize)
 plt.ylabel('fraction of unmasked data', fontsize=tSize)
 
+ax = plt.gca()
+ax.tick_params(labelsize=tSize)
+
+plt.legend(fontsize=tSize-4)
+
+plt.tight_layout()
+
 #plt.show()
-plt.savefig('Images/Egal_cut.eps', format='eps', dpi=120)
+plt.savefig('Images/Egal_cut_v6.eps', format='eps', dpi=120)
 ################################################################################
 
 

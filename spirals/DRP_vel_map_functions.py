@@ -266,7 +266,6 @@ def find_vel_bounds(mHa_vel, gal_ID):
                                                  bins=np.arange(-vel_extreme, 
                                                                 vel_extreme + bin_width, 
                                                                 bin_width))
-
     ############################################################################
     # Find the bin with the most counts
     #---------------------------------------------------------------------------
@@ -289,7 +288,10 @@ def find_vel_bounds(mHa_vel, gal_ID):
     ############################################################################
     # Find the lowest bin in which data is connected back to the central bin
     #---------------------------------------------------------------------------
-    min_bin = center_bin - 1
+    if center_bin == 0:
+        min_bin = 0
+    else:
+        min_bin = center_bin - 1
 
     while vel_bin_counts[min_bin] > 0 and min_bin > 0:
         min_bin -= 1
@@ -471,7 +473,10 @@ def deproject_spaxel(coords, center, phi, i_angle):
     delta = np.subtract(coords, center)
 
     # x-direction distance relative to the semi-major axis
-    dx_prime = (delta[1]*np.cos(phi) + delta[0]*np.sin(phi))/np.cos(i_angle)
+    if i_angle < 0.5*np.pi:
+        dx_prime = (delta[1]*np.cos(phi) + delta[0]*np.sin(phi))/np.cos(i_angle)
+    else:
+        dx_prime = 0.
 
     # y-direction distance relative to the semi-major axis
     dy_prime = (-delta[1]*np.sin(phi) + delta[0]*np.cos(phi))
@@ -695,11 +700,12 @@ def calculate_chi2_flat(params,
     chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
     #chi2 = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
-    chi2_norm = chi2/(len(flat_vel_map) - len(params))
+    #chi2_norm = chi2/(len(flat_vel_map) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    #return chi2_norm
+    return chi2
 ################################################################################
 
 
@@ -1124,9 +1130,11 @@ def find_vel_map(gal_ID,
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
     v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
-    v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
+    v_max_guess = ma.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
 
+    #print('v_max index:', v_max_index)
     #print("v_max_guess:", v_max_guess)
+    #print('i_angle guess:', inclination_angle_guess)
     ############################################################################
 
 
@@ -1139,17 +1147,23 @@ def find_vel_map(gal_ID,
     sys_vel_bounds = (sys_vel_low, sys_vel_high)
 
     # Inclination angle
-    inclination_angle_low = 0
-    inclination_angle_high = 0.5*np.pi
+    #inclination_angle_low = 0
+    #inclination_angle_high = 0.5*np.pi
+    inclination_angle_low = np.max([0, inclination_angle_guess - 0.1])
+    inclination_angle_high = np.min([0.5*np.pi, inclination_angle_guess + 0.1])
     inclination_angle_bounds = (inclination_angle_low, inclination_angle_high)
 
     # Center coordinates
     i_center_low = i_center_guess - 10
     i_center_high = i_center_guess + 10
+    #i_center_low = i_center_guess - 5
+    #i_center_high = i_center_guess + 5
     i_center_bounds = (i_center_low, i_center_high)
 
     j_center_low = j_center_guess - 10
     j_center_high = j_center_guess + 10
+    #j_center_low = j_center_guess - 5
+    #j_center_high = j_center_guess + 5
     j_center_bounds = (j_center_low, j_center_high)
 
     # Orientation angle
@@ -1268,6 +1282,9 @@ def find_vel_map(gal_ID,
                               args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
                               bounds=np.concatenate([pos_bounds, vel_bounds]),
                               options={'disp':True})
+
+        # Calculate the normalized chi2 for the fit
+        result_all.fun /= (len(mHa_vel_flat) - len(result_all.x))
         ########################################################################
         
         """
@@ -1313,6 +1330,9 @@ def find_vel_map(gal_ID,
                                          args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
                                          bounds=np.concatenate([pos_bounds, vel_bounds]),
                                          options={'disp':True})
+
+            # Calculate normalize chi2 of fit
+            result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x))
         ########################################################################
         
         
@@ -1334,6 +1354,9 @@ def find_vel_map(gal_ID,
                                                   mHa_vel.mask, 
                                                   pix_scale_factor, 
                                                   fit_function)
+
+        # Calculate normalized chi2 of the fit
+        result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x))
         ########################################################################
         
         
@@ -1374,6 +1397,9 @@ def find_vel_map(gal_ID,
                                  args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
                                  bounds=np.concatenate([pos_bounds, vel_bounds]),
                                  options={'disp':True})
+
+            # Calculate normalized chi2 of fit
+            result_SN.fun /= (len(modified_mHa_vel_flat) - len(result_SN.x))
         ########################################################################
         
 
@@ -1417,11 +1443,16 @@ def find_vel_map(gal_ID,
                                      args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask_sigma, pix_scale_factor, fit_function),
                                      bounds=np.concatenate([pos_bounds, vel_bounds]),
                                      options={'disp':True})
+
+            # Calculate normalized chi2 of fit
+            result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x))
         ########################################################################
 
 
         ########################################################################
         # Choose the best fit (the one with the lowest chi2)
+        # 
+        # This needs to be based on the normalized chi2.
         #-----------------------------------------------------------------------
         fit_chi2 = np.inf*np.ones(5)
 

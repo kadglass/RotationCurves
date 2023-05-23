@@ -17,9 +17,9 @@ from astropy.table import Table
 ################################################################################
 # Read in data file to be updated
 #-------------------------------------------------------------------------------
-file_directory = ''
+file_directory = 'dr15_files/'
 
-filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_SK_H2_noWords_v7.txt'
+filename = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_SK_H2_noWords_v8.txt'
 
 bestfits = Table.read(file_directory + filename, 
                       format='ascii.commented_header')
@@ -34,13 +34,13 @@ bestfits = Table.read(file_directory + filename,
 # This is copied from the terminal output from running DRP_vel_map_main.py on a 
 # single galaxy.
 #-------------------------------------------------------------------------------
-galaxy = '9876-6101'
+galaxy = '8555-12703'
 
-new_fit = {'v_sys': -10.516612392916022, 'v_sys_err': 24.192473943415685, 'ba': 0.7229720952623375, 'ba_err': 0.31289998514833794, 'x0': 26.10157344194446, 'x0_err': 7.293701680809073, 'y0': 32.48742129313883, 'y0_err': 8.146629110036697, 'phi': 92.62073451106335, 'phi_err': 2.7347459637415263, 'v_max': 91.46913771379435, 'v_max_err': 37.1721957249918, 'r_turn': 4.239668535289252, 'r_turn_err': 2.6894744839285423, 'chi2': 91.671286001927, 'alpha': 53.868728233105884, 'alpha_err': 724.4277776731709, 'Rmax': 6.445871033708616}
+new_fit = {'v_sys': -11.7915157879904, 'v_sys_err': 0.15179609332033261, 'ba': 0.3451567854528824, 'ba_err': 0.00042755585370431024, 'x0': 36.91848716322662, 'x0_err': 0.01532483005174314, 'y0': 36.27603198447388, 'y0_err': 0.012743543287219971, 'phi': 323.5159996195613, 'phi_err': 0.032811910319898996, 'v_max': 265.2916256570105, 'v_max_err': 0.6207670891661553, 'r_turn': 4.58334337593553, 'r_turn_err': 0.024066624164666522, 'chi2': 9.036286641175959, 'alpha': 1.7546423562137674, 'alpha_err': 0.016744408647898883, 'Rmax': 17.50798202428108}
 
-mass_new = {'M': 9.989988053582147, 'M_err': 9.882863446313143}
+mass_new = {'M': 11.348787424069096, 'M_err': 10.920815602546794}
 
-fit_flag = -1
+fit_flag = -3
 ################################################################################
 
 

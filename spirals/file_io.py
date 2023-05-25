@@ -109,6 +109,13 @@ def add_disk_columns(data_table):
     data_table['R_disk'] = np.nan
     data_table['R_disk_err'] = np.nan
 
+    data_table['rho_bulge'] = np.nan
+    data_table['rho_bulge_err'] = np.nan
+
+    data_table['R_bulge'] = np.nan
+    data_table['R_bulge_err'] = np.nan
+
+
 
     return data_table
 

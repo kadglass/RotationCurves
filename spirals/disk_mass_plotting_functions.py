@@ -133,7 +133,7 @@ def plot_fitted_disk_rot_curve(gal_ID,
                                 good_randoms[:,2][i], 
                                 good_randoms[:,3][i])
         
-        '''
+        
 
     else:
         random_sample = np.random.multivariate_normal(mean=[fit_parameters['Sigma_disk'], 

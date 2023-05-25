@@ -12,4 +12,5 @@ setup(
       ext_modules=cythonize("GradientSmoothness/calculate_smoothness.pyx"),
       packages=["GradientSmoothness", "GradientSmoothness.test_scripts"],
       include_dirs=[numpy.get_include()]
+      #compiler_directives={'language_level' : "3"} # added for python3
       )

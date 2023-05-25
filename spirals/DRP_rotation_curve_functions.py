@@ -710,7 +710,7 @@ def calc_mass_interior(velocity, velocity_err, radius, radius_err):
 
 
 
-def calc_stellar_mass( mass, sMass_density_array, annulus_spaxels):
+def calc_stellar_mass(mass, mass_err2,  sMass_density_array, sMass_density_array_err, annulus_spaxels):
     '''
     Calculate the stellar mass interior to a radius.
 
@@ -742,6 +742,7 @@ def calc_stellar_mass( mass, sMass_density_array, annulus_spaxels):
     mass : float
         Total stellar mass interior to current annulus
 
+
     '''
 
     ############################################################################
@@ -754,9 +755,19 @@ def calc_stellar_mass( mass, sMass_density_array, annulus_spaxels):
         except AttributeError:
             if np.isfinite(spaxel):
                 mass += spaxel
+    
+    for spaxel in sMass_density_array_err[ annulus_spaxels]:
+        try:
+            if np.isfinite(spaxel.physical):
+                mass_err2 += spaxel.physical**2
+        except AttributeError:
+            if np.isfinite(spaxel):
+                mass_err2 += spaxel**2
+  
+
     ############################################################################
 
-    return mass
+    return mass, mass_err2
 
 
 
@@ -809,13 +820,15 @@ def calc_velocity( mass, mass_err, radius, radius_err):
     velocity = velocity.to('km/s')
     ############################################################################
 
-
     ############################################################################
     # Calculate velocity error
     #---------------------------------------------------------------------------
     velocity_err = 0.5 * velocity * np.sqrt( (const.G.uncertainty * const.G.unit / const.G)**2 \
                                              + (mass_err / mass)**2 \
                                              + (radius_err / radius)**2)
+
+ 
+
     velocity_err = velocity_err.to('km/s')
     ############################################################################
 

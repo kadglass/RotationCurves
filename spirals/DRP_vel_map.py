@@ -1,7 +1,7 @@
 '''
 Analyzes disk galaxies to determine the kinematics of the galaxy.
 
-To download the MaNGA .fits files used to calculate the kinematics for these 
+To download the MaNGA .fits files used to calculate the kinematics for these
 galaxies, see the instructions for each data release via the following links:
 
 http://www.sdss.org/dr14/manga/manga-data/data-access/
@@ -26,7 +26,7 @@ import os.path
 from astropy.io import fits
 from astropy.table import Table, Column
 
-from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
+from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
 
 from DRP_vel_map_functions import find_vel_map, \
                                   mass_newton, \
@@ -66,28 +66,28 @@ q0 = 0.2 # Nominal disk thickness
 ################################################################################
 
 
-def fit_vel_map(vel, 
-                vel_ivar, 
-                vel_mask, 
-                Ha_sigma, 
-                Ha_sigma_ivar, 
-                Ha_sigma_mask, 
-                Ha_flux, 
-                Ha_flux_ivar, 
-                Ha_flux_mask, 
-                r_band, 
+def fit_vel_map(vel,
+                vel_ivar,
+                vel_mask,
+                Ha_sigma,
+                Ha_sigma_ivar,
+                Ha_sigma_mask,
+                Ha_flux,
+                Ha_flux_ivar,
+                Ha_flux_mask,
+                r_band,
                 r_band_ivar,
-                axis_ratio, 
-                phi_EofN_deg, 
-                z, 
+                axis_ratio,
+                phi_EofN_deg,
+                z,
                 gal_ID,
-                fit_function, 
-                V_type='Ha', 
-                IMAGE_DIR=None, 
-                IMAGE_FORMAT='eps', 
+                fit_function,
+                V_type='Ha',
+                IMAGE_DIR=None,
+                IMAGE_FORMAT='eps',
                 num_masked_gal=0):
     '''
-    Determine the values of the parameters that best reproduce the galaxy's 
+    Determine the values of the parameters that best reproduce the galaxy's
     H-alpha velocity map.
 
 
@@ -128,12 +128,12 @@ def fit_vel_map(vel,
         Inverse variance in the r-band flux data
 
     axis_ratio : float
-        Ratio of the galaxy's minor axis to major axis as obtained via an 
+        Ratio of the galaxy's minor axis to major axis as obtained via an
         elliptical sersic fit of the galaxy
 
     phi_EofN_deg : float
-        Angle (east of north) of rotation in the 2-D, observational plane.  
-        Units are degrees 
+        Angle (east of north) of rotation in the 2-D, observational plane.
+        Units are degrees
 
         NOTE: east is 'left' per astronomy convention
 
@@ -144,21 +144,21 @@ def fit_vel_map(vel,
         [PLATE]-[IFU]
 
     fit_function : string
-        Determines which function to use for the velocity.  Options are 'BB' and 
+        Determines which function to use for the velocity.  Options are 'BB' and
         'tanh'.
 
     V_type : string
         Type of velocity map being fit.  Used for plot titles, file names, etc.
 
     IMAGE_DIR : string
-        File path to which pictures of the fitted rotation curves are saved.  
+        File path to which pictures of the fitted rotation curves are saved.
         Default value is None (do not save images).
 
     IMAGE_FORMAT : string
         Saved image file format.  Default format is eps.
 
     num_masked_gal : float
-        Cumulative number of completely masked galaxies seen so far.  Default 
+        Cumulative number of completely masked galaxies seen so far.  Default
         value is 0.
 
 
@@ -205,32 +205,32 @@ def fit_vel_map(vel,
     plt.close()
     '''
     ############################################################################
-    
+
 
     ############################################################################
     # DIAGNOSTICS:
     #---------------------------------------------------------------------------
     # Plot r-band image
     #---------------------------------------------------------------------------
-    plot_rband_image(r_band, 
-                     gal_ID, 
-                     IMAGE_DIR=IMAGE_DIR, 
+    plot_rband_image(r_band,
+                     gal_ID,
+                     IMAGE_DIR=IMAGE_DIR,
                      IMAGE_FORMAT=IMAGE_FORMAT)
     '''
     if IMAGE_DIR is None:
         plt.show()
     '''
     #---------------------------------------------------------------------------
-    # Plot velocity field before systemic redshift subtraction.  Galaxy 
-    # velocities vary from file to file, so vmin and vmax will have to be 
+    # Plot velocity field before systemic redshift subtraction.  Galaxy
+    # velocities vary from file to file, so vmin and vmax will have to be
     # manually adjusted for each galaxy before reshift subtraction.
     #---------------------------------------------------------------------------
-    plot_vel(vel, 
-             gal_ID, 
-             V_type=V_type, 
-             IMAGE_DIR=IMAGE_DIR, 
-             FOLDER_NAME='/unmasked_' + V_type + '_vel/', 
-             IMAGE_FORMAT=IMAGE_FORMAT, 
+    plot_vel(vel,
+             gal_ID,
+             V_type=V_type,
+             IMAGE_DIR=IMAGE_DIR,
+             FOLDER_NAME='/unmasked_' + V_type + '_vel/',
+             IMAGE_FORMAT=IMAGE_FORMAT,
              FILENAME_SUFFIX='_' + V_type + '_vel_raw.')
     '''
     if IMAGE_DIR is None:
@@ -239,44 +239,62 @@ def fit_vel_map(vel,
     #---------------------------------------------------------------------------
     # Plot H-alpha line width
     #---------------------------------------------------------------------------
-    plot_Ha_sigma(mHa_sigma, 
-                  gal_ID, 
-                  IMAGE_DIR=IMAGE_DIR, 
-                  FOLDER_NAME='/Ha_sigma/', 
-                  IMAGE_FORMAT=IMAGE_FORMAT, 
+    plot_Ha_sigma(mHa_sigma,
+                  gal_ID,
+                  IMAGE_DIR=IMAGE_DIR,
+                  FOLDER_NAME='/Ha_sigma/',
+                  IMAGE_FORMAT=IMAGE_FORMAT,
                   FILENAME_SUFFIX='_Ha_sigma.')
     ############################################################################
 
 
     ############################################################################
-    # Determine initial guess for the optical center via the max luminosity in 
+    # Determine initial guess for the optical center via the max luminosity in
     # the r-band.
     #---------------------------------------------------------------------------
     center_guess = np.unravel_index(ma.argmax(mr_band), mr_band.shape)
 
     if gal_ID == '8613-12701':
         center_guess = (40,35)
-    elif gal_ID == '8134-3701':
+    elif gal_ID in ['8252-3701','8717-3704', '9487-3703']:
+        center_guess = (20,22)
+    elif gal_ID in ['8134-3701','8095-3701']:
         center_guess = (22,22)
-    elif gal_ID in ['8252-6103']:
+    elif gal_ID == '8249-3704':
+        center_guess = (23,20)
+    elif gal_ID == '8934-3701':
+        center_guess = (25,22)
+    elif gal_ID in  ['11958-3701','9491-6101']:
+        center_guess = (25,25)
+    elif gal_ID == '8250-6101':
+        center_guess = (26,25)
+    elif gal_ID in ['8252-6103', '9042-6101']:
         center_guess = (27,27)
-    elif gal_ID == '8447-9102':
+    elif gal_ID in ['7958-6101','12085-6101']:
+        center_guess = (28,28)
+    elif gal_ID == '8252-9101':
+        center_guess = (30,30)
+    elif gal_ID in ['8447-9102','8713-9102']:
         center_guess = (32,32)
-    elif gal_ID in ['8940-12701', '8941-12703', '8950-12705', '9488-12702', 
+    elif gal_ID == '8727-12705':
+        center_guess = (35,32)
+    elif gal_ID == '8313-12702':
+        center_guess = (36,38)
+    elif gal_ID in ['8940-12701', '8941-12703', '8950-12705', '9488-12702',
                     '9181-12701']:
         center_guess = (37,37)
     elif gal_ID in ['7958-12703']:
         center_guess = (39,39)
 
     #print(center_guess)
-    
+
     i_center_guess = center_guess[0]
     j_center_guess = center_guess[1]
     ############################################################################
 
 
     ############################################################################
-    # Set the initial guess for the systemic velocity to be equal to the 
+    # Set the initial guess for the systemic velocity to be equal to the
     # velocity at the initially-guessed center spaxel.
     #---------------------------------------------------------------------------
     sys_vel_guess = mvel[center_guess]
@@ -289,7 +307,7 @@ def fit_vel_map(vel,
 
 
     ############################################################################
-    # Set the initial guess for the inclination angle equal that given by the 
+    # Set the initial guess for the inclination angle equal that given by the
     # measured axis ratio.
     #---------------------------------------------------------------------------
     cosi2 = (axis_ratio**2 - q0**2)/(1 - q0**2)
@@ -304,38 +322,42 @@ def fit_vel_map(vel,
 
 
     ############################################################################
-    # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it 
+    # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it
     # always points through the positive velocity semi-major axis.
     #---------------------------------------------------------------------------
     phi_guess = find_phi(center_guess, phi_EofN_deg, mvel)
 
 
-    if gal_ID in ['8134-6102']:
+    if gal_ID in ['8134-6102','10218-12703']:
         phi_guess += 0.25*np.pi
 
     elif gal_ID in ['8932-12704', '8252-6103', '9500-6102']:
         phi_guess -= 0.25*np.pi
 
-    elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102', 
-                    '8274-6101', '9027-12705', '9868-12702', '8135-1901', 
-                    '7815-1901', '8568-1901', '8989-1902', '8458-3701', 
-                    '9000-1901', '9037-3701', '8456-6101']:
+    elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102',
+                    '8274-6101', '9027-12705', '9868-12702', '8135-1901',
+                    '7815-1901', '8568-1901', '8989-1902', '8458-3701',
+                    '9000-1901', '9037-3701', '8456-6101', '8727-12705']:
         phi_guess += 0.5*np.pi
 
     elif gal_ID in ['9864-3702', '8601-1902']:
         phi_guess -= 0.5*np.pi
 
-    elif gal_ID in ['9502-12702']:
+    elif gal_ID in ['9502-12702','9050-9101','7977-3702', '8084-12703',
+                    '8713-9102']:
         phi_guess += 0.75*np.pi
 
-    elif gal_ID in ['9029-12705', '8137-3701', '8618-3704', '8323-12701', 
-                    '8942-3703', '8333-12701', '8615-6103', '9486-3704', 
-                    '8937-1902', '9095-3704', '8466-1902', '9508-3702', 
-                    '8727-3703', '8341-12704', '8655-6103', '8335-6101']:
+    elif gal_ID in ['9029-12705', '8137-3701', '8618-3704', '8323-12701',
+                    '8942-3703', '8333-12701', '8615-6103', '9486-3704',
+                    '8937-1902', '9095-3704', '8466-1902', '9508-3702',
+                    '8727-3703', '8341-12704', '8655-6103', '8335-6101',
+                     '8095-1902', '10844-3703','9494-3701',
+                     '8252-9101']:
         phi_guess += np.pi
 
-    elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703', 
-                    '8624-1902', '8948-12702', '8443-6102', '8259-1901']:
+    elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703',
+                    '8624-1902', '8948-12702', '8443-6102', '8259-1901',
+                    '8313-6102']:
         phi_guess += 1.5*np.pi
 
     elif gal_ID in ['8241-12705', '8326-6102', '9505-6103', '8256-6104']:
@@ -352,13 +374,13 @@ def fit_vel_map(vel,
 
 
     ############################################################################
-    # Find the global max and global min of the masked velocity map to use in 
+    # Find the global max and global min of the masked velocity map to use in
     # graphical analysis.
     #
     # NOTE: If the entire array is masked, 'global_max' and 'global_min'
     #       cannot be calculated. It has been found that if the
-    #       'inclination_angle' is 0 degrees, the entire array is masked. An 
-    #       if-statement tests this case, and sets 'unmasked_data' to False if 
+    #       'inclination_angle' is 0 degrees, the entire array is masked. An
+    #       if-statement tests this case, and sets 'unmasked_data' to False if
     #       there is no max/min in the array.
     #---------------------------------------------------------------------------
     global_max = ma.max(mvel)
@@ -375,7 +397,7 @@ def fit_vel_map(vel,
 
     ############################################################################
     # If 'unmasked_data' was set to False because the entire velocity map is
-    # masked after correcting for the angle of inclination, set the output to 
+    # masked after correcting for the angle of inclination, set the output to
     # None.
     #---------------------------------------------------------------------------
     if not unmasked_data:
@@ -394,31 +416,30 @@ def fit_vel_map(vel,
     #---------------------------------------------------------------------------
     else:
         print(gal_ID, 'fitting velocity map', flush=True)
-        param_outputs, best_fit_map, scale, fit_flag = find_vel_map(gal_ID, 
-                                                                    mvel, 
-                                                                    mvel_ivar, 
+        param_outputs, best_fit_map, scale, fit_flag = find_vel_map(gal_ID,
+                                                                    mvel,
+                                                                    mvel_ivar,
                                                                     mHa_sigma,
-                                                                    mHa_flux, 
+                                                                    mHa_flux,
                                                                     mHa_flux_ivar,
-                                                                    z, 
-                                                                    i_center_guess, 
+                                                                    z,
+                                                                    i_center_guess,
                                                                     j_center_guess,
-                                                                    sys_vel_guess, 
-                                                                    inclination_angle_guess, 
-                                                                    phi_guess, 
+                                                                    sys_vel_guess,
+                                                                    inclination_angle_guess,
+                                                                    phi_guess,
                                                                     fit_function)
 
         if param_outputs is not None:
             ####################################################################
             # Mask best-fit map
             #-------------------------------------------------------------------
-            best_mask = build_map_mask(gal_ID, 
-                                       fit_flag, 
-                                       mvel, 
-                                       mHa_flux, 
-                                       mHa_flux_ivar, 
+            best_mask = build_map_mask(gal_ID,
+                                       fit_flag,
+                                       mvel,
+                                       mHa_flux,
+                                       mHa_flux_ivar,
                                        mHa_sigma)
-
             mbest_fit_map = ma.array(best_fit_map, mask=best_mask)
             ####################################################################
 
@@ -426,15 +447,14 @@ def fit_vel_map(vel,
             ####################################################################
             # Plot the best-fit velocity field
             #-------------------------------------------------------------------
-            plot_vel(mbest_fit_map, 
-                     gal_ID, 
-                     V_type=V_type, 
+            plot_vel(mbest_fit_map,
+                     gal_ID,
+                     V_type=V_type,
                      model=True,
-                     IMAGE_DIR=IMAGE_DIR, 
-                     FOLDER_NAME='/fitted_velocity_fields/', 
-                     FILENAME_SUFFIX='_fitted_' + V_type + '_vel_field.', 
+                     IMAGE_DIR=IMAGE_DIR,
+                     FOLDER_NAME='/fitted_velocity_fields/',
+                     FILENAME_SUFFIX='_fitted_' + V_type + '_vel_field.',
                      IMAGE_FORMAT=IMAGE_FORMAT)
-
             if IMAGE_DIR is None:
                 plt.show()
             ####################################################################
@@ -443,12 +463,12 @@ def fit_vel_map(vel,
             ####################################################################
             # Plot the residual velocity map between the best-fit and the data
             #-------------------------------------------------------------------
-            plot_residual(mbest_fit_map, 
+            plot_residual(mbest_fit_map,
                           mvel,
-                          gal_ID, 
-                          IMAGE_DIR=IMAGE_DIR, 
-                          FOLDER_NAME='/residuals/', 
-                          FILENAME_SUFFIX='_' + V_type + '_residual.', 
+                          gal_ID,
+                          IMAGE_DIR=IMAGE_DIR,
+                          FOLDER_NAME='/residuals/',
+                          FILENAME_SUFFIX='_' + V_type + '_residual.',
                           IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -457,15 +477,16 @@ def fit_vel_map(vel,
 
 
             ####################################################################
-            # Plot the normalized residual velocity map between the best-fit and 
+            # Plot the normalized residual velocity map between the best-fit and
             # the data
             #-------------------------------------------------------------------
-            plot_residual_norm(mbest_fit_map, 
+
+            plot_residual_norm(mbest_fit_map,
                                mvel,
-                               gal_ID, 
-                               IMAGE_DIR=IMAGE_DIR, 
-                               FOLDER_NAME='/residuals_norm/', 
-                               FILENAME_SUFFIX='_' + V_type + '_residual_norm.', 
+                               gal_ID,
+                               IMAGE_DIR=IMAGE_DIR,
+                               FOLDER_NAME='/residuals_norm/',
+                               FILENAME_SUFFIX='_' + V_type + '_residual_norm.',
                                IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -476,13 +497,13 @@ def fit_vel_map(vel,
             ####################################################################
             # Plot the chi2 map of the best-fit model
             #-------------------------------------------------------------------
-            plot_chi2(mbest_fit_map, 
+            plot_chi2(mbest_fit_map,
                       mvel,
-                      mvel_ivar, 
-                      gal_ID, 
-                      IMAGE_DIR=IMAGE_DIR, 
-                      FOLDER_NAME='/chi2/', 
-                      FILENAME_SUFFIX='_' + V_type + '_chi2.', 
+                      mvel_ivar,
+                      gal_ID,
+                      IMAGE_DIR=IMAGE_DIR,
+                      FOLDER_NAME='/chi2/',
+                      FILENAME_SUFFIX='_' + V_type + '_chi2.',
                       IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -493,12 +514,12 @@ def fit_vel_map(vel,
             ####################################################################
             # Plot velocity field with the systemic velocity subtracted.
             #-------------------------------------------------------------------
-            plot_vel(ma.array(mvel, mask=best_mask) - param_outputs['v_sys'], 
-                     gal_ID, 
-                     V_type=V_type, 
-                     IMAGE_DIR=IMAGE_DIR, 
-                     FOLDER_NAME='/masked_' + V_type + '_vel/', 
-                     FILENAME_SUFFIX='_' + V_type + '_vel_field.', 
+            plot_vel(ma.array(mvel, mask=best_mask) - param_outputs['v_sys'],
+                     gal_ID,
+                     V_type=V_type,
+                     IMAGE_DIR=IMAGE_DIR,
+                     FOLDER_NAME='/masked_' + V_type + '_vel/',
+                     FILENAME_SUFFIX='_' + V_type + '_vel_field.',
                      IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -509,14 +530,14 @@ def fit_vel_map(vel,
             ####################################################################
             # Plot 1D rotation curve with best-fit
             #-------------------------------------------------------------------
-            Rmax = plot_rot_curve(ma.array(mvel, mask=best_mask), 
+            Rmax = plot_rot_curve(ma.array(mvel, mask=best_mask),
                                   ma.array(mvel_ivar, mask=best_mask),
-                                  param_outputs, 
+                                  param_outputs,
                                   scale,
-                                  gal_ID, 
+                                  gal_ID,
                                   fit_function,
-                                  IMAGE_DIR=IMAGE_DIR, 
-                                  IMAGE_FORMAT=IMAGE_FORMAT, 
+                                  IMAGE_DIR=IMAGE_DIR,
+                                  IMAGE_FORMAT=IMAGE_FORMAT,
                                   FILENAME_SUFFIX='_' + V_type)
 
             param_outputs['Rmax'] = Rmax
@@ -529,11 +550,11 @@ def fit_vel_map(vel,
             ####################################################################
             # Plot cumulative mass as a function of deprojected radius.
             #-------------------------------------------------------------------
-            plot_mass_curve(mHa_vel, 
-                            mHa_vel_ivar, 
+            plot_mass_curve(mHa_vel,
+                            mHa_vel_ivar,
                             param_outputs,
                             gal_ID,
-                            IMAGE_DIR=IMAGE_DIR, 
+                            IMAGE_DIR=IMAGE_DIR,
                             IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -542,22 +563,22 @@ def fit_vel_map(vel,
             '''
 
             ####################################################################
-            # Plot a two by two paneled image containging 
+            # Plot a two by two paneled image containging
             #   - the r-band image
-            #   - the masked velocity array, 
-            #   - the best-fit velocity array, 
+            #   - the masked velocity array,
+            #   - the best-fit velocity array,
             #   - the best-fit rotation curve
             #-------------------------------------------------------------------
-            plot_diagnostic_panel(r_band, 
-                                  ma.array(mvel, mask=best_mask), 
-                                  ma.array(mvel_ivar, mask=best_mask), 
+            plot_diagnostic_panel(r_band,
+                                  ma.array(mvel, mask=best_mask),
+                                  ma.array(mvel_ivar, mask=best_mask),
                                   mbest_fit_map,
                                   param_outputs,
-                                  scale, 
-                                  gal_ID, 
+                                  scale,
+                                  gal_ID,
                                   fit_function,
-                                  V_type=V_type, 
-                                  IMAGE_DIR=IMAGE_DIR, 
+                                  V_type=V_type,
+                                  IMAGE_DIR=IMAGE_DIR,
                                   IMAGE_FORMAT=IMAGE_FORMAT)
 
             if IMAGE_DIR is None:
@@ -587,7 +608,7 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     ===========
 
     params : list
-        Best-fit values for the given velocity function, in the order of input 
+        Best-fit values for the given velocity function, in the order of input
         to the velocity function.
 
     r : float
@@ -597,7 +618,7 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
         Galaxy redshift
 
     fit_function : string
-        Represents which fit function to use to calculate the velocity at the 
+        Represents which fit function to use to calculate the velocity at the
         given r.
 
     gal_ID : string
@@ -626,7 +647,8 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     ############################################################################
     # Calculate velocity at given radius
     #---------------------------------------------------------------------------
-    hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+    # hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+    hess = np.load('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
 
     N_samples = 10000
 
@@ -637,12 +659,12 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
 
         try:
 
-            param_samples = np.random.multivariate_normal(mean=params, 
-                                                          cov=0.5*hess[-3:,-3:], 
+            param_samples = np.random.multivariate_normal(mean=params,
+                                                          cov=0.5*hess[-3:,-3:],
                                                           size=N_samples)
 
             for i in range(N_samples):
-                
+
                 if np.all(param_samples[i] > 0):
                     v_samples[i] = rot_fit_BB(r_kpc, param_samples[i])
 
@@ -650,12 +672,12 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
 
         except np.linalg.LinAlgError:
             v_err = np.nan
-    
+
     elif fit_function == 'tanh':
         v = rot_fit_tanh(r_kpc, params)
 
-        param_samples = np.random.multivariate_normal(mean=params, 
-                                                      cov=0.5*hess[-2:,-2:], 
+        param_samples = np.random.multivariate_normal(mean=params,
+                                                      cov=0.5*hess[-2:,-2:],
                                                       size=N_samples)
 
         for i in range(N_samples):
@@ -664,7 +686,20 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
                 v_samples[i] = rot_fit_tanh(r_kpc, param_samples[i])
 
         v_err = np.std(v_samples[np.isfinite(v_samples)])
-    
+
+    elif fit_function == 'tail':
+        v = rot_fit_tail(r_kpc, params)
+
+        param_samples = np.random.multivariate_normal(mean=params,
+                                                      cov=0.5*hess[-4:,-4:],
+                                                      size=N_samples)
+        for i in range(N_samples):
+            if np.all(param_samples[i] > 0):
+                v_samples[i] = rot_fit_tail(r_kpc, param_samples[i])
+        
+        v_err = np.std(v_samples[np.isfinite(v_samples)])
+
+
     else:
         print('Fit function not known.  Please update estimate_total_mass function.')
     ############################################################################
@@ -677,13 +712,3 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     ############################################################################
 
     return {'M':np.log10(M), 'M_err':np.log10(M_err)}
-
-
-
-
-
-
-
-
-
-

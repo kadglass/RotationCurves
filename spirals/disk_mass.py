@@ -5,6 +5,7 @@ import numpy.ma as ma
 from astropy.table import Table
 
 from scipy.optimize import minimize, curve_fit
+import scipy.special
 
 import matplotlib.pyplot as plt
 
@@ -14,9 +15,7 @@ from Pipe3D_rotation_curve_plottingFunctions import plot_sMass_image
 
 from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 
-import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
-from rotation_curve_functions import disk_vel
+from rotation_curve_functions import disk_vel, disk_bulge_vel
 
 
 
@@ -25,7 +24,8 @@ from rotation_curve_functions import disk_vel
 ################################################################################
 ################################################################################
 
-def calc_mass_curve(sMass_density, 
+def calc_mass_curve(sMass_density,
+                    sMass_density_err,
                     r_band,
                     map_mask, 
                     x0, 
@@ -93,6 +93,9 @@ def calc_mass_curve(sMass_density,
 
     msMass_density = ma.array(sMass_density.value, mask=sMass_mask)
 
+    sMass_err_mask = map_mask + np.isnan(sMass_density_err)
+    msMass_density_err = ma.array(sMass_density_err.value, mask=sMass_err_mask)
+
     mr_band = ma.array(r_band, mask=sMass_mask)
     ############################################################################
 
@@ -138,6 +141,7 @@ def calc_mass_curve(sMass_density,
 
         mass_vel_table['radius'] = [np.NaN]
         mass_vel_table['M_star'] = [np.NaN]
+        mass_vel_table['M_star_err'] = [np.NaN]
         mass_vel_table['star_vel'] = [np.NaN]
         mass_vel_table['star_vel_err'] = [np.NaN]
 
@@ -151,7 +155,8 @@ def calc_mass_curve(sMass_density,
     else:
         mass_vel_table = find_mass_curve(z, 
                                          map_mask,
-                                         msMass_density, 
+                                         msMass_density,
+                                         msMass_density_err,
                                          optical_center, 
                                          phi, 
                                          ba)
@@ -167,8 +172,32 @@ def calc_mass_curve(sMass_density,
 ################################################################################
 ################################################################################
 ################################################################################
+'''def disk_vel(r,R_disk, Sigma_disk):
 
-def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
+    G = 4.3009E-3 # [pc (km/s)^2 / M_sol]
+    y = r / (2*R_disk)
+    
+
+    return np.sqrt(4 * np.pi * G * Sigma_disk * 1000* R_disk * y**2 * (scipy.special.iv(0,y) * scipy.special.kn(0,y) - scipy.special.iv(1,y) * scipy.special.kn(1,y)))
+
+
+
+################################################################################
+################################################################################
+################################################################################
+def disk_mass(R_disk, Sigma_disk, r):
+    Mass = 2 * np.pi * Sigma_disk * R_disk * (R_disk - np.exp(-r/R_disk)*(r + R_disk))
+    return Mass
+'''
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
     '''
     Fit the stellar mass rotation curve to the disk velocity function.
 
@@ -176,7 +205,7 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
     PARAMETERS
     ==========
 
-    data_table : astropy table
+    data_table : astropy tables
         Contains the deprojected radius and the mass within that radius
 
     gal_ID : string
@@ -201,13 +230,25 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
     ############################################################################
     # Set up initial guesses for the best-fit parameters
     #---------------------------------------------------------------------------
+    
+    
     # Central disk mass density [M_sol/pc^2]
     Sigma_disk_guess = 1000.
 
     # Disk scale radius [kpc]
     R_disk_guess = 1.
 
-    param_guesses = [Sigma_disk_guess, R_disk_guess]
+    if fit_function == 'bulge':
+        # Bulge central density [M_sol/kpc^3]
+        rho_bulge_guess =  1000.
+
+        # Bulge scale radius [kpc]
+        R_bulge_guess = 1.
+        
+        param_guesses = [Sigma_disk_guess, R_disk_guess, rho_bulge_guess, R_bulge_guess]
+
+    else: 
+        param_guesses = [Sigma_disk_guess, R_disk_guess]
     ############################################################################
 
 
@@ -216,7 +257,7 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
     #---------------------------------------------------------------------------
     # Central disk mass density [M_sol/pc^2]
     Sigma_disk_min = 0.
-    Sigma_disk_max = 1e4
+    Sigma_disk_max = 1e6
     Sigma_disk_bounds = (Sigma_disk_min, Sigma_disk_max)
 
     # Disk scale radius [kpc]
@@ -224,7 +265,28 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
     R_disk_max = 10. 
     R_disk_bounds = (R_disk_min, R_disk_max)
 
-    param_bounds = [Sigma_disk_bounds, R_disk_bounds]
+    if fit_function == 'bulge':
+
+        # Bulge central density [M_sol/pc^3]
+        rho_bulge_min = 0.
+        rho_bulge_max = 1e11
+        rho_bulge_bounds  = (rho_bulge_min, rho_bulge_max)
+
+        # Bulge scale radius [kpc]
+        R_bulge_min = 0.
+        R_bulge_max = 10.
+        R_bulge_bounds = (R_bulge_min, R_bulge_max)
+
+
+        '''param_bounds = [Sigma_disk_bounds, 
+                        R_disk_bounds, 
+                        rho_bulge_bounds, 
+                        R_bulge_bounds]'''
+        param_bounds = ([Sigma_disk_min, R_disk_min, rho_bulge_min, R_bulge_min], 
+                        [Sigma_disk_max, R_disk_max, rho_bulge_max, R_bulge_max])
+
+    else:
+        param_bounds = [Sigma_disk_bounds, R_disk_bounds]
     ############################################################################
 
 
@@ -232,16 +294,31 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
     # Find the best-fit parameters
     #---------------------------------------------------------------------------
     try:
-        popt, pconv = curve_fit(disk_vel, 
-                                data_table['radius'], 
-                                data_table['star_vel'], 
-                                p0=param_guesses,
-                                sigma=data_table['star_vel_err'])
+
+        if fit_function=='bulge':
+            popt, pconv = curve_fit(disk_bulge_vel, 
+                                    data_table['radius'], 
+                                    data_table['star_vel'], 
+                                    p0=param_guesses,
+                                    bounds=param_bounds,
+                                    sigma=data_table['star_vel_err']
+                                    )
+
+            
+
+
+        else:
+            popt, pconv = curve_fit(disk_vel, 
+                                    data_table['radius'], 
+                                    data_table['star_vel'], 
+                                    p0=param_guesses,
+                                    sigma=data_table['star_vel_err'])
 
         #-----------------------------------------------------------------------
         # Determine uncertainties in the fitted parameters
         #-----------------------------------------------------------------------
-        np.save('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy', pconv)
+        #np.save('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy', pconv)
+        np.save(gal_ID + '_cov.npy', pconv)
 
         perr = np.sqrt(np.diag(pconv))
         #-----------------------------------------------------------------------
@@ -255,7 +332,22 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
                          data_table['star_vel'], 
                          data_table['star_vel_err'])
 
-        best_fit_values = {'Sigma_disk': popt[0], 
+        
+
+
+        if fit_function == 'bulge' :
+            best_fit_values = {'Sigma_disk': popt[0], 
+                                'Sigma_disk_err': perr[0], 
+                                'R_disk': popt[1], 
+                                'R_disk_err': perr[1],
+                                'rho_bulge' : popt[2],
+                                'rho_bulge_err' : perr[2],
+                                'R_bulge' : popt[3],
+                                'R_bulge_err' : perr[3], 
+                                'chi2_disk': chi2}
+
+        else: 
+            best_fit_values = {'Sigma_disk': popt[0], 
                            'Sigma_disk_err': perr[0], 
                            'R_disk': popt[1], 
                            'R_disk_err': perr[1], 
@@ -266,10 +358,11 @@ def fit_mass_curve(data_table, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps'):
         #-----------------------------------------------------------------------
         # Plot data and best-fit curve
         #-----------------------------------------------------------------------
-        plot_fitted_disk_rot_curve(gal_ID, 
+        plot_fitted_disk_rot_curve(gal_ID,
                                    data_table, 
                                    best_fit_values, 
                                    chi2,
+                                   fit_function, 
                                    IMAGE_DIR=IMAGE_DIR, 
                                    IMAGE_FORMAT=IMAGE_FORMAT)
 

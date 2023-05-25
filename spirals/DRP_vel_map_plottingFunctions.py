@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from DRP_vel_map_functions import deproject_spaxel
 
-from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh
+from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, plot_vel
 
@@ -22,12 +22,12 @@ q0 = 0.2
 ################################################################################
 ################################################################################s
 
-def plot_Ha_sigma(Ha_sigma, 
-                  gal_ID, 
-                  IMAGE_DIR=None, 
-                  FOLDER_NAME=None, 
-                  IMAGE_FORMAT='eps', 
-                  FILENAME_SUFFIX=None, 
+def plot_Ha_sigma(Ha_sigma,
+                  gal_ID,
+                  IMAGE_DIR=None,
+                  FOLDER_NAME=None,
+                  IMAGE_FORMAT='eps',
+                  FILENAME_SUFFIX=None,
                   ax=None):
     '''
     Creates a plot of the H-alpha line widths.
@@ -70,10 +70,10 @@ def plot_Ha_sigma(Ha_sigma,
     cbar_ticks = np.linspace( minimum, maximum, 11, dtype='int')
 
     ax.set_title( gal_ID + r' H$\alpha$ $\sigma$')
-    Ha_sigma_im = ax.imshow( Ha_sigma, 
-                             #cmap='RdBu_r', 
-                             origin='lower', 
-                             vmin = minimum, 
+    Ha_sigma_im = ax.imshow( Ha_sigma,
+                             #cmap='RdBu_r',
+                             origin='lower',
+                             vmin = minimum,
                              vmax = maximum)
 
     cbar = plt.colorbar( Ha_sigma_im, ax=ax, ticks=cbar_ticks)
@@ -92,7 +92,7 @@ def plot_Ha_sigma(Ha_sigma,
     ############################################################################
 
 
-    
+
     if IMAGE_DIR is not None:
         ########################################################################
         # Create output directory if it does not already exist
@@ -104,7 +104,7 @@ def plot_Ha_sigma(Ha_sigma,
         ########################################################################
         # Save figure
         #-----------------------------------------------------------------------
-        plt.savefig( IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+        plt.savefig( IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT,
                      format=IMAGE_FORMAT)
         ########################################################################
 
@@ -126,16 +126,16 @@ def plot_Ha_sigma(Ha_sigma,
 ################################################################################
 
 
-def plot_rot_curve(mvel, 
+def plot_rot_curve(mvel,
                    mvel_ivar,
-                   best_fit_values, 
+                   best_fit_values,
                    scale,
-                   gal_ID, 
+                   gal_ID,
                    fit_function,
-                   IMAGE_DIR=None, 
+                   IMAGE_DIR=None,
                    IMAGE_FORMAT='eps',
-                   FILENAME_SUFFIX=None, 
-                   HESSIAN_DIR='', 
+                   FILENAME_SUFFIX=None,
+                   HESSIAN_DIR='',
                    ax=None):
     '''
     Plot the galaxy rotation curve.
@@ -160,7 +160,7 @@ def plot_rot_curve(mvel,
         MaNGA <plate>-<IFU> for the current galaxy
 
     fit_function : string
-        Determines which function to use for the velocity.  Options are 'BB' and 
+        Determines which function to use for the velocity.  Options are 'BB' and
         'tanh'.
 
     IMAGE_DIR : str
@@ -179,7 +179,7 @@ def plot_rot_curve(mvel,
         Default is None (no suffix added)
 
     HESSIAN_DIR : string
-        Path to the Hessian directory.  Default is an empty string (so the 
+        Path to the Hessian directory.  Default is an empty string (so the
         directory is in the current working directory).
 
     ax : matplotlib.pyplot figure axis object
@@ -224,9 +224,9 @@ def plot_rot_curve(mvel,
     for i in range(vel_array_shape[0]):
         for j in range(vel_array_shape[1]):
 
-            r_deproj[i,j], theta[i,j] = deproject_spaxel((i,j), 
-                                                         (best_fit_values['x0'], best_fit_values['y0']), 
-                                                         phi, 
+            r_deproj[i,j], theta[i,j] = deproject_spaxel((i,j),
+                                                         (best_fit_values['x0'], best_fit_values['y0']),
+                                                         phi,
                                                          i_angle)
 
             ####################################################################
@@ -255,12 +255,18 @@ def plot_rot_curve(mvel,
     r = np.linspace(ma.min(rm_deproj), ma.max(rm_deproj), 100)
 
     if fit_function == 'BB':
-        v = rot_fit_BB(r, [best_fit_values['v_max'], 
-                           best_fit_values['r_turn'], 
+        v = rot_fit_BB(r, [best_fit_values['v_max'],
+                           best_fit_values['r_turn'],
                            best_fit_values['alpha']])
     elif fit_function == 'tanh':
-        v = rot_fit_tanh(r, [best_fit_values['v_max'], 
+        v = rot_fit_tanh(r, [best_fit_values['v_max'],
                              best_fit_values['r_turn']])
+    elif fit_function == 'tail':
+        v = rot_fit_tail(r, [best_fit_values['v_max'],
+                           best_fit_values['r_turn'],
+                           best_fit_values['alpha'],
+                           best_fit_values['b']])                       
+                
     else:
         print('Fit function not known.  Please update plot_rot_curve function.')
     ############################################################################
@@ -269,15 +275,16 @@ def plot_rot_curve(mvel,
     ############################################################################
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
-    Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+    #Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+    Hessian = np.load('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
     hess_inv = 2*np.linalg.inv(Hessian)
 
     N_samples = 10000
 
-    random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'], 
-                                                        best_fit_values['r_turn'], 
-                                                        best_fit_values['alpha']], 
-                                                  cov=hess_inv[-3:,-3:], 
+    random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
+                                                        best_fit_values['r_turn'],
+                                                        best_fit_values['alpha']],
+                                                  cov=hess_inv[-3:,-3:],
                                                   size=N_samples)
 
     # Remove bad samples (those with negative values for any of the parameters)
@@ -286,8 +293,8 @@ def plot_rot_curve(mvel,
 
     for i in range(len(r)):
         # Calculate values of curve at this location
-        y_sample = rot_fit_BB(r[i], [good_randoms[:,0], 
-                                     good_randoms[:,1], 
+        y_sample = rot_fit_BB(r[i], [good_randoms[:,0],
+                                     good_randoms[:,1],
                                      good_randoms[:,2]])
 
     stdevs = np.std(y_sample, axis=0)
@@ -349,12 +356,12 @@ def plot_rot_curve(mvel,
 
 
 
-def plot_residual(model_map, 
-                  data_map, 
-                  gal_ID, 
+def plot_residual(model_map,
+                  data_map,
+                  gal_ID,
                   IMAGE_DIR=None,
                   FOLDER_NAME=None,
-                  IMAGE_FORMAT='eps', 
+                  IMAGE_FORMAT='eps',
                   FILENAME_SUFFIX=None,
                   ax=None):
     '''
@@ -374,18 +381,18 @@ def plot_residual(model_map,
         [MaNGA plate] - [MaNGA IFU]
 
     IMAGE_DIR : string
-        Path of directory to store images.  Default is None (image will not be 
+        Path of directory to store images.  Default is None (image will not be
         saved).
 
     FOLDER_NAME : string
-        Name of folder in which to save images.  Default is None (iamge will not 
+        Name of folder in which to save images.  Default is None (iamge will not
         be saved).
 
     IMAGE_FORMAT : string
         Format of saved images.  Default is eps.
 
     FILENAME_SUFFIX : string
-        Suffix to append to gal_ID to create image file name.  Default is None 
+        Suffix to append to gal_ID to create image file name.  Default is None
         (image will not be saved).
 
     ax : matplotlib.pyplot figure axis object
@@ -407,19 +414,16 @@ def plot_residual(model_map,
     rmin_bound = -rmax_bound
 
     cbar_ticks = np.linspace(rmin_bound, rmax_bound, 11, dtype='int')
-
     ax.set_title(gal_ID + ' residual')
-
-    residual_im = ax.imshow(residual_map, 
-                            cmap='PiYG_r', 
-                            origin='lower', 
+    residual_im = ax.imshow(residual_map,
+                            cmap='PiYG_r',
+                            origin='lower',
                             vmin=rmin_bound,
                             vmax=rmax_bound)
 
     cbar = plt.colorbar(residual_im, ax=ax, ticks=cbar_ticks)
     cbar.ax.tick_params(direction='in')
     cbar.set_label('residual (model - data)')
-
     ax.tick_params(axis='both', direction='in')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
@@ -434,13 +438,15 @@ def plot_residual(model_map,
         #-----------------------------------------------------------------------
         if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
             os.makedirs(IMAGE_DIR + FOLDER_NAME)
+
         ########################################################################
 
         ########################################################################
         # Save figure
         #-----------------------------------------------------------------------
-        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT,
                     format=IMAGE_FORMAT)
+
         ########################################################################
 
         ########################################################################
@@ -451,26 +457,26 @@ def plot_residual(model_map,
         plt.close()
         del cbar, residual_im
         gc.collect()
+
         ########################################################################
 
 
-
 ################################################################################
 ################################################################################
 ################################################################################
 
 
 
-def plot_residual_norm(model_map, 
-                       data_map, 
-                       gal_ID, 
+def plot_residual_norm(model_map,
+                       data_map,
+                       gal_ID,
                        IMAGE_DIR=None,
                        FOLDER_NAME=None,
-                       IMAGE_FORMAT='eps', 
+                       IMAGE_FORMAT='eps',
                        FILENAME_SUFFIX=None,
                        ax=None):
     '''
-    Creates a plot of the residual between the model and the data, normalized by 
+    Creates a plot of the residual between the model and the data, normalized by
     the model.
 
 
@@ -487,18 +493,18 @@ def plot_residual_norm(model_map,
         [MaNGA plate] - [MaNGA IFU]
 
     IMAGE_DIR : string
-        Path of directory to store images.  Default is None (image will not be 
+        Path of directory to store images.  Default is None (image will not be
         saved).
 
     FOLDER_NAME : string
-        Name of folder in which to save images.  Default is None (iamge will not 
+        Name of folder in which to save images.  Default is None (iamge will not
         be saved).
 
     IMAGE_FORMAT : string
         Format of saved images.  Default is eps.
 
     FILENAME_SUFFIX : string
-        Suffix to append to gal_ID to create image file name.  Default is None 
+        Suffix to append to gal_ID to create image file name.  Default is None
         (image will not be saved).
 
     ax : matplotlib.pyplot figure axis object
@@ -519,13 +525,13 @@ def plot_residual_norm(model_map,
     rmax_bound = ma.max(np.abs(residual_map))
     rmin_bound = -rmax_bound
 
+
     cbar_ticks = np.linspace(rmin_bound, rmax_bound, 11, dtype='int')
 
     ax.set_title(gal_ID + ' normalized residual')
-
-    residual_im = ax.imshow(residual_map, 
-                            cmap='PiYG_r', 
-                            origin='lower', 
+    residual_im = ax.imshow(residual_map,
+                            cmap='PiYG_r',
+                            origin='lower',
                             vmin=rmin_bound,
                             vmax=rmax_bound)
 
@@ -552,7 +558,7 @@ def plot_residual_norm(model_map,
         ########################################################################
         # Save figure
         #-----------------------------------------------------------------------
-        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT,
                     format=IMAGE_FORMAT)
         ########################################################################
 
@@ -564,6 +570,7 @@ def plot_residual_norm(model_map,
         plt.close()
         del cbar, residual_im
         gc.collect()
+
         ########################################################################
 
 
@@ -575,13 +582,19 @@ def plot_residual_norm(model_map,
 
 
 
-def plot_chi2(model_map, 
-              data_map, 
-              ivar_map, 
-              gal_ID, 
+################################################################################
+################################################################################
+################################################################################
+
+
+
+def plot_chi2(model_map,
+              data_map,
+              ivar_map,
+              gal_ID,
               IMAGE_DIR=None,
               FOLDER_NAME=None,
-              IMAGE_FORMAT='eps', 
+              IMAGE_FORMAT='eps',
               FILENAME_SUFFIX=None,
               ax=None):
     '''
@@ -604,24 +617,25 @@ def plot_chi2(model_map,
         [MaNGA plate] - [MaNGA IFU]
 
     IMAGE_DIR : string
-        Path of directory to store images.  Default is None (image will not be 
+        Path of directory to store images.  Default is None (image will not be
         saved).
 
     FOLDER_NAME : string
-        Name of folder in which to save images.  Default is None (iamge will not 
+        Name of folder in which to save images.  Default is None (iamge will not
         be saved).
 
     IMAGE_FORMAT : string
         Format of saved images.  Default is eps.
 
     FILENAME_SUFFIX : string
-        Suffix to append to gal_ID to create image file name.  Default is None 
+        Suffix to append to gal_ID to create image file name.  Default is None
         (image will not be saved).
 
     ax : matplotlib.pyplot figure axis object
         Axis handle on which to create plot.
     '''
 
+    
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -640,9 +654,9 @@ def plot_chi2(model_map,
 
     ax.set_title(gal_ID + r' $\chi^2$')
 
-    chi2_im = ax.imshow(chi2_map, 
-                        cmap='PiYG_r', 
-                        origin='lower', 
+    chi2_im = ax.imshow(chi2_map,
+                        cmap='PiYG_r',
+                        origin='lower',
                         vmin=rmin_bound,
                         vmax=rmax_bound)
 
@@ -669,7 +683,7 @@ def plot_chi2(model_map,
         ########################################################################
         # Save figure
         #-----------------------------------------------------------------------
-        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
+        plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT,
                     format=IMAGE_FORMAT)
         ########################################################################
 
@@ -692,19 +706,19 @@ def plot_chi2(model_map,
 
 
 
-def plot_diagnostic_panel(r_band, 
-                          mvel, 
-                          mvel_ivar, 
+def plot_diagnostic_panel(r_band,
+                          mvel,
+                          mvel_ivar,
                           best_fit_map,
                           best_fit_values,
                           scale,
-                          gal_ID, 
+                          gal_ID,
                           fit_function,
-                          V_type='Ha', 
-                          IMAGE_DIR=None, 
+                          V_type='Ha',
+                          IMAGE_DIR=None,
                           IMAGE_FORMAT='eps'):
     '''
-    Plot a two-by-two paneled image containing the entire rgb image, the masked 
+    Plot a two-by-two paneled image containing the entire rgb image, the masked
     velocity array, the masked model velocity array, and the rotation curve.
 
 
@@ -733,11 +747,11 @@ def plot_diagnostic_panel(r_band,
         MaNGA <plate>-<IFU> for the current galaxy
 
     fit_function : string
-        Determines which function to use for the velocity.  Options are 'BB' and 
+        Determines which function to use for the velocity.  Options are 'BB' and
         'tanh'.
 
     V_type : string
-        Identifies whether the velocity map data is from gas (usually the 
+        Identifies whether the velocity map data is from gas (usually the
         H-alpha emission) or from stars.
 
         Default is 'Ha'
@@ -755,7 +769,7 @@ def plot_diagnostic_panel(r_band,
 
     panel_fig, ((r_band_panel, rot_curve_panel),
                 (mvel_panel, vel_model_panel)) = plt.subplots(2,2)
-    
+
     panel_fig.set_figheight(10)
     panel_fig.set_figwidth(10)
 
@@ -763,20 +777,20 @@ def plot_diagnostic_panel(r_band,
 
     plot_rband_image(r_band, gal_ID, ax=r_band_panel)
 
-    plot_rot_curve(mvel, 
-                   mvel_ivar, 
-                   best_fit_values, 
-                   scale, 
-                   gal_ID, 
-                   fit_function, 
+    plot_rot_curve(mvel,
+                   mvel_ivar,
+                   best_fit_values,
+                   scale,
+                   gal_ID,
+                   fit_function,
                    ax=rot_curve_panel)
 
     plot_vel(mvel, gal_ID, V_type=V_type, ax=mvel_panel)
 
-    plot_vel(best_fit_map, 
-             gal_ID, 
-             V_type=V_type, 
-             model=True, 
+    plot_vel(best_fit_map,
+             gal_ID,
+             V_type=V_type,
+             model=True,
              ax=vel_model_panel)
 
     panel_fig.tight_layout()
@@ -806,10 +820,3 @@ def plot_diagnostic_panel(r_band,
         del panel_fig, r_band_panel, rot_curve_panel, mvel_panel, vel_model_panel
         gc.collect()
         ########################################################################
-
-
-
-
-
-
-

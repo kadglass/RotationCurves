@@ -12,7 +12,7 @@ The function write_master_file creates a .txt file in ecsv format with
 identifying information about each galaxy as well as specific parameters taken
 from the DRPall catalog in calculating the rotation curve for the galaxy.
 
-To download the MaNGA .fits files used to calculate the rotation curves for
+To download the MaNGA .s files used to calculate the rotation curves for
 these galaxies, see the instructions for each data release via the following
 links:
 
@@ -60,10 +60,10 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     """
     Open the MaNGA .fits file and extract data.
 
-    
+
     PARAMETERS
     ==========
-    
+
     DRP_FOLDER : string
         Address to location of DRP data on computer system
 
@@ -78,7 +78,7 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
           - Ha_sigma
           - star_vel
 
-    
+
     RETURNS
     =======
 
@@ -92,13 +92,17 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     """
 
     [plate, IFU] = gal_ID.split('-')
-    file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
-    
+    # file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+    # file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+
+    # for dr17:
+    file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
         return None
 
-    cube = fits.open( file_name)
+    cube = fits.open(file_name)
 
     maps = {}
 
@@ -106,20 +110,23 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
         maps['r_band'] = cube['SPX_MFLUX'].data
         maps['r_band_ivar'] = cube['SPX_MFLUX_IVAR'].data
 
+
+    #channel 19 (index 18) for DR15, channel 24 (index 23) for DR17
+
     if 'Ha_flux' in which_maps:
-        maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[18]
-        maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[18]
-        maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[18]
-    
+        maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[23] #channel 19 (index 18) for DR15
+        maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[23]
+        maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[23]
+
     if 'Ha_vel' in which_maps:
-        maps['Ha_vel'] = cube['EMLINE_GVEL'].data[18]
-        maps['Ha_vel_ivar'] = cube['EMLINE_GVEL_IVAR'].data[18]
-        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[18]
+        maps['Ha_vel'] = cube['EMLINE_GVEL'].data[23]
+        maps['Ha_vel_ivar'] = cube['EMLINE_GVEL_IVAR'].data[23]
+        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[23]
 
     if 'Ha_sigma' in which_maps:
-        maps['Ha_sigma'] = cube['EMLINE_GSIGMA'].data[18]
-        maps['Ha_sigma_ivar'] = cube['EMLINE_GSIGMA_IVAR'].data[18]
-        maps['Ha_sigma_mask'] = cube['EMLINE_GSIGMA_MASK'].data[18]
+        maps['Ha_sigma'] = cube['EMLINE_GSIGMA'].data[23]
+        maps['Ha_sigma_ivar'] = cube['EMLINE_GSIGMA_IVAR'].data[23]
+        maps['Ha_sigma_mask'] = cube['EMLINE_GSIGMA_MASK'].data[23]
 
     if 'star_vel' in which_maps:
         maps['star_vel'] = cube['STELLAR_VEL'].data
@@ -140,17 +147,17 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
     '''
     Open the MaNGA Pipe3d .fits file and extract data.
 
-    
+
     PARAMETERS
     ==========
 
     PIPE3D_FOLDER : string
         Address to location of Pipe3d data on computer system
-    
+
     gal_ID : string
         '[PLATE]-[IFUID]' of the galaxy
 
-    
+
     RETURNS
     =======
 
@@ -159,7 +166,8 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
     '''
 
     [plate, IFU] = gal_ID.split('-')
-    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+    #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+    pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
 
     if not os.path.isfile(pipe3d_filename):
         print(gal_ID, 'Pipe3d data file does not exist.')
@@ -170,8 +178,11 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
     main_file.close()
 
     sMass_density = ssp[19] * u.dex( u.M_sun)
+    #sMass_density = ssp *u.dex(u.M_sun)
+    sMass_density_err = ssp[20] * u.dex(u.M_sun) # error in stellar mass density
 
-    return sMass_density
+    return sMass_density, sMass_density_err
+    #return sMass_density
 
 
 ###############################################################################
@@ -181,24 +192,24 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
 
 def match_to_DRPall( gal_ID, DRPall_plateIFU):
     """
-    Match the galaxy in question to the DRPall catalog and extract the galaxy's 
+    Match the galaxy in question to the DRPall catalog and extract the galaxy's
     index into DRPall.
 
-    
+
     PARAMETERS
     ==========
-    
+
     gal_ID : string
         [PLATE]-[IFU]
 
     DRPall_plateIFU : numpy array of shape (N,)
-        DRPall list containing all of the [PLATE]-[IFU] for the galaxies 
+        DRPall list containing all of the [PLATE]-[IFU] for the galaxies
         contained in the DRPall catalog
 
-    
+
     RETURNS
     =======
-    
+
     idx : integer
         The DRPall catalog integer index of the galaxy in question
     """
@@ -219,9 +230,9 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
                     IMAGE_DIR=None, IMAGE_FORMAT='eps', num_masked_gal=0):
     '''
     Calculate the rotation curve (rotational velocity as a funciton of
-    deprojected distance) of the galaxy.  In addition, a galaxy statistics file 
-    is created that contains information about the galaxy's center luminosity, 
-    the errors associated with these quantities as available, and gal_ID, which 
+    deprojected distance) of the galaxy.  In addition, a galaxy statistics file
+    is created that contains information about the galaxy's center luminosity,
+    the errors associated with these quantities as available, and gal_ID, which
     identifies the galaxy by SDSS data release and MaNGA plate and IFU.
 
 
@@ -247,7 +258,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
         Stellar mass density map in units of log(Msun/spaxel^2)
 
     axis_ratio : float
-        Ratio of the galaxy's minor axis to major axis as obtained via an 
+        Ratio of the galaxy's minor axis to major axis as obtained via an
         elliptical sersic fit of the galaxy
 
     phi_EofN_deg : float
@@ -262,14 +273,14 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
         [PLATE]-[IFU]
 
     IMAGE_DIR : string
-        File path to which pictures of the fitted rotation curves are saved.  
+        File path to which pictures of the fitted rotation curves are saved.
         Default value is None (do not save images).
 
     IMAGE_FORMAT : string
         Saved image file format.  Default format is eps.
 
     num_masked_gal : float
-        Cumulative number of completely masked galaxies seen so far.  Default 
+        Cumulative number of completely masked galaxies seen so far.  Default
         value is 0.
 
 
@@ -277,13 +288,13 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     ========
 
     data_table : astropy QTable
-        Contains the deprojected distance; maximum, minimum, average, and dark 
-        matter velocities at that radius; difference between the maximum and 
-        minimum velocities; and the dark matter and total mass interior to that 
+        Contains the deprojected distance; maximum, minimum, average, and dark
+        matter velocities at that radius; difference between the maximum and
+        minimum velocities; and the dark matter and total mass interior to that
         radius as well as the errors associated with each quantity as available
 
     gal_stats : astropy QTable
-        Contains single-valued columns of the center luminosity and its error 
+        Contains single-valued columns of the center luminosity and its error
         and the fraction of spaxels masked
 
     num_masked_gal : float
@@ -291,7 +302,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     '''
 
     ###########################################################################
-    # Create a mask for the data arrays. The final mask is applied to all data 
+    # Create a mask for the data arrays. The final mask is applied to all data
     # arrays extracted from the .fits file.
     #--------------------------------------------------------------------------
     data_mask = build_mask( Ha_vel_mask, sMass_density)
@@ -316,7 +327,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     plt.close()
     '''
     ###########################################################################
-    
+
 
     ############################################################################
     # DIAGNOSTICS:
@@ -328,12 +339,12 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     if IMAGE_DIR is None:
         plt.show()
     #---------------------------------------------------------------------------
-    # Plot H-alpha velocity field before systemic redshift subtraction.  Galaxy 
-    # velocities vary from file to file, so vmin and vmax will have to be 
+    # Plot H-alpha velocity field before systemic redshift subtraction.  Galaxy
+    # velocities vary from file to file, so vmin and vmax will have to be
     # manually adjusted for each galaxy before reshift subtraction.
     #-----------------------------------------------------------------------
-    plot_Ha_vel( Ha_vel, gal_ID, 
-                 IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/unmasked_Ha_vel/', 
+    plot_Ha_vel( Ha_vel, gal_ID,
+                 IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/unmasked_Ha_vel/',
                  IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_raw.')
 
     if IMAGE_DIR is None:
@@ -408,7 +419,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
 
     ############################################################################
     # If 'unmasked_data' was set to False by all of the 'Ha_vel' data being
-    # masked after correcting for the angle of inclination, set all of the data 
+    # masked after correcting for the angle of inclination, set all of the data
     # arrays to be -1.
     #---------------------------------------------------------------------------
     if not unmasked_data:
@@ -418,7 +429,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
                  'avg_vel':[-1], 'avg_vel_err':[-1],
                  'vel_diff':[-1], 'vel_diff_err':[-1],
                  'M_tot':[-1], 'M_tot_err':[-1],
-                 'M_star':[-1], 
+                 'M_star':[-1],
                  'star_vel':[-1], 'star_vel_err':[-1],
                  'DM':[-1], 'DM_err':[-1],
                  'DM_vel':[-1], 'DM_vel_err':[-1]}
@@ -437,23 +448,23 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     # normal.
     #---------------------------------------------------------------------------
     else:
-        lists, center_flux, center_flux_err, mVel_contour_plot = find_rot_curve( z, 
-                                                                                 data_mask, 
-                                                                                 r_band, 
+        lists, center_flux, center_flux_err, mVel_contour_plot = find_rot_curve( z,
+                                                                                 data_mask,
+                                                                                 r_band,
                                                                                  r_band_ivar,
-                                                                                 Ha_vel, 
-                                                                                 mHa_vel, 
-                                                                                 mHa_vel_ivar, 
-                                                                                 msMass_density, 
-                                                                                 optical_center, 
-                                                                                 phi_EofN_deg, 
+                                                                                 Ha_vel,
+                                                                                 mHa_vel,
+                                                                                 mHa_vel_ivar,
+                                                                                 msMass_density,
+                                                                                 optical_center,
+                                                                                 phi_EofN_deg,
                                                                                  axis_ratio)
 
         ########################################################################
         # Plot the H-alapha velocity field within the annuli
         #-----------------------------------------------------------------------
-        plot_Ha_vel( mVel_contour_plot, gal_ID, 
-                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/collected_velocity_fields/', 
+        plot_Ha_vel( mVel_contour_plot, gal_ID,
+                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/collected_velocity_fields/',
                      IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_collected_vel_field.')
 
         if IMAGE_DIR is None:
@@ -464,8 +475,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
         ########################################################################
         # Plot H-alpha velocity field with redshift subtracted.
         #-----------------------------------------------------------------------
-        plot_Ha_vel( mHa_vel, gal_ID, 
-                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/masked_Ha_vel/', 
+        plot_Ha_vel( mHa_vel, gal_ID,
+                     IMAGE_DIR=IMAGE_DIR, FOLDER_NAME='/masked_Ha_vel/',
                      IMAGE_FORMAT=IMAGE_FORMAT, FILENAME_SUFFIX='_Ha_vel_field.')
 
         if IMAGE_DIR is None:
@@ -478,11 +489,11 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     # Convert the data arrays into astropy Column objects and then add those
     # Column objects to an astropy QTable.
     #
-    # NOTE: 'gal_stats' contains general statistics about luminosity and stellar 
+    # NOTE: 'gal_stats' contains general statistics about luminosity and stellar
     #       mass for the entire galaxy
     #---------------------------------------------------------------------------
-    data_table, gal_stats = put_data_in_QTable( lists, gal_ID, 
-                                                center_flux, center_flux_err, 
+    data_table, gal_stats = put_data_in_QTable( lists, gal_ID,
+                                                center_flux, center_flux_err,
                                                 frac_masked_spaxels)
     ############################################################################
 
@@ -497,8 +508,8 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
     #       algorithm is working correctly.
     #---------------------------------------------------------------------------
     '''
-    # Print the systemic velocity (taken from the most luminous point in the 
-    # galaxy), and absolute maximum and minimum velocities in the entire numpy 
+    # Print the systemic velocity (taken from the most luminous point in the
+    # galaxy), and absolute maximum and minimum velocities in the entire numpy
     # n-D array after the velocity subtraction.
     #
     print("Systemic Velocity:", sys_vel)
@@ -513,7 +524,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
         ########################################################################
         # Rotational velocity as a function of deprojected radius.
         #-----------------------------------------------------------------------
-        plot_rot_curve( gal_ID, data_table, 
+        plot_rot_curve( gal_ID, data_table,
                         IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
 
         if IMAGE_DIR is None:
@@ -524,7 +535,7 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
         ########################################################################
         # Plot cumulative mass as a function of deprojected radius.
         #-----------------------------------------------------------------------
-        plot_mass_curve( gal_ID, data_table, 
+        plot_mass_curve( gal_ID, data_table,
                          IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
 
         if IMAGE_DIR is None:
@@ -533,17 +544,17 @@ def calc_rot_curve( Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar,
 
 
         ########################################################################
-        # Plot a two by two paneled image containging the entire 'Ha_vel' array, 
+        # Plot a two by two paneled image containging the entire 'Ha_vel' array,
         # the masked version of this array, 'masked_Ha_vel,' the masked
-        # 'vel_contour_plot' array containing ovals of the data points processed 
-        # in the algorithm, and the averaged max and min rotation curves along 
+        # 'vel_contour_plot' array containing ovals of the data points processed
+        # in the algorithm, and the averaged max and min rotation curves along
         # with the stellar mass rotation curve.
         #-----------------------------------------------------------------------
-        plot_diagnostic_panel( gal_ID, 
-                               r_band_raw, 
-                               mHa_vel, 
-                               mVel_contour_plot, 
-                               data_table, 
+        plot_diagnostic_panel( gal_ID,
+                               r_band_raw,
+                               mHa_vel,
+                               mVel_contour_plot,
+                               data_table,
                                IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
 
         if IMAGE_DIR is None:
@@ -569,22 +580,22 @@ def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
 
     Parameters:
     ===========
-    
+
     data_table : astropy QTable of shape (m,p)
-        Contains the deprojected distance, maximum and minimum velocities at 
-        that radius, average luminosities for each half of the galaxy at that 
-        radius, luminosity interior to the radius, and the stellar mass interior 
+        Contains the deprojected distance, maximum and minimum velocities at
+        that radius, average luminosities for each half of the galaxy at that
+        radius, luminosity interior to the radius, and the stellar mass interior
         to the radius
 
     gal_stats : astropy QTable of shape (1,n)
-        Contains single valued columns of the processed and unprocessed 
-        luminosities and corresponding masses, the luminosity at the center of 
+        Contains single valued columns of the processed and unprocessed
+        luminosities and corresponding masses, the luminosity at the center of
         the galaxy, and the fraction of masked spaxels
 
     gal_ID : string
         [PLATE]-[IFU]
 
-    LOCAL_PATH : string 
+    LOCAL_PATH : string
         Path of the main script
 
     ROT_CURVE_MASTER_FOLDER : string
@@ -604,10 +615,10 @@ def write_rot_curve( data_table, gal_stats, gal_ID, ROT_CURVE_MASTER_FOLDER):
 ###############################################################################
 
 
-def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master, 
+def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master,
                        ra_master, dec_master, z_master,
-                       axis_ratio_master, phi_master, 
-                       mStar_master, rabsmag_master, 
+                       axis_ratio_master, phi_master,
+                       mStar_master, rabsmag_master,
                        LOCAL_PATH, MASTER_FILENAME):
     '''
     Create the master file containing identifying information about each
@@ -615,7 +626,7 @@ def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master,
     master file that will contain the best fit parameters for the fitted
     rotation curve equations.
 
-    
+
     Parameters:
     ===========
 
@@ -647,7 +658,7 @@ def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master,
         master list containing the stellar mass estimate for each galaxy
 
     rabsmag_master : numpy array of shape (n,)
-        master list containing the SDSS r-band absolute magnitude for each 
+        master list containing the SDSS r-band absolute magnitude for each
         galaxy
 
     LOCAL_PATH : string
@@ -684,7 +695,7 @@ def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master,
         #-----------------------------------------------------------------------
         master_table = QTable([ manga_plate_col,
                                 manga_IFU_col,
-                                NSAid_col, 
+                                NSAid_col,
                                 ra_col * u.degree,
                                 dec_col * u.degree,
                                 z_col,
@@ -694,7 +705,7 @@ def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master,
                                 rabsmag_col],
                        names = ['MaNGA_plate',
                                 'MaNGA_IFU',
-                                'NSAID', 
+                                'NSAID',
                                 'ra',
                                 'dec',
                                 'redshift',
@@ -707,7 +718,7 @@ def write_master_file( manga_plate_master, manga_IFU_master, NSAid_master,
         ########################################################################
         # Read in current master_file.txt file
         #-----------------------------------------------------------------------
-        master_table = QTable.read( LOCAL_PATH + MASTER_FILENAME, 
+        master_table = QTable.read( LOCAL_PATH + MASTER_FILENAME,
                                     format='ascii.ecsv')
         ########################################################################
 

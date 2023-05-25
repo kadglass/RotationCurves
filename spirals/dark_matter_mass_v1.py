@@ -217,6 +217,48 @@ def rot_fit_tanh( depro_radius, params):
 ################################################################################
 ################################################################################
 
+def rot_fit_tail( depro_radius, params):
+    """
+    Function to fit the rotation curve data to.
+
+    PARAMETERS
+    ==========
+    
+    depro_radius : float
+        Deprojected radius as taken from the [PLATE]-[FIBERID] rotation curve 
+        data file (in units of kpc); the "x" data of the rotation curve equation
+
+    v_max : float
+        The maximum velocity (or in the case of fitting the negative, the
+        absolute value of the minimum velocity) parameter of the rotation curve 
+        equation (given in km/s)
+
+    r_turn : float
+        The radius at which the rotation curve trasitions from increasing to 
+        flat-body for the rotation curve equation (given in kpc)
+
+
+    RETURNS
+    =======
+        
+    The rotation curve equation with the given '@param' parameters and
+    'depro_radius' data
+    """
+
+    v_max, r_turn, alpha, b = params
+
+    v = v_max * (np.abs(depro_radius) * (1 + b * np.abs(depro_radius)) / (r_turn**alpha + np.abs(depro_radius)**alpha)**(1/alpha))
+
+    v = v*np.sign(depro_radius)
+
+    return v
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
 
 def fit_data( depro_dist, rot_vel, rot_vel_err, fit_func, TRY_N):
     '''
@@ -286,7 +328,8 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, fit_func, TRY_N):
     # Fitting function options
     #---------------------------------------------------------------------------
     fit_options = {'BB': rot_fit_BB,
-                   'tanh': rot_fit_tanh
+                   'tanh': rot_fit_tanh,
+                   'tail' : rot_fit_tail
                   }
     ############################################################################
 
@@ -341,6 +384,25 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, fit_func, TRY_N):
             rot_param_bounds = [v_max_bounds, r_turn_bounds, alpha_bounds]
             #rot_param_low = ( v_max_low, r_turn_low, np.nextafter(0, 1))
             #rot_param_high = ( v_max_high, r_turn_high, 10.)
+        elif fit_func == 'tail':
+            alpha_guess = 2.
+            alpha_low = np.nextafter(0, 1)
+            alpha_high = 100.
+            alpha_bounds = (alpha_low, alpha_high)
+            alpha_scale = 10.
+
+            b_guess = 0.
+            b_low = -0.1
+            b_high = 0.1
+            b_bounds = (b_low, b_high)
+            b_scale = 10.
+
+
+            scales = [v_max_scale, r_turn_scale, alpha_scale, b_scale]
+
+            rot_param_guess = [ v_max_guess, r_turn_guess, alpha_guess, b_guess]
+            rot_param_bounds = [v_max_bounds, r_turn_bounds, alpha_bounds, b_bounds]
+
         else:
             scales = [v_max_scale, r_turn_scale]
 
@@ -452,6 +514,11 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, fit_func, TRY_N):
             if fit_func == 'BB':
                 alpha_best = -999
                 alpha_sigma = -999
+            elif fit_func == 'tail':
+                alpha_best = -999
+                alpha_sigma = -999
+                b_best = -999
+                b_sigma = -999
 
             chi_square_rot = -999
     # ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~
@@ -472,12 +539,22 @@ def fit_data( depro_dist, rot_vel, rot_vel_err, fit_func, TRY_N):
             alpha_best = -100
             alpha_sigma = -100
 
+        elif fit_func == 'tail':
+            alpha_best = -100
+            alpha_sigma = -100
+            b_best = -100
+            b_sigma = -100
         chi_square_rot = -100
     ############################################################################
 
     if fit_func == 'BB':
         best_param = ( v_max_best, r_turn_best, alpha_best)
         param_err = ( v_max_sigma, r_turn_sigma, alpha_sigma)
+
+    elif fit_func == 'tail':
+        best_param = ( v_max_best, r_turn_best, alpha_best, b_best)
+        param_err = ( v_max_sigma, r_turn_sigma, alpha_sigma, b_sigma)
+
     else:
         best_param = ( v_max_best, r_turn_best)
         param_err = ( v_max_sigma, r_turn_sigma)

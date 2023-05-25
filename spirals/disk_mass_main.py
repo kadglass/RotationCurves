@@ -24,8 +24,6 @@ from disk_mass import calc_mass_curve, fit_mass_curve
 
 #import matplotlib.pyplot as plt
 
-import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
 from rotation_curve_functions import disk_mass
 
 
@@ -42,7 +40,7 @@ c = 299792.458 # Speed of light in units of km/s
 
 ################################################################################
 # File format for saved images
-#-------------------------------------------------------------------------------
+#-----------------------------------------------s--------------------------------
 IMAGE_FORMAT = 'eps'
 ################################################################################
 
@@ -55,9 +53,57 @@ IMAGE_FORMAT = 'eps'
 # If RUN_ALL_GALAXIES is set to True, then the code will ignore what is in 
 # FILE_IDS
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8997-9102']
+
+
+'''
+FILE_IDS =  ['10001-3702','7815-3702',  '7990-6104',
+        '7992-6104', '8077-12704', '8077-6102',
+        '8082-12702', '8082-9102',  '8146-1901',
+        '8150-9102', '8153-1901', '8155-12701', '8158-1901',
+        '8255-12704', '8257-9102',
+        '8262-3702', '8262-9102', '8311-3703',
+        '8320-9101', '8322-1901',
+        '8322-3701', '8329-12701', '8330-12703', '8332-3702',
+        '8332-9102', '8335-12705', '8338-12701', '8440-6104',
+        '8450-6102', '8452-12705',
+        '8453-3704', '8455-3701', '8459-1901', '8462-9101',
+        '8465-9102', '8466-12702', '8483-6101', '8547-6102',
+        '8548-12704', '8551-12705', '8552-12701', 
+         '8588-6101', '8592-6101',
+        '8595-3703', '8600-1901', '8600-3704',
+        '8601-12702', '8603-12704', '8603-6103', '8603-6104',
+        '8604-12702', '8604-9102', '8624-12702', '8624-12703',
+        '8626-12701', '8626-12702', '8626-3702', '8626-3703',
+        '8712-6101', '8713-6104',  '8727-3701',
+        '8932-9102', '8935-6104', '8945-12701', '8950-12705',
+        '8952-6104','8979-6102', '8987-3701',
+        '8989-9102', '8993-6104', '8996-3703', '8997-12704', 
+        '9027-12701', '9029-12702', '9029-6102',
+        '9036-9102', '9041-12701', '9042-12703',
+        '9044-6101', '9047-6104', '9049-6104', '9050-3704',
+        '9050-9101', '9085-12703', 
+        '9095-9102',
+        '9196-6103', '9485-12705', '9485-3701', '9486-12701',
+        '9486-12702', '9500-1901', '9508-12705',
+        '9508-6101', '9508-6104', '9865-9102', '9871-6101',
+        '9881-12705', '9881-3702', '9888-12704', '9888-12705',
+        '8092-3701', '11744-6103', '7977-3704',
+        '7977-3703', '12085-6103', '12090-1901', '12085-9102',
+        '9863-1902',
+        '8089-12701', '9495-6101', '9506-1901', '10844-3703', '12769-6104', 
+        '10513-1901', '12700-12702',
+        '9493-6103', '9494-3701', '10219-1901', '8087-9102',
+        '10514-3701', '8934-3701']'''
+
+FILE_IDS = ['8082-12702']
+
 
 RUN_ALL_GALAXIES = False
+TEXT_OUT = True
+
+
+
+fit_function = 'bulge'
 ################################################################################
 
 
@@ -81,25 +127,32 @@ if RUN_ALL_GALAXIES:
     if not os.path.isdir( IMAGE_DIR):
         os.makedirs( IMAGE_DIR)
 else:
-    IMAGE_DIR = None
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
 
 
-MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
+#MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
 SDSS_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
+
+MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
+NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
+
 '''
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 SDSS_FOLDER = '/home/kelly/Documents/Data/SDSS/'
 '''
-MASS_MAP_FOLDER = SDSS_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
-VEL_MAP_FOLDER = SDSS_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
+#MASS_MAP_FOLDER = SDSS_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
+#VEL_MAP_FOLDER = SDSS_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 
-MASS_CURVE_MASTER_FOLDER = LOCAL_PATH + 'Pipe3d-mass_curve_data_files/'
+MASS_MAP_FOLDER = MANGA_FOLDER + 'Pipe3D/'
+VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
+
+MASS_CURVE_MASTER_FOLDER = MASS_MAP_FOLDER + 'Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = 'DRP_vel_map_results_BB_smooth_lt_1p85_v6.fits'
-DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
+GALAXIES_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/output_files/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
+DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
 ################################################################################
 
 
@@ -151,6 +204,7 @@ if RUN_ALL_GALAXIES:
 else:
 
     N_files = len(FILE_IDS)
+    galaxies_table = add_disk_columns(galaxies_table)
 ################################################################################
 
 
@@ -168,7 +222,7 @@ for gal_ID in FILE_IDS:
     maps = extract_data(VEL_MAP_FOLDER, 
                         gal_ID, 
                         ['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
-    sMass_density = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
+    sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
 
     if maps is None or sMass_density is None:
         print('\n')
@@ -245,7 +299,8 @@ for gal_ID in FILE_IDS:
     #-----------------------------------------------------------------------
     start = time()
     
-    mass_data_table = calc_mass_curve(sMass_density, 
+    mass_data_table = calc_mass_curve(sMass_density,
+                                      sMass_density_err, 
                                       maps['r_band'], 
                                       map_mask, 
                                       center_x,
@@ -270,11 +325,13 @@ for gal_ID in FILE_IDS:
         start = time()
 
         param_outputs = fit_mass_curve(mass_data_table, 
-                                       gal_ID, 
+                                       gal_ID,
+                                       fit_function, 
                                        IMAGE_DIR=IMAGE_DIR,
                                        IMAGE_FORMAT=IMAGE_FORMAT
                                        )
 
+        print(param_outputs)
         fit_time = time() - start
 
         print(gal_ID, 'mass curve fit', fit_time)
@@ -299,7 +356,7 @@ for gal_ID in FILE_IDS:
         ####################################################################
 
 
-        if RUN_ALL_GALAXIES:
+        if RUN_ALL_GALAXIES or TEXT_OUT:
 
             ################################################################
             # Write the extracted mass curve to a text file in ascii format.
@@ -349,11 +406,11 @@ for gal_ID in FILE_IDS:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES:
+if RUN_ALL_GALAXIES or TEXT_OUT:
 
-    galaxies_filename, extension = GALAXIES_FILENAME.split('.')
+    #galaxies_filename, extension = GALAXIES_FILENAME.split('.')
 
-    galaxies_table.write(galaxies_filename + '_diskFit.fits', 
+    galaxies_table.write('out_bulge_chi2_diskFit.fits', 
                          format='fits', #'ascii.commented_header', 
                          overwrite=True)
 ################################################################################

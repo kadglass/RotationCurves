@@ -20,8 +20,9 @@ from Pipe3D_vel_map import extract_Pipe3D_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
+#sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/RotationCurves/')
 #sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+sys.path.insert(1, '/Users/nityaravi/Documents/GitHub/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 warnings.simplefilter('ignore', np.RankWarning)
@@ -48,8 +49,8 @@ map_smoothness_max = 2.27
 vel_function = 'BB'
 
 # Velocity map to use
-V_type = 'Ha'
-#V_type = 'star'
+#V_type = 'Ha'
+V_type = 'star'
 ################################################################################
 
 
@@ -60,9 +61,87 @@ V_type = 'Ha'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8440-12704']
+#FILE_IDS = ['10001-3702']
+
+'''
+worked = [ '7992-6104', '8077-12704', '8077-6102',
+            '8082-9102', '8150-9102', '8153-1901',
+            '8158-1901',
+        '8255-12704', '8257-9102',
+        '8262-3702', '8262-9102', '8311-3703', 
+        '8318-12702', '8318-9101', '8320-9101', '8322-1901',
+        '8322-3701', '8329-12701', '8330-12703', '8332-3702',
+        '8332-9102', '8335-12705', '8338-12701', '8440-6104',
+        '8450-6102', '8453-3704', '8455-3701', '8459-1901', '8462-9101',
+        '8465-9102', '8466-12702', '8483-6101', '8547-6102',
+        '8548-12704', '8551-12705', '8552-12701',
+        '8588-12705', '8588-6101', '8592-6101', ]
+        '8588-12705', '8588-6101', '8592-6101', '8603-6104',
+        '8604-12702', '8604-9102', '8624-12702', '8624-12703',
+        '8626-12701', '8626-12702', '8626-3702', '8712-6101', '8713-6104',
+        '8932-9102', '8935-6104', '8945-12701', '8950-12705',
+        '8952-6104', '8978-3701', '8979-6102', '8987-3701',
+        '8989-9102','8996-3703', '9024-1902', '9027-12701', '9029-12702', '9029-6102',
+        '9036-9102', '9042-12703', '9047-6104', '9049-6104', '9050-3704',
+        '9050-9101', '9085-12703', '9095-1901', '9095-9102',
+        '9485-12705', '9485-3701', '9486-12701',
+        '9486-12702', '9500-1901', '9508-12705',
+        '9508-6101', '9508-6104', '9865-9102', '9871-6101',
+        '9881-12705', '9881-3702', '9888-12704', '8092-3701', '8095-1902',
+        '7977-3702', '7977-3703', '12085-6103', '12090-1901',
+        '10218-12703', '9863-1902',
+        '8089-12701', '9495-6101', '9506-1901', '10844-3703', '12769-6104', 
+        '10513-1901', '12700-12702', '9494-3701', '10219-1901', '9863-3701', '10514-3701'
+         ]
+
+failed = [
+        '7990-6104', #SVD did not converge
+        '8080-12702', # ran but no fit params output
+        '8082-12702', # all nan slice - SVD did not converge
+        '8146-1901', # singular matrix
+        '8155-12701', nan sl - svd did not converge
+        '8452-12705',
+        '8595-3703',
+        '8595-6104'# singular matrix
+        '8600-1901',  # singular matrix
+        '8600-3704', # singular matrix'
+        '8603-6103', # math domain error
+          '8626-3703', nan sl - svd
+          '8727-3701',
+          '8993-6104', svd dnc
+          '8997-12704',
+          '9041-12701',  svd dnc
+          '9044-6101', '9196-6103',
+          '9888-12705','9513-3702',
+          '11744-6103',
+          '11974-3701',
+          '7977-3704',
+          '12085-9102',
+          '9493-6103',
+          '8087-9102',
+          '10214-6101', # singular
+          '8934-3701'
+
+]
+
+'''
+
+
+FILE_IDS =  [ ,
+           
+         
+         
+         
+         
+           
+         
+        
+          
+          ]
 
 RUN_ALL_GALAXIES = False
+
+TEXT_OUT = False
 ################################################################################
 
 
@@ -80,25 +159,36 @@ if LOCAL_PATH == '':
     LOCAL_PATH = './'
 
 if RUN_ALL_GALAXIES:
-    IMAGE_DIR = LOCAL_PATH + 'Images/Pipe3D_star/'
+    #IMAGE_DIR = LOCAL_PATH + 'Images/Pipe3D_star/'
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/Pipe3D_star/'
 
     # Create directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR):
         os.makedirs( IMAGE_DIR)
 else:
     #IMAGE_DIR = None
-    IMAGE_DIR = LOCAL_PATH + 'Images/Pipe3D_star/'
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/Pipe3D_star/'
 
 
-MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
-NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
+#MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
+#NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
+
+MANGA_FOLDER = '/Users/nityaravi/Documents/RotationCurves/Research/data/manga/'
+NSA_FILENAME = '/Users/nityaravi/Documents/RotationCurves/Research/data/nsa_v1_0_1.fits'
+
 '''
 MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
 '''
-PIPE3D_FOLDER = MANGA_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
-DRP_FOLDER = MANGA_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
-DRP_FILENAME = MANGA_FOLDER + 'dr16/manga/spectro/redux/v2_4_3/drpall-v2_4_3.fits'
+#PIPE3D_FOLDER = MANGA_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
+#DRP_FOLDER = MANGA_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
+#DRP_FILENAME = MANGA_FOLDER + 'dr16/manga/spectro/redux/v2_4_3/drpall-v2_4_3.fits'
+
+
+# for DR17
+PIPE3D_FOLDER = MANGA_FOLDER + 'Pipe3D/'
+DRP_FOLDER = MANGA_FOLDER + 'DR17/'
+DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
 ################################################################################
 
 
@@ -256,8 +346,8 @@ for gal_ID in FILE_IDS:
                                                                       gal_ID, 
                                                                       vel_function, 
                                                                       V_type=V_type, 
-                                                                      #IMAGE_DIR=IMAGE_DIR, 
-                                                                      #IMAGE_FORMAT=IMAGE_FORMAT, 
+                                                                      IMAGE_DIR=IMAGE_DIR, 
+                                                                      IMAGE_FORMAT=IMAGE_FORMAT, 
                                                                       num_masked_gal=num_masked_gal)
                                                              
                 fit_time = datetime.datetime.now() - start
@@ -289,7 +379,7 @@ for gal_ID in FILE_IDS:
                     mass_outputs = None
 
 
-                if RUN_ALL_GALAXIES:
+                if RUN_ALL_GALAXIES or TEXT_OUT:
                     ############################################################
                     # Write the best-fit values and calculated parameters to a 
                     # text file in ascii format.
@@ -342,7 +432,7 @@ for gal_ID in FILE_IDS:
 
             num_not_smooth += 1
 
-            if RUN_ALL_GALAXIES:
+            if RUN_ALL_GALAXIES or TEXT_OUT:
                 DRP_table = fillin_output_table(DRP_table, 
                                                 map_smoothness, 
                                                 i_DRP, 
@@ -362,16 +452,17 @@ for gal_ID in FILE_IDS:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES:
+if RUN_ALL_GALAXIES or TEXT_OUT:
 
     if V_type == 'Ha':
-        out_filename = 'Pipe3D_HaVel_map_results_' + fit_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt'
+        out_filename = 'Pipe3D_HaVel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt'
     else:
-        out_filename = 'Pipe3D_starVel_map_results_' + fit_function + '.txt'
+        out_filename = 'Pipe3D_starVel_map_results_' + vel_function + '.txt'
 
-    DRP_table.write(out_filename, 
+    DRP_table.write('out.fits', format = 'fits', overwrite=True)
+    '''DRP_table.write(out_filename, 
                     format='ascii.commented_header', 
-                    overwrite=True)
+                    overwrite=True)'''
 ################################################################################
 
 
@@ -379,7 +470,7 @@ if RUN_ALL_GALAXIES:
 ################################################################################
 # Print number of galaxies that were completely masked
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES:
+if RUN_ALL_GALAXIES or TEXT_OUT:
     print('There were', num_masked_gal, 'galaxies that were completely masked.')
 ################################################################################
 

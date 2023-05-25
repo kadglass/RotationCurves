@@ -3,7 +3,8 @@
 import numpy as np
 
 import sys
-sys.path.insert(1, '/scratch/kdougla7/RotationCurves/GradientSmoothness-1.0.0/')
+# sys.path.insert(1, '/scratch/kdougla7/RotationCurves/GradientSmoothness-1.0.0/')
+sys.path.append('/Users/nityaravi/Documents/GitHub/RotationCurves/GradientSmoothness-1.0.0/')
 from GradientSmoothness import calculate_smoothness
 
 
@@ -83,9 +84,9 @@ def how_smooth(ha_vel, mask):
     ############################################################################
     # Calculate smoothness score
     #---------------------------------------------------------------------------
-    score = calculate_smoothness( grad_x.astype(np.float32), 
-                                  grad_y.astype(np.float32), 
-                                  mask.astype(np.uint8), 
+    score = calculate_smoothness( grad_x.astype(np.float32),
+                                  grad_y.astype(np.float32),
+                                  mask.astype(np.uint8),
                                   ha_vel.shape[0], ha_vel.shape[1])
     ############################################################################
 

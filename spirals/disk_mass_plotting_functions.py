@@ -6,17 +6,17 @@ import gc
 
 import matplotlib.pyplot as plt
 
-import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
-from rotation_curve_functions import disk_vel
+
+from rotation_curve_functions import disk_vel, disk_bulge_vel
 
 
 
 
-def plot_fitted_disk_rot_curve(gal_ID, 
+def plot_fitted_disk_rot_curve(gal_ID,
                                data_table, 
                                fit_parameters, 
                                chi2,
+                               fit_function=None,
                                IMAGE_DIR=None, 
                                IMAGE_FORMAT='eps'):
     '''
@@ -62,33 +62,96 @@ def plot_fitted_disk_rot_curve(gal_ID,
     #---------------------------------------------------------------------------
     r_depro = np.linspace(0, data_table['radius'][-1], 10000)
 
-    v = disk_vel(r_depro, 
-                 fit_parameters['Sigma_disk'], 
-                 fit_parameters['R_disk'])
+
+    if fit_function == 'bulge':
+        v = disk_bulge_vel(r_depro,
+                            fit_parameters['Sigma_disk'],
+                            fit_parameters['R_disk'],
+                            fit_parameters['rho_bulge'],
+                            fit_parameters['R_bulge'])
+
+    else:
+        v = disk_vel(r_depro, 
+                    fit_parameters['Sigma_disk'], 
+                    fit_parameters['R_disk'])
     ############################################################################
 
 
     ############################################################################
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
-    cov = np.load('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy')
+    #cov = np.load('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy')
+    cov = np.load(gal_ID + '_cov.npy')
 
     N_samples = 10000
 
-    random_sample = np.random.multivariate_normal(mean=[fit_parameters['Sigma_disk'], 
-                                                        fit_parameters['R_disk']], 
-                                                  cov=cov, 
-                                                  size=N_samples)
+    if fit_function == 'bulge':
+        random_sample = np.random.multivariate_normal(mean=[fit_parameters['Sigma_disk'], 
+                                                            fit_parameters['R_disk'],
+                                                            fit_parameters['rho_bulge'],
+                                                            fit_parameters['R_bulge']], 
+                                                            cov=cov, 
+                                                            size=N_samples)
 
-    # Remove bad samples (those with negative values for any of the parameters)
-    is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0)
-    good_randoms = random_sample[is_good_random, :]
+        # Remove bad samples (those with negative values for any of the parameters)
+        
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0) & (random_sample[:,3] > 0) 
+        good_randoms = random_sample[is_good_random, :]
 
-    for i in range(len(r_depro)):
-        # Calculate the values of the curve at this location
-        y_sample = disk_vel(r_depro[i], good_randoms[:,0], good_randoms[:,1])
+        '''
+        gr_len = len(good_randoms[:,0])
+        rv, xv = np.meshgrid(r_depro, np.linspace(0,gr_len-1, gr_len))
 
-    stdevs = np.std(y_sample, axis=0)
+        xv_2 = tuple(xv.astype(int))
+
+        gr_mesh = good_randoms[xv_2, :]
+
+        y_sample = disk_bulge_vel(r_depro,
+                                gr_mesh[:,:,0],
+                                gr_mesh[:,:,1],
+                                gr_mesh[:,:,2],
+                                gr_mesh[:,:,3])
+        '''
+        
+                
+        '''
+        y_sample = disk_bulge_vel(r_depro,
+                                np.full((len(r_depro), len(good_randoms[:,0])), good_randoms[:,0]),
+                                np.full((len(r_depro), len(good_randoms[:,0])), good_randoms[:,1]),
+                                np.full((len(r_depro), len(good_randoms[:,0])), good_randoms[:,2]),
+                                np.full((len(r_depro), len(good_randoms[:,0])), good_randoms[:,3]))
+        
+        
+        '''
+        y_sample = np.zeros(( len(good_randoms[:,0]), len(r_depro)))
+        
+        for i in range(len(good_randoms[:,0])):
+            # Calculate the values of the curve at this location
+            y_sample[i] = disk_bulge_vel(r_depro, 
+                                good_randoms[:,0][i], 
+                                good_randoms[:,1][i], 
+                                good_randoms[:,2][i], 
+                                good_randoms[:,3][i])
+        
+        '''
+
+    else:
+        random_sample = np.random.multivariate_normal(mean=[fit_parameters['Sigma_disk'], 
+                                                            fit_parameters['R_disk']], 
+                                                            cov=cov, 
+                                                            size=N_samples)
+
+        # Remove bad samples (those with negative values for any of the parameters)
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) 
+        good_randoms = random_sample[is_good_random, :]
+
+        for i in range(len(r_depro)):
+            # Calculate the values of the curve at this location
+            y_sample = disk_vel(r_depro[i], good_randoms[:,0], good_randoms[:,1])
+
+        
+    stdevs = np.nanstd(y_sample, axis=0)
+
     ############################################################################
 
 
@@ -133,17 +196,27 @@ def plot_fitted_disk_rot_curve(gal_ID,
     legend_ax.patch.set_visible(False)
     legend_ax.axis('off')
 
-    textstr = '\n'.join((
-                         r'$\chi^{2}_{\nu}$: $%.3f$' % (chi2, ), 
-                         r'$\Sigma_{d}$: $%.1f$ $M_{\odot}$/pc$^2$' % (fit_parameters['Sigma_disk'], ), 
-                         r'$R_{d}$: $%.3f$ kpc' % (fit_parameters['R_disk'], )))
+    if fit_function == 'bulge':
+        textstr = '\n'.join((
+                            r'$\chi^{2}_{\nu}$: $%.3E$' % (chi2, ), 
+                            r'$\Sigma_{d}$: $%.3E$ $M_{\odot}$/pc$^2$' % (fit_parameters['Sigma_disk'], ), 
+                            r'$R_{d}$: $%.3f$ kpc' % (fit_parameters['R_disk'], ),
+                            r'$\rho_{b}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (fit_parameters['rho_bulge'], ),
+                            r'$R_{b}$: $%.3f$ kpc' % (fit_parameters['R_bulge'], )
+                            ))
+
+    else:
+        textstr = '\n'.join((
+                            r'$\chi^{2}_{\nu}$: $%.3f$' % (chi2, ), 
+                            r'$\Sigma_{d}$: $%.1f$ $M_{\odot}$/pc$^2$' % (fit_parameters['Sigma_disk'], ), 
+                            r'$R_{d}$: $%.3f$ kpc' % (fit_parameters['R_disk'], )))
 
     props = dict( boxstyle='round', facecolor='cornsilk', alpha=0.6)
 
     legend_ax.text( 0, 0.4, textstr,
                     verticalalignment='top', horizontalalignment='left',
                     transform=legend_ax.transAxes,
-                    color='black', fontsize=10, bbox=props)
+                    color='black', fontsize=8, bbox=props)
     ###########################################################################
 
 

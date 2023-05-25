@@ -5,10 +5,9 @@ from astropy.table import Table
 import astropy.units as u
 
 from DRP_rotation_curve_functions import calc_stellar_mass, calc_velocity
+import scipy.special
 
-import sys
-sys.path.insert(1, '/Users/kellydouglass/Documents/Research/Rotation_curves/Yifan_Zhang/RotationCurve/2D_RC/main/')
-from rotation_curve_functions import disk_vel
+from rotation_curve_functions import disk_vel, disk_bulge_vel
 
 
 
@@ -29,9 +28,22 @@ MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radia
 ################################################################################
 ################################################################################
 
+'''def disk_vel(r,R_disk, Sigma_disk):
+
+    G = 4.3009E-3 # [pc (km/s)^2 / M_sol]
+    y = r / (2*R_disk)
+    
+
+    return np.sqrt(4 * np.pi * G * Sigma_disk * 1000* R_disk * y**2 * (scipy.special.iv(0,y) * scipy.special.kn(0,y) - scipy.special.iv(1,y) * scipy.special.kn(1,y)))
+################################################################################
+################################################################################'''
+################################################################################
+
+
 def find_mass_curve(z, 
                     map_mask, 
                     msMass_density, 
+                    msMass_density_err,
                     optical_center, 
                     phi, 
                     ba):
@@ -114,6 +126,7 @@ def find_mass_curve(z,
     rot_curve_dist = []
 
     sMass_interior_curve = []
+    sMass_interior_curve_err = []
     sVel_rot_curve = []
     sVel_rot_curve_err = []
     ############################################################################
@@ -124,6 +137,8 @@ def find_mass_curve(z,
     # be 0 solar masses.
     #---------------------------------------------------------------------------
     sMass_interior = 0.
+    sMass_interior_err2 = 0.
+    sMass_interior_err = 0.
     ############################################################################
 
 
@@ -151,14 +166,19 @@ def find_mass_curve(z,
         ########################################################################
         # Extract the stellar mass interior to that annulus.
         #-----------------------------------------------------------------------
-        sMass_interior = calc_stellar_mass(sMass_interior, 
+        sMass_interior, sMass_interior_err2 = calc_stellar_mass(sMass_interior,
+                                            sMass_interior_err2,
                                            10**msMass_density, 
+                                           10**msMass_density_err,
                                            pix_between_annuli)
 
-        sVel_rot, sVel_rot_err = calc_velocity(sMass_interior*u.Msun, 0*u.Msun, 
-                                               deproj_dist_kpc*u.kpc, 0*u.kpc)
-        ########################################################################
+        sMass_interior_err = np.sqrt(sMass_interior_err2)
 
+        sVel_rot, sVel_rot_err = calc_velocity(sMass_interior*u.Msun, sMass_interior_err*u.Msun, 
+                                               deproj_dist_kpc*u.kpc, 0*u.kpc)
+    
+        ########################################################################
+    
 
         ########################################################################
         # Append the corresponding values to their respective arrays to write to 
@@ -169,6 +189,7 @@ def find_mass_curve(z,
             #rot_curve_dist_err.append( deproj_dist_kpc_err)
 
             sMass_interior_curve.append( np.log10(sMass_interior))
+            sMass_interior_curve_err.append( np.log10(sMass_interior_err))
             sVel_rot_curve.append( sVel_rot.value)
             sVel_rot_curve_err.append( sVel_rot_err.value)
         ########################################################################
@@ -191,6 +212,7 @@ def find_mass_curve(z,
     #data_table['radius_err'] = rot_curve_dist_err
 
     data_table['M_star'] = sMass_interior_curve
+    data_table['M_star_err'] = sMass_interior_curve_err
     data_table['star_vel'] = sVel_rot_curve
     data_table['star_vel_err'] = sVel_rot_curve_err
     ############################################################################
@@ -298,13 +320,21 @@ def chi2_mass(params, r, v_data_mass, v_data_mass_err):
     '''
 
     #v_model= disk_vel(params, r)
-    v_model = disk_vel(r, params[0], params[1])
+    v_model = disk_bulge_vel(r, params[0], params[1], params[2], params[3])
+
+
 
     chi2 = np.sum((v_data_mass - v_model)**2/v_data_mass_err**2)
+    
+    
 
     n_chi2 = chi2/(len(r) - len(params))
     
     return n_chi2
+
+    #chi2 = np.sum((v_data_mass - v_model)**2/v_model)
+
+    #return chi2
 
 
 

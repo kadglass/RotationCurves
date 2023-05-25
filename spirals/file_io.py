@@ -70,6 +70,14 @@ def add_columns(data_table, fit_function):
 
 
 
+def add_smoothness_columns(data_table):
+    N = len(data_table)
+
+    data_table['smoothness_score'] = np.nan
+    data_table['can_fit'] = np.nan
+
+    return data_table
+
 
 ################################################################################
 # Initialize stellar mass output table

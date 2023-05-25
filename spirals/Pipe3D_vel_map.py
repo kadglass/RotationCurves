@@ -38,7 +38,8 @@ def extract_Pipe3D_data(VEL_MAP_FOLDER, gal_ID, include_maps):
 
     plate, IFU = gal_ID.split('-')
 
-    file_name = VEL_MAP_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+    #file_name = VEL_MAP_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+    file_name = VEL_MAP_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
     ############################################################################
     # Open the fits file
@@ -46,7 +47,8 @@ def extract_Pipe3D_data(VEL_MAP_FOLDER, gal_ID, include_maps):
     main_file = fits.open(file_name)
 
     ssp = main_file[1].data
-    flux_emlines = main_file[3].data
+    #flux_emlines = main_file[3].data
+    flux_emlines = main_file[4].data
 
     main_file.close()
     ############################################################################
@@ -85,8 +87,8 @@ def extract_Pipe3D_data(VEL_MAP_FOLDER, gal_ID, include_maps):
     # Extract the H-alpha velocity maps
     #---------------------------------------------------------------------------
     if 'Ha_vel' in include_maps:
-        maps['Ha_vel'] = flux_emlines[102]     # km/s
-        maps['Ha_vel_err'] = flux_emlines[330] # km/s
+        maps['Ha_vel'] = flux_emlines[0]     # km/s
+        maps['Ha_vel_err'] = flux_emlines[1] # km/s
     ############################################################################
 
 

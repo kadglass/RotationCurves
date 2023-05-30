@@ -23,8 +23,8 @@ from DRP_rotation_curve import extract_data
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
 import sys
-#sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
-sys.path.insert(1, '/scratch/kdougla7/RotationCurves/')
+sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
+#sys.path.insert(1, '/scratch/kdougla7/RotationCurves/')
 from mapSmoothness_functions import how_smooth
 
 #warnings.simplefilter('ignore', np.RankWarning)
@@ -51,6 +51,7 @@ def process_1_galaxy(job_queue, i,
                      map_smoothness_max, 
                      DRP_table, 
                      vel_function, 
+                     V_type, 
                      NSA_index, 
                      NSA_table):
     '''
@@ -108,7 +109,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Confirm that object is a galaxy target
         #-----------------------------------------------------------------------
-        if DRP_table['mngtarg1'][i_DRP] <= 0:
+        if (DRP_table['mngtarg1'][i_DRP] <= 0) or (gal_ID in ['9037-9102']):
             
             print(gal_ID, 'is not a galaxy target.\n', flush=True)
             
@@ -122,9 +123,26 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
-        Ha_vel, Ha_vel_ivar, Ha_vel_mask, r_band, r_band_ivar, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data(VEL_MAP_FOLDER, gal_ID)
-
-        if Ha_vel is None:
+        if V_type == 'Ha':
+            maps = extract_data(VEL_MAP_FOLDER, 
+                                gal_ID, 
+                                ['Ha_vel', 'Ha_flux', 'Ha_sigma', 'r_band'])
+            
+        elif V_type == 'star':
+            maps = extract_data(VEL_MAP_FOLDER, 
+                                gal_ID, 
+                                ['star_vel', 'Ha_flux', 'Ha_sigma', 'r_band'])
+                
+        else:
+            print('Unknown velocity data type (V_type).')
+            
+            output_tuple = (None, None, None, None, None, None)
+            return_queue.put(output_tuple)
+            
+            continue
+            
+            
+        if maps is None:
         
             print('No data for', gal_ID, '\n', flush=True)
             
@@ -133,6 +151,7 @@ def process_1_galaxy(job_queue, i,
             
             continue
         
+        
         print( gal_ID, "extracted", flush=True)
         ########################################################################
 
@@ -140,15 +159,21 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Calculate degree of smoothness of velocity map
         #-----------------------------------------------------------------------
-        map_smoothness = how_smooth( Ha_vel, Ha_vel_mask)
+        can_fit = True
         
-        map_smoothness_5sigma = how_smooth(Ha_vel, 
-                                           np.logical_or(Ha_vel_mask > 0, 
-                                                         np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5))
+        if V_type == 'Ha':
+            map_smoothness = how_smooth( maps['Ha_vel'], maps['Ha_vel_mask'])
+            
+            map_smoothness_5sigma = how_smooth(maps['Ha_vel'], 
+                                               np.logical_or(maps['Ha_vel_mask'] > 0, 
+                                                             np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar'])) < 5))
+                                                             
+            if (map_smoothness > map_smoothness_max) and (map_smoothness_5sigma > map_smoothness_max):
+                can_fit = False
         ########################################################################
 
 
-        if map_smoothness <= map_smoothness_max or map_smoothness_5sigma <= map_smoothness_max:
+        if can_fit:
             ####################################################################
             # Extract the necessary data from the DRP table.
             #-------------------------------------------------------------------
@@ -167,22 +192,23 @@ def process_1_galaxy(job_queue, i,
                 start = datetime.datetime.now()
                 
                 try:
-                    param_outputs, masked_gal_flag, fit_flag = fit_vel_map(Ha_vel, 
-                                                                           Ha_vel_ivar, 
-                                                                           Ha_vel_mask, 
-                                                                           Ha_sigma, 
-                                                                           Ha_sigma_ivar, 
-                                                                           Ha_sigma_mask, 
-                                                                           Ha_flux, 
-                                                                           Ha_flux_ivar, 
-                                                                           Ha_flux_mask, 
-                                                                           r_band, 
-                                                                           r_band_ivar, 
+                    param_outputs, masked_gal_flag, fit_flag = fit_vel_map(maps[V_type + '_vel'], 
+                                                                           maps[V_type + '_vel_ivar'], 
+                                                                           maps[V_type + '_vel_mask'], 
+                                                                           maps['Ha_sigma'], 
+                                                                           maps['Ha_sigma_ivar'], 
+                                                                           maps['Ha_sigma_mask'], 
+                                                                           maps['Ha_flux'], 
+                                                                           maps['Ha_flux_ivar'], 
+                                                                           maps['Ha_flux_mask'], 
+                                                                           maps['r_band'], 
+                                                                           maps['r_band_ivar'], 
                                                                            axis_ratio, 
                                                                            phi_EofN_deg, 
                                                                            z, 
                                                                            gal_ID, 
                                                                            vel_function, 
+                                                                           V_type=V_type,
                                                                            IMAGE_DIR=IMAGE_DIR, 
                                                                            IMAGE_FORMAT=IMAGE_FORMAT
                                                                            )
@@ -281,6 +307,10 @@ map_smoothness_max = 1.85
 
 # Velocity function to use (options are 'BB' or 'tanh')
 vel_function = 'BB'
+
+# Velocity map to use
+V_type = 'Ha'
+#V_type = 'star'
 ################################################################################
 
 
@@ -303,13 +333,13 @@ IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
 if not os.path.isdir( IMAGE_DIR):
     os.makedirs( IMAGE_DIR)
 
-#MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
-MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr16/manga/spectro/'
+MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
+#MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr16/manga/spectro/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 
-#NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
+NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
+#NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
 ################################################################################
 
 
@@ -388,17 +418,19 @@ num_tasks = len(FILE_IDS)
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
-
+    '''
     if i > 10:
         num_tasks = 12
         break
+    '''
+    
 
 
 print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
-for i in range(2):
+for i in range(12): # This number is the number of processes
 
     p = Process(target=process_1_galaxy, args=(job_queue, i, 
                                                return_queue, 
@@ -412,6 +444,7 @@ for i in range(2):
                                                map_smoothness_max, 
                                                DRP_table, 
                                                vel_function, 
+                                               V_type, 
                                                NSA_index, 
                                                NSA_table))
     

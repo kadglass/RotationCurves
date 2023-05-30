@@ -627,11 +627,11 @@ def calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
     #---------------------------------------------------------------------------
     chi2 = ma.sum(vel_map_ivar*(vel_map_model - vel_map)**2)
 
-    chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
+    #chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    return chi2#_norm
     
     
     
@@ -704,8 +704,7 @@ def calculate_chi2_flat(params,
     ############################################################################
 
 
-    #return chi2_norm
-    return chi2
+    return chi2#_norm
 ################################################################################
 
 
@@ -770,11 +769,11 @@ def calculate_residual_flat(params,
     #---------------------------------------------------------------------------
     residual = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
-    residual_norm = residual/(len(flat_vel_map) - len(params))
+    #residual_norm = residual/(len(flat_vel_map) - len(params))
     ############################################################################
 
 
-    return residual_norm
+    return residual#_norm
 ################################################################################
 
 
@@ -841,11 +840,11 @@ def chi2_velocity(params,
     #---------------------------------------------------------------------------
     chi2 = ma.sum(vel_map_ivar*(vel_map_model - vel_map)**2)
 
-    chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
+    #chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    return chi2#_norm
 ################################################################################
 
 
@@ -909,11 +908,11 @@ def chi2_position(params,
     #---------------------------------------------------------------------------
     chi2 = ma.sum(vel_map_ivar*(vel_map_model - vel_map)**2)
 
-    chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
+    #chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    return chi2#_norm
 ################################################################################
 
 
@@ -1287,7 +1286,7 @@ def find_vel_map(gal_ID,
         result_all.fun /= (len(mHa_vel_flat) - len(result_all.x))
         ########################################################################
         
-        """
+        
         ########################################################################
         # Fit velocity map using only continuous velocity field
         #-----------------------------------------------------------------------
@@ -1494,10 +1493,11 @@ def find_vel_map(gal_ID,
             fit_flag = -4
             result = result_nonAGN
         ########################################################################
-        """
         
+        '''
         result = result_all
         fit_flag = -1
+        '''
 
 
         if result.success:

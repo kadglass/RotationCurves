@@ -269,28 +269,32 @@ def plot_rot_curve(mvel,
     ############################################################################
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
-    Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    hess_inv = 2*np.linalg.inv(Hessian)
+    if np.isfinite(best_fit_values['v_max_err']):
+        Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+        hess_inv = 2*np.linalg.inv(Hessian)
 
-    N_samples = 10000
+        N_samples = 10000
 
-    random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'], 
-                                                        best_fit_values['r_turn'], 
-                                                        best_fit_values['alpha']], 
-                                                  cov=hess_inv[-3:,-3:], 
-                                                  size=N_samples)
+        random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'], 
+                                                            best_fit_values['r_turn'], 
+                                                            best_fit_values['alpha']], 
+                                                      cov=hess_inv[-3:,-3:], 
+                                                      size=N_samples)
 
-    # Remove bad samples (those with negative values for any of the parameters)
-    is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0)
-    good_randoms = random_sample[is_good_random, :]
+        # Remove bad samples (those with negative values for any of the parameters)
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0)
+        good_randoms = random_sample[is_good_random, :]
 
-    for i in range(len(r)):
-        # Calculate values of curve at this location
-        y_sample = rot_fit_BB(r[i], [good_randoms[:,0], 
-                                     good_randoms[:,1], 
-                                     good_randoms[:,2]])
+        for i in range(len(r)):
+            # Calculate values of curve at this location
+            y_sample = rot_fit_BB(r[i], [good_randoms[:,0], 
+                                         good_randoms[:,1], 
+                                         good_randoms[:,2]])
 
-    stdevs = np.std(y_sample, axis=0)
+        stdevs = np.std(y_sample, axis=0)
+        
+    else:
+        stdevs = np.zeros(len(r))
     ############################################################################
 
 

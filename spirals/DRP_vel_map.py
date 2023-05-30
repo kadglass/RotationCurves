@@ -262,11 +262,13 @@ def fit_vel_map(vel,
         center_guess = (27,27)
     elif gal_ID in ['8447-9102', '9037-9102']:
         center_guess = (32,32)
-    elif gal_ID in ['8940-12701', '8941-12703', '8950-12705', '9488-12702', 
-                    '8333-12702', '9181-12701']:
+    elif gal_ID in ['8249-12702', '8940-12701', '8941-12703', '8950-12705', 
+                    '9488-12702', '8333-12702', '9181-12701']:
         center_guess = (37,37)
     elif gal_ID in ['7958-12703']:
         center_guess = (39,39)
+    elif gal_ID in ['8588-12702']:
+        center_guess = (40,40)
 
     #print(center_guess)
     

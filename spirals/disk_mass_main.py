@@ -121,23 +121,23 @@ if LOCAL_PATH == '':
     LOCAL_PATH = './'
 
 if RUN_ALL_GALAXIES:
-    IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
-    #IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
+    #IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
+    IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
 
     # Create directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR):
         os.makedirs( IMAGE_DIR)
 else:
-    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
+    #IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
-    #IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
+    IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
 
 
 #MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
 SDSS_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
 
-MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-#MANGA_FOLDER = '/sdss_sas/dr17/manga/spectro/'
+#MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
+MANGA_FOLDER = '/sdss_sas/dr17/manga/spectro/'
 NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
 
 
@@ -147,19 +147,19 @@ NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0
 #MASS_MAP_FOLDER = SDSS_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
 #VEL_MAP_FOLDER = SDSS_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 
-#MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/v3_1_1/3.1.1/'
-MASS_MAP_FOLDER = MANGA_FOLDER + 'Pipe3D/'
-#VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
-VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
+MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/v3_1_1/3.1.1/'
+#MASS_MAP_FOLDER = MANGA_FOLDER + 'Pipe3D/'
+VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
+#VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 
-MASS_CURVE_MASTER_FOLDER = MASS_MAP_FOLDER + 'Pipe3d-mass_curve_data_files/'
-#MASS_CURVE_MASTER_FOLDER = IMAGE_DIR
+#MASS_CURVE_MASTER_FOLDER = MASS_MAP_FOLDER + 'Pipe3d-mass_curve_data_files/'
+MASS_CURVE_MASTER_FOLDER = IMAGE_DIR
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
 GALAXIES_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/output_files/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
-#DRP_FILENAME = MANGA_FOLDER + 'redux/' + 'drpall-v3_1_1.fits'
-DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
+DRP_FILENAME = MANGA_FOLDER + 'redux/' + 'drpall-v3_1_1.fits'
+#DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
 ################################################################################
 
 

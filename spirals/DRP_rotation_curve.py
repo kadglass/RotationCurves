@@ -98,6 +98,9 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     # for dr17:
     file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
 
+    # for sciserver
+    #file_name = DRP_FOLDER + '/' + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
         return None
@@ -168,6 +171,9 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
     [plate, IFU] = gal_ID.split('-')
     #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
     pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
+
+    # for sciserver
+    #pipe3d_filename = PIPE3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
     if not os.path.isfile(pipe3d_filename):
         print(gal_ID, 'Pipe3d data file does not exist.')

@@ -335,9 +335,15 @@ def disk_bulge_vel(r, SigD, Rd, rho_bulge, R_bulge):
 
     R_bulge : float
         bulge scale radius [kpc]
+
     r
         [kpc]
     
+    SigD : float
+        central surface density for the disk [M_sol/pc^2]
+
+    Rd : float
+        scale radius of disk [pc]
     RETURNS
     =======
 

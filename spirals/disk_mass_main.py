@@ -121,25 +121,25 @@ if LOCAL_PATH == '':
     LOCAL_PATH = './'
 
 if RUN_ALL_GALAXIES:
-    IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
-    #IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
+    #IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
+    IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
 
     # Create directory if it does not already exist
     if not os.path.isdir( IMAGE_DIR):
         os.makedirs( IMAGE_DIR)
 else:
-    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
+    #IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
-    #IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
+    IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
 
 
 #MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
-SDSS_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
+#SDSS_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
 
 MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-#MANGA_FOLDER = '/sdss_sas/dr17/manga/spectro/'
+#MANGA_FOLDER = '/home/idies/workspace/sdss_sas/dr17/manga/spectro/'
 NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
-
+#NSA_FILENAME = '/home/idies/workspace/Storage/nityaravi/RotationCurves/nsa_v1_0_1.fits'
 
 #MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
 #SDSS_FOLDER = '/home/kelly/Documents/Data/SDSS/'
@@ -158,7 +158,9 @@ if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
 GALAXIES_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/output_files/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
-#DRP_FILENAME = MANGA_FOLDER + 'redux/' + 'drpall-v3_1_1.fits'
+#GALAXIES_FILENAME = '/home/idies/workspace/Storage/nityaravi/RotationCurves/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
+#DRP_FILENAME = '/home/idies/workspace/sdss_sas/dr17/manga/spectro/redux/v3_1_1/drpall-v3_1_1.fits'
+
 DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
 ################################################################################
 
@@ -417,7 +419,7 @@ if RUN_ALL_GALAXIES or TEXT_OUT:
 
     #galaxies_filename, extension = GALAXIES_FILENAME.split('.')
 
-    galaxies_table.write('out_bulge_chi2_diskFit.fits', 
+    galaxies_table.write('/home/idies/workspace/Storage/nityaravi/OutputFiles/out_diskFit.fits', 
                          format='fits', #'ascii.commented_header', 
                          overwrite=True)
 ################################################################################

@@ -5,7 +5,11 @@ import numpy as np
 import numpy.ma as ma
 
 import matplotlib
+
 matplotlib.use('TKAgg')
+
+# for sciserver
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 

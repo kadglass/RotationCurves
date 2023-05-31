@@ -144,8 +144,8 @@ def fit_vel_map(vel,
         [PLATE]-[IFU]
 
     fit_function : string
-        Determines which function to use for the velocity.  Options are 'BB' and
-        'tanh'.
+        Determines which function to use for the velocity.  Options are 'BB',
+        'tanh', and 'tail'.
 
     V_type : string
         Type of velocity map being fit.  Used for plot titles, file names, etc.

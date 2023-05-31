@@ -175,3 +175,44 @@ def calc_metallicity():
             + (0.970 - 0.291*ma.log10(R3/R2) - 0.019*ma.log10(N2))*ma.log(R2)
 
     return z
+
+
+
+def mask_AGN(OIII2, Hb, Ha, NII2):
+    
+    '''
+
+    Takes [OIII] 5007, [NII] 6584, H-beta, H-alpha maps and creates mask for AGN-like regions
+    using eq. 1 from Kauffmann et al. 2003
+
+
+    PARAMETERS
+    ==========
+
+    OIII2 : array
+        [OIII] 5007 flux map
+    
+    NII2 : array
+        [NII] 6584 flux map
+    
+    Hb : array
+        H-beta flux map
+
+    Ha : array
+        H-alpha flux map
+
+    
+
+
+    RETURNS
+    =======
+
+    mask : array
+        AGN spaxel mask
+
+    '''
+
+    for spaxel in flux_map:
+
+        #if ma.log10(OIII2 / Hb) > 0.61 / (ma.log(NII2/Halpha) - 0.05) +1.3
+        # mask spaxel

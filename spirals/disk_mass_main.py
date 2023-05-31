@@ -362,6 +362,7 @@ for gal_ID in FILE_IDS:
             ####################################################################
 
             M90_disk, M90_disk_err = disk_mass(param_outputs, R90_kpc)
+            M_disk, M_disk_err = disk_mass(param_outputs, 3.5*R90_kpc)
         ####################################################################
 
 
@@ -392,6 +393,14 @@ for gal_ID in FILE_IDS:
                                                      M90_disk_err, 
                                                      i_DRP, 
                                                      col_name='M90_disk_err')
+                galaxies_table = fillin_output_table(galaxies_table,
+                                                     M_disk,
+                                                     i_DRP,
+                                                     col_name='M_disk')
+                galaxies_table = fillin_output_table(galaxies_table,
+                                                     M_disk_err,
+                                                     i_DRP,
+                                                     col_name='M_disk_err')
                 ############################################################
 
             print(gal_ID, "written")

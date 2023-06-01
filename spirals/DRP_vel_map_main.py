@@ -58,7 +58,7 @@ V_type = 'Ha'
 # 
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-FILE_IDS = ['8555-12703']
+FILE_IDS = ['8932-12702']
 
 RUN_ALL_GALAXIES = False
 ################################################################################

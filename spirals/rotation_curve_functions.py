@@ -265,18 +265,39 @@ def disk_mass(function_parameters, r):
 
     Mdisk_err : float
         Uncertainty in the disk mass.  Units are log(solar masses).
+
     '''
 
     SigD = function_parameters['Sigma_disk']*1e6 # Converting from Msun/pc^2 to Msun/kpc^2
-    Rd = function_parameters['R_disk']
+    Rd = function_parameters['R_disk'] #kpc
+    R_bulge = function_parameters['R_bulge'] #kpc
+    rho_bulge = function_parameters['rho_bulge'] #Msun/kpc^3
     
     #Mdisk, Mdisk_err = inte.quad(mass_integrand, 0, r, args=[SigD, Rd])
     Mdisk = 2*np.pi*SigD*Rd*(Rd - np.exp(-r/Rd)*(r + Rd))
 
-    Mdisk_err = np.sqrt((2*np.pi*SigD*Rd*(2*(1 - np.exp(-r/Rd)) - (r/Rd)**2*np.exp(-r/Rd) - 2*(r/Rd)*np.exp(-r/Rd)))**2*function_parameters['Sigma_disk_err']**2 \
-                        + (Mdisk/SigD)**2*function_parameters['R_disk_err']**2)
+    Mdisk_err2 = (4*np.pi*Rd*SigD - 2*np.exp(-r/Rd)*np.pi*SigD*(r**2 + 2*r*Rd +2*Rd**2)/Rd)**2\
+                    * function_parameters['R_disk_err']**2 \
+                    + (Mdisk/SigD)**2 * function_parameters['Sigma_disk_err']**2
+
+    #Mdisk_err2 = (2*np.pi*SigD*Rd*(2*(1 - np.exp(-r/Rd)) - (r/Rd)**2*np.exp(-r/Rd) \
+    #                    - 2*(r/Rd)*np.exp(-r/Rd)))**2*function_parameters['Sigma_disk_err']**2 \
+    #                    + (Mdisk/SigD)**2*function_parameters['R_disk_err']**2
     
-    return np.log10(Mdisk), np.log10(Mdisk_err)
+    x = r/R_bulge
+    F = 1 - np.exp(-x) * (1 + x + x**2 / 2)
+    M_bulge = 8*np.pi*R_bulge**3*rho_bulge*F
+
+    M_bulge_err2= ((4*np.pi*rho_bulge/R_bulge)*(6*R_bulge**3-np.exp(-x) \
+                    *(r**3 + 3*r**2*R_bulge + 6*r*R_bulge**2 + 6*R_bulge**3)))**2 \
+                    * function_parameters['R_bulge_err']**2 \
+                    + ((1 / rho_bulge) * M_bulge)**2 * function_parameters['rho_bulge_err']**2
+
+    Mdisk_tot = M_bulge + Mdisk
+    Mdisk_tot_err = np.sqrt(Mdisk_err2 + M_bulge_err2) 
+
+
+    return np.log10(Mdisk_tot), np.log10(Mdisk_tot_err)
 ################################################################################
 
 
@@ -343,7 +364,7 @@ def disk_bulge_vel(r, SigD, Rd, rho_bulge, R_bulge):
         central surface density for the disk [M_sol/pc^2]
 
     Rd : float
-        scale radius of disk [pc]
+        scale radius of disk [kpc]
         
     RETURNS
     =======

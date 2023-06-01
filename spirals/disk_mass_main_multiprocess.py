@@ -221,10 +221,13 @@ def process_1_galaxy(job_queue, i,
             ####################################################################
 
             M90_disk, M90_disk_err = disk_mass(param_outputs, R90_kpc)
+            M_disk, M_disk_err = disk_mass(param_outputs, 3.5*R90_kpc)
         ####################################################################
         else:
             M90_disk = None
             M90_disk_err = None
+            M_disk = None 
+            M_disk_err = None
 
 
         ################################################################
@@ -241,7 +244,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Add output values to return queue
         #-----------------------------------------------------------------------
-        output_tuple = (param_outputs, M90_disk, M90_disk_err, i_DRP)
+        output_tuple = (param_outputs, M90_disk, M90_disk_err, M_disk, M_disk_err, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
 
@@ -302,36 +305,24 @@ if LOCAL_PATH == '':
     LOCAL_PATH = './'
 
 
-IMAGE_DIR = '/home/nravi3/Documents/Images/DRP-Pipe3d/'
+IMAGE_DIR = '/scratch/nravi3/Images/Pipe3d/'
 
 if not os.path.isdir( IMAGE_DIR):
     os.makedirs( IMAGE_DIR)
 
 
+# for bluehive
+MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
+NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
+MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/'
+VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 
-
-
-MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-#MANGA_FOLDER = '/public/kdougla7/
-NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
-
-#MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
-#SDSS_FOLDER = '/home/kelly/Documents/Data/SDSS/'
-
-#MASS_MAP_FOLDER = SDSS_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
-#VEL_MAP_FOLDER = SDSS_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
-
-#MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/v3_1_1/3.1.1/'
-MASS_MAP_FOLDER = MANGA_FOLDER + 'Pipe3D/'
-#VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
-VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
-
-MASS_CURVE_MASTER_FOLDER  = '/home/nravi3/Documents/Pipe3d-mass_curve_data_files/'
+MASS_CURVE_MASTER_FOLDER  = '/scratch/nravi3/Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/output_files/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
-DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
+GALAXIES_FILENAME = '/scratch/nravi3/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
+DRP_FILENAME = MANGA_FOLDER + 'redux/v3_1_1/drpall-v3_1_1.fits'
 ################################################################################
 
 
@@ -460,6 +451,18 @@ while num_processed < num_tasks:
                                                      i_DRP, 
                                                      col_name='M90_disk_err')
 
+    if M_disk is not None:
+        galaxies_table = fillin_output_table(galaxies_table, 
+                                                     M_disk, 
+                                                     i_DRP, 
+                                                     col_name='M_disk')
+
+    if M_disk_err is not None:
+        galaxies_table = fillin_output_table(galaxies_table, 
+                                                     M_disk_err, 
+                                                     i_DRP, 
+                                                     col_name='M_disk_err')
+
     num_processed += 1
     
     print(num_processed)
@@ -473,7 +476,7 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-galaxies_table.write('/home/nravi3/Documents/Pipe3d_disk_bulge' + '.fits', 
+galaxies_table.write('/scratch/nravi3/Pipe3d_disk_bulge' + '.fits', 
                 format='fits', overwrite=True)
 ################################################################################
 

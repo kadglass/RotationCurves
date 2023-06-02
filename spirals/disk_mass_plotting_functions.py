@@ -81,7 +81,8 @@ def plot_fitted_disk_rot_curve(gal_ID,
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
     #cov = np.load('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy')
-    cov = np.load(gal_ID + '_cov.npy')
+    #cov = np.load(gal_ID + '_cov.npy') # for nitya's laptop
+    cov = np.load('/scratch/nravi3/cov/' + gal_ID + '_cov.npy')
 
     N_samples = 10000
 

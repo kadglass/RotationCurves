@@ -4,6 +4,9 @@
 from time import time
 START = time()
 
+import datetime
+START = datetime.datetime.now()
+
 import os
 
 from multiprocessing import Process, Queue, Value
@@ -44,9 +47,9 @@ def process_1_galaxy(job_queue, i,
                      DRP_table,
                      fit_function,
                      galaxies_index,
-                     galaxies_table)
+                     galaxies_table):
 
-    outfile = open('Process_' + str(i) + '_output.txt', 'wt')
+    outfile = open('/scratch/nravi3/out_text/Process_' + str(i) + '_output.txt', 'wt')
     sys.stdout = outfile
     sys.stderr = outfile
 
@@ -80,21 +83,25 @@ def process_1_galaxy(job_queue, i,
             print('Worker', i, 'returned successfully', datetime.datetime.now(), flush=True)
             return
 
+        i_gal = galaxies_index[gal_ID]
+        i_DRP = DRP_index[gal_ID]
+
         maps = extract_data(VEL_MAP_FOLDER, 
                         gal_ID, 
                         ['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
         sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
 
         if maps is None or sMass_density is None:
+            
+            output_tuple = (None, None, None, None, None, i_DRP)
+            return_queue.put(output_tuple)
+
             print('\n', flush=True)
             continue
 
         print( gal_ID, "extracted", flush=True)
         ############################################################################
 
-
-        i_gal = galaxies_index[gal_ID]
-        i_DRP = DRP_index[gal_ID]
 
 
         ########################################################################
@@ -119,7 +126,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Create mask based on fit method
         #-----------------------------------------------------------------------
-        map_mask = build_map_mask(gal_ID, 
+            map_mask = build_map_mask(gal_ID, 
                                   fit_flag, 
                                   ma.array(maps['Ha_vel'], mask=maps['Ha_vel_mask']), 
                                   ma.array(maps['Ha_flux'], mask=maps['Ha_flux_mask']), 
@@ -128,7 +135,6 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
 
         else:
-
             axis_ratio = DRP_table['nsa_elpetro_ba'][i_DRP]
             axis_ratio_err = np.NaN
 
@@ -209,6 +215,13 @@ def process_1_galaxy(job_queue, i,
         ####################################################################
         # Estimate the total disk mass within the galaxy
         #-------------------------------------------------------------------
+
+        M90_disk = None
+        M90_disk_err = None
+        M_disk = None 
+        M_disk_err = None
+
+
         if param_outputs is not None:
 
             ####################################################################
@@ -222,12 +235,12 @@ def process_1_galaxy(job_queue, i,
 
             M90_disk, M90_disk_err = disk_mass(param_outputs, R90_kpc)
             M_disk, M_disk_err = disk_mass(param_outputs, 3.5*R90_kpc)
+
+            print('M90_disk:', M90_disk, '+/-', M90_disk_err, flush=True)
+            print('M_disk:', M_disk, '+/-', M_disk_err, flush=True)
         ####################################################################
-        else:
-            M90_disk = None
-            M90_disk_err = None
-            M_disk = None 
-            M_disk_err = None
+        
+            
 
 
         ################################################################
@@ -321,7 +334,7 @@ MASS_CURVE_MASTER_FOLDER  = '/scratch/nravi3/Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = '/scratch/nravi3/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
+GALAXIES_FILENAME = '/home/nravi3/Documents/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v3_1_1/drpall-v3_1_1.fits'
 ################################################################################
 
@@ -349,8 +362,8 @@ for i in range(len(DRP_table)):
 #galaxies_table = Table.read( GALAXIES_FILENAME, format='ascii.ecsv')
 galaxies_table = Table.read(GALAXIES_FILENAME, format='fits')
 
-# for test purposes, only take first 5 galaxies
-galaxies_table = galaxies_table[0:5]
+# for test purposes, only take first 20 galaxies
+#galaxies_table = galaxies_table[0:20]
 
 
 galaxies_index = {}
@@ -383,16 +396,16 @@ for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
 
-    if i > 10:
-        num_tasks = 12
-        break
+    #if i > 10:
+    #    num_tasks = 12
+    #    break
 
 
 print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
-for i in range(2):
+for i in range(10):
 
     p = Process(target=process_1_galaxy, args=(job_queue, i, 
                                                return_queue, 
@@ -402,7 +415,6 @@ for i in range(2):
                                                IMAGE_FORMAT, 
                                                DRP_index, 
                                                DRP_table, 
-                                               vel_function, 
                                                fit_function,
                                                galaxies_index,
                                                galaxies_table))
@@ -431,7 +443,7 @@ while num_processed < num_tasks:
     except:
         continue
 
-    param_outputs, M90_disk, M90_disk_err, i_DRP = return_tuple
+    param_outputs, M90_disk, M90_disk_err, M_disk, M_disk_err, i_DRP = return_tuple
 
     if param_outputs is not None:
         galaxies_table = fillin_output_table(galaxies_table, 
@@ -464,6 +476,11 @@ while num_processed < num_tasks:
                                                      col_name='M_disk_err')
 
     num_processed += 1
+
+    if num_processed % 10 == 0:
+        galaxies_table.write('/scratch/nravi3/Pipe3d_disk_bulge' + '.fits', 
+                format='fits', overwrite=True)
+        print('Table written ', num_processed, flush=True)
     
     print(num_processed)
 

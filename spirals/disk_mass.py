@@ -274,7 +274,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
         # Bulge scale radius [kpc]
         R_bulge_min = 0.
-        R_bulge_max = 10.
+        R_bulge_max = 100.
         R_bulge_bounds = (R_bulge_min, R_bulge_max)
 
 
@@ -318,7 +318,8 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
         # Determine uncertainties in the fitted parameters
         #-----------------------------------------------------------------------
         #np.save('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy', pconv)
-        np.save(gal_ID + '_cov.npy', pconv)
+        #np.save(gal_ID + '_cov.npy', pconv) # for nitya's laptop
+        np.save('/scratch/nravi3/cov/' + gal_ID + '_cov.npy', pconv) # for bluehive
 
         perr = np.sqrt(np.diag(pconv))
         #-----------------------------------------------------------------------

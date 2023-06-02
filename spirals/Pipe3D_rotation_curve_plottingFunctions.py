@@ -6,10 +6,10 @@ import numpy.ma as ma
 
 import matplotlib
 
-matplotlib.use('TKAgg')
+#matplotlib.use('TKAgg')
 
 # for sciserver
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 

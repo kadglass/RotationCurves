@@ -250,8 +250,8 @@ def disk_mass(function_parameters, r):
 
     function_parameters : dictionary
         Parameter values (and their uncertainties) for the disk velocity 
-        function (Sigma_d, R_d).  Sigma_D has units of Msun/pc^2, and R_d has 
-        units of kpc.
+        function (Sigma_d, R_d, R_bulge, rho_bulge).  Sigma_D has units of Msun/pc^2, and R_d has 
+        units of kpc. R_bulge has units of kpc. rho_bulge has units of Msun/kpc^3
 
     r : float
         Radius within which to calculate the total mass.  Units are kpc

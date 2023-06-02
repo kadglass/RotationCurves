@@ -139,33 +139,39 @@ else:
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
     IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/RD_test/'
 
-'''
-MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
-NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
-'''
 
+# for bluehive
+# MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
+# NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
+# VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
+# DRP_FILENAME = MANGA_FOLDER + 'redux/v3_1_1/v3_1_1.fits'
+
+# old
+# MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/spectro/'
+# NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
+
+
+# nitya's local machine
 MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
 NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
-
-'''
-MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
-NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-'''
-'''
-VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
-DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
-'''
-
-'''
-# for dr15:
-VEL_MAP_FOLDER = MANGA_FOLDER + 'DR15/'
-DRP_FILENAME = MANGA_FOLDER + 'drpall-v2_4_3.fits'
-'''
-
-
-# for DR17
 VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
+
+# old
+# MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
+# NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
+# VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
+# DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
+
+
+
+# for dr15:
+# VEL_MAP_FOLDER = MANGA_FOLDER + 'DR15/'
+# DRP_FILENAME = MANGA_FOLDER + 'drpall-v2_4_3.fits'
+
+
+
+
 
 ################################################################################
 

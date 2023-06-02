@@ -92,11 +92,13 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     """
 
     [plate, IFU] = gal_ID.split('-')
-    # file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+
+    # for bluehive
+    file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
     # file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
 
     # for dr17:
-    file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    #file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
 
     # for sciserver
     #file_name = DRP_FOLDER + '/' + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
@@ -166,21 +168,24 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
 
     sMass_density : n-D numpy array
         Stellar mass density map, in units of log(Msun/spaxel^2)
+
     '''
 
     [plate, IFU] = gal_ID.split('-')
-    #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
-    pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
+    # for bluehive
+    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.SSP.fits.gz'
+    #pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
 
     # for sciserver
     #pipe3d_filename = PIPE3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
     if not os.path.isfile(pipe3d_filename):
         print(gal_ID, 'Pipe3d data file does not exist.')
-        return None
+        return None, None
 
     main_file = fits.open( pipe3d_filename)
-    ssp = main_file[1].data
+    #ssp = main_file[1].data # for full pipe3d file
+    ssp = main_file[0].data # for bluehive trimmed data
     main_file.close()
 
     sMass_density = ssp[19] * u.dex( u.M_sun)

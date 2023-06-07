@@ -90,8 +90,11 @@ def match_HI( master_table):
     ############################################################################
     # Load in HI data
     #---------------------------------------------------------------------------
-    ALFALFA_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/manga_alfalfa-dr15.fits'
-    GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/mangaHIall.fits'
+    # ALFALFA_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/manga_alfalfa-dr15.fits'
+    # GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/mangaHIall.fits'
+
+    ALFALFA_filename = '/Users/nityaravi/Documents/Research/data/manga/manga_alfalfa-dr15.fits'
+    GBT_filename = '/Users/nityaravi/Documents/Research/data/manga/mangaHIall.fits'
 
     ALFALFA = Table.read(ALFALFA_filename, format='fits')
     GBT = Table.read(GBT_filename, format='fits')
@@ -240,8 +243,8 @@ def match_HI_dr2( master_table):
     ############################################################################
     # Load in HI data
     #---------------------------------------------------------------------------
-    GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/himanga_dr2.fits'
-
+    #GBT_filename = '/Users/kellydouglass/Documents/Research/data/SDSS/dr16/manga/HI/v1_0_2/himanga_dr2.fits'
+    GBT_filename='/Users/nityaravi/Documents/Research/RotationCurves/data/manga/mangaHIall.fits'
     GBT = Table.read(GBT_filename, format='fits')
     ############################################################################
 
@@ -303,4 +306,99 @@ def match_HI_dr2( master_table):
 
 
 
+################################################################################
+################################################################################
 
+def match_HI_dr3( master_table):
+
+    '''
+    Locate the HI mass, velocity width for each galaxy with data taken from the 
+    DR2 of the HI-MaNGA survey.
+
+
+    PARAMETERS
+    ==========
+
+    master_table : astropy QTable
+        Data table with N rows, each row containing one MaNGA galaxy for which 
+        the rotation curve has been measured.
+
+
+    RETURNS
+    =======
+
+    master_table     : astropy QTable
+        Same as the input master_table object, but with the additional HI mass 
+        and velocity width columns:
+          - logHI    : log(M_HI) in units of log(M_sun)
+          - logHIlim : upper limit of HI mass in units of log(M_sun)
+          - WF50     : width of the HI line profile at 50% of the peak's height, 
+                    measured from a fit to the line profile (units are km/s)
+          - WP20     : width of the HI line profile at 20% of the peak's height 
+                    (units are km/s)
+    '''
+
+
+    ############################################################################
+    # Initialize HI columns in master_table
+    #---------------------------------------------------------------------------
+    master_table['logHI'] = np.nan*np.ones(len(master_table), dtype=float)# * u.dex(u.M_sun)
+    master_table['logHIlim'] = np.nan*np.ones(len(master_table), dtype=float) # * u.dex(u.M_sun)
+    master_table['WF50'] = np.nan*np.ones(len(master_table), dtype=float)# * (u.km/u.s)
+
+    ############################################################################
+    # Load in HI data
+    #---------------------------------------------------------------------------
+    GBT_filename= '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/mangaHIall.fits'
+    GBT = Table.read(GBT_filename, format='fits')
+    
+    
+    
+    ############################################################################
+    # Find duplicates in HI table
+    #---------------------------------------------------------------------------
+    gal_IDs, counts = np.unique(GBT['PLATEIFU'], return_counts=True)
+    duplicate_IDs = gal_IDs[np.where(counts > 1)[0]]
+
+
+    ############################################################################
+    # Insert HI measurements into table, if there are ALFALFA and GBT
+    # measurements, use GBT
+    #---------------------------------------------------------------------------
+    for i in range(0, len(gal_IDs)):
+        
+        gal_ID = gal_IDs[i]
+
+        ####################################################################
+        # Find gal in master_table
+        #-------------------------------------------------------------------
+        i_master = np.where(master_table['plateifu'] == gal_ID)[0]
+
+
+        ####################################################################
+        # Find gal in GBT table
+        #-------------------------------------------------------------------
+        GBT_row = GBT[GBT['PLATEIFU'] == gal_ID]
+        if len(GBT_row) > 1:
+            GBT_row = GBT_row[GBT_row['SESSION'] != 'ALFALFA']
+
+
+
+        ####################################################################
+        # Calculate sin(i)
+        #-------------------------------------------------------------------
+        sini = np.sqrt((1 - master_table['nsa_elpetro_ba'][i_master]**2)/(1 - 0.2**2))
+
+        if sini == 0:
+            sini = 1
+        ####################################################################
+
+
+        master_table['logHI'][i_master] = GBT_row['LOGMHI']
+        master_table['logHIlim'][i_master]= GBT_row['LOGHILIM200KMS']
+        master_table['WF50'][i_master] = GBT_row['WF50'] / sini
+
+        if i % 50 == 0:
+            print(i)
+
+    return master_table

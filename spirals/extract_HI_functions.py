@@ -334,8 +334,7 @@ def match_HI_dr3( master_table):
           - logHIlim : upper limit of HI mass in units of log(M_sun)
           - WF50     : width of the HI line profile at 50% of the peak's height, 
                     measured from a fit to the line profile (units are km/s)
-          - WP20     : width of the HI line profile at 20% of the peak's height 
-                    (units are km/s)
+          - WF50_err : uncertainty on width of HI line (km/s)
     '''
 
 
@@ -345,6 +344,7 @@ def match_HI_dr3( master_table):
     master_table['logHI'] = np.nan*np.ones(len(master_table), dtype=float)# * u.dex(u.M_sun)
     master_table['logHIlim'] = np.nan*np.ones(len(master_table), dtype=float) # * u.dex(u.M_sun)
     master_table['WF50'] = np.nan*np.ones(len(master_table), dtype=float)# * (u.km/u.s)
+    master_table['WF50_err'] = np.nan*np.ones(len(master_table), dtype=float) # * (u.km/u.s)
 
     ############################################################################
     # Load in HI data
@@ -397,6 +397,7 @@ def match_HI_dr3( master_table):
         master_table['logHI'][i_master] = GBT_row['LOGMHI']
         master_table['logHIlim'][i_master]= GBT_row['LOGHILIM200KMS']
         master_table['WF50'][i_master] = GBT_row['WF50'] / sini
+        master_table['WF50_err'][i_master] = GBT_row['EV'] / sini
 
         if i % 50 == 0:
             print(i)

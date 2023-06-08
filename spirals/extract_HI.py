@@ -51,5 +51,5 @@ master_table = match_HI_dr3(master_table)
 #master_table.write(MASTER_FILE_NAME[:-4] + '_HIdr2.txt', 
 #                   format='ascii.commented_header', 
 #                   overwrite=True)
-master_table.write(MASTER_FILE_NAME + '_HIdr3.fits', format='fits')
+master_table.write(MASTER_FILE_NAME[:-4] + '_HIdr3.fits', format='fits', overwrite=True)
 ###############################################################################

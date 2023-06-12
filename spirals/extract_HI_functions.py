@@ -396,8 +396,14 @@ def match_HI_dr3( master_table):
 
         master_table['logHI'][i_master] = GBT_row['LOGMHI']
         master_table['logHIlim'][i_master]= GBT_row['LOGHILIM200KMS']
-        master_table['WF50'][i_master] = GBT_row['WF50'] / sini
-        master_table['WF50_err'][i_master] = GBT_row['EV'] / sini
+
+        if GBT_row['WF50'] < 0:
+            master_table['WF50'][i_master] = -999
+            master_table['WF50_err'][i_master] = -999
+        
+        else:
+            master_table['WF50'][i_master] = GBT_row['WF50'] / sini
+            master_table['WF50_err'][i_master] = GBT_row['EV'] / sini
 
         if i % 50 == 0:
             print(i)

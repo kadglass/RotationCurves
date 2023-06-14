@@ -356,7 +356,7 @@ def find_phi(center_coords, phi_angle, vel_map):
     
     checkpoint_masked = True
     
-    while checkpoint_masked and not vel_map.mask.all():
+    while checkpoint_masked:
         delta_x = int(center_coords[1]*f)
         delta_y = int(delta_x/np.tan(phi))
         semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
@@ -372,11 +372,11 @@ def find_phi(center_coords, phi_angle, vel_map):
             checkpoint_masked = False
         else:
             f *= 0.9
-    
-    if vel_map.mask.all() or vel_map[tuple(semi_major_axis_spaxel)] - v_sys >= 0:
-        phi_adjusted = phi
-    else:
+            
+    if vel_map[tuple(semi_major_axis_spaxel)] - v_sys < 0:
         phi_adjusted = phi + np.pi
+    else:
+        phi_adjusted = phi
             
     return phi_adjusted
 
@@ -627,11 +627,11 @@ def calculate_chi2(params, vel_map, vel_map_ivar, pix_scale, fit_function):
     #---------------------------------------------------------------------------
     chi2 = ma.sum(vel_map_ivar*(vel_map_model - vel_map)**2)
 
-    chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
+    #chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    return chi2#_norm
     
     
     
@@ -704,8 +704,7 @@ def calculate_chi2_flat(params,
     ############################################################################
 
 
-    #return chi2_norm
-    return chi2
+    return chi2#_norm
 ################################################################################
 
 
@@ -770,11 +769,11 @@ def calculate_residual_flat(params,
     #---------------------------------------------------------------------------
     residual = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
-    residual_norm = residual/(len(flat_vel_map) - len(params))
+    #residual_norm = residual/(len(flat_vel_map) - len(params))
     ############################################################################
 
 
-    return residual_norm
+    return residual#_norm
 ################################################################################
 
 
@@ -841,11 +840,11 @@ def chi2_velocity(params,
     #---------------------------------------------------------------------------
     chi2 = ma.sum(vel_map_ivar*(vel_map_model - vel_map)**2)
 
-    chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
+    #chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    return chi2#_norm
 ################################################################################
 
 
@@ -909,11 +908,11 @@ def chi2_position(params,
     #---------------------------------------------------------------------------
     chi2 = ma.sum(vel_map_ivar*(vel_map_model - vel_map)**2)
 
-    chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
+    #chi2_norm = chi2/(np.sum(~vel_map.mask) - len(params))
     ############################################################################
 
 
-    return chi2_norm
+    return chi2#_norm
 ################################################################################
 
 
@@ -1458,21 +1457,22 @@ def find_vel_map(gal_ID,
 
         alpha_max = alpha_high - 5
         
-        if result_all.x[7] < alpha_max:
+        if (result_all.x[7] < alpha_max) and (result_all.fun > 0):
             fit_chi2[0] = result_all.fun
-        if result_continuous.x[7] < alpha_max:
+        if (result_continuous.x[7] < alpha_max) and (result_continuous.fun > 0):
             fit_chi2[1] = result_continuous.fun
-        if result_SN.x[7] < alpha_max:
+        if (result_SN.x[7] < alpha_max) and (result_SN.fun > 0):
             fit_chi2[2] = result_SN.fun
-        if result_residual.x[7] < alpha_max:
+        if (result_residual.x[7] < alpha_max) and (result_residual.fun > 0):
             fit_chi2[3] = result_residual.fun
-        if result_nonAGN.x[7] < alpha_max:
+        if (result_nonAGN.x[7] < alpha_max) and (result_nonAGN.fun > 0):
             fit_chi2[4] = result_nonAGN.fun
 
         print(fit_chi2)
 
         if np.sum(np.isfinite(fit_chi2)) == 0:
-            print('All fit methods have bad alpha values.', flush=True)
+            print('All fit methods have bad alpha values and/or negative chi2.', 
+                  flush=True)
             min_pos = 0
         else:
             min_pos = np.argmin(fit_chi2)
@@ -1493,7 +1493,11 @@ def find_vel_map(gal_ID,
             fit_flag = -4
             result = result_nonAGN
         ########################################################################
-
+        
+        '''
+        result = result_all
+        fit_flag = -1
+        '''
 
 
         if result.success:

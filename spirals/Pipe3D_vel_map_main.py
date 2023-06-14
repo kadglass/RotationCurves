@@ -89,13 +89,13 @@ else:
     #IMAGE_DIR = None
     IMAGE_DIR = LOCAL_PATH + 'Images/Pipe3D_star/'
 
-
+'''
 MANGA_FOLDER = '/Users/kellydouglass/Documents/Research/data/SDSS/'
 NSA_FILENAME = '/Users/kellydouglass/Documents/Drexel/Research/Data/NSA/nsa_v1_0_1.fits'
 '''
-MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
+MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/'
 NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-'''
+
 PIPE3D_FOLDER = MANGA_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
 DRP_FOLDER = MANGA_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
 DRP_FILENAME = MANGA_FOLDER + 'dr16/manga/spectro/redux/v2_4_3/drpall-v2_4_3.fits'

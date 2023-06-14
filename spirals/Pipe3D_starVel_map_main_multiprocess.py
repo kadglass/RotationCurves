@@ -10,22 +10,24 @@ import numpy as np
 
 from astropy.table import Table
 import astropy.units as u
+import astropy.constants as const
 
 from multiprocessing import Process, Queue, Value
 from queue import Empty
 
 from ctypes import c_long
 
-from file_io import add_columns, fillin_output_table
+from file_io import add_star_columns, fillin_output_table
 
 from DRP_rotation_curve import extract_data
 
+from Pipe3D_starVel_map import extract_Pipe3D_data
+
 from DRP_vel_map import fit_vel_map, estimate_total_mass
 
+from dark_matter_mass_v1 import rot_fit_BB
+
 import sys
-sys.path.insert(1, '/home/kelly/Documents/RotationCurves/')
-#sys.path.insert(1, '/scratch/kdougla7/RotationCurves/')
-from mapSmoothness_functions import how_smooth
 
 #warnings.simplefilter('ignore', np.RankWarning)
 #warnings.simplefilter('ignore', RuntimeWarning)
@@ -42,18 +44,14 @@ from mapSmoothness_functions import how_smooth
 def process_1_galaxy(job_queue, i, 
                      return_queue, 
                      num_masked_gal, 
-                     num_not_smooth, 
                      num_missing_photo,
-                     VEL_MAP_FOLDER, 
+                     DRP_FOLDER, 
+                     PIPE3D_FOLDER, 
                      IMAGE_DIR, 
                      IMAGE_FORMAT, 
                      DRP_index, 
-                     map_smoothness_max, 
                      DRP_table, 
-                     vel_function, 
-                     V_type, 
-                     NSA_index, 
-                     NSA_table):
+                     vel_function):
     '''
     Main body of for-loop for processing one galaxy.
     '''
@@ -102,174 +100,139 @@ def process_1_galaxy(job_queue, i,
         #-----------------------------------------------------------------------
         i_DRP = DRP_index[gal_ID]
         
-        NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
+        #NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
         ########################################################################
         
-        
+        """
         ########################################################################
         # Confirm that object is a galaxy target
         #-----------------------------------------------------------------------
-        if (DRP_table['mngtarg1'][i_DRP] <= 0) or (gal_ID in ['9037-9102']):
+        if DRP_table['mngtarg1'][i_DRP] <= 0:
             
             print(gal_ID, 'is not a galaxy target.\n', flush=True)
             
-            output_tuple = (None, None, None, None, None, None)
+            output_tuple = (None, None, None, None, None)
             return_queue.put(output_tuple)
             
             continue
         ########################################################################
-        
+        """
             
         ########################################################################
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
-        if V_type == 'Ha':
-            maps = extract_data(VEL_MAP_FOLDER, 
-                                gal_ID, 
-                                ['Ha_vel', 'Ha_flux', 'Ha_sigma', 'r_band'])
-            
-        elif V_type == 'star':
-            maps = extract_data(VEL_MAP_FOLDER, 
-                                gal_ID, 
-                                ['star_vel', 'Ha_flux', 'Ha_sigma', 'r_band'])
-                
-        else:
-            print('Unknown velocity data type (V_type).')
-            
-            output_tuple = (None, None, None, None, None, None)
-            return_queue.put(output_tuple)
-            
-            continue
-            
-            
-        if maps is None:
+        _, _, _, r_band, r_band_ivar, Ha_flux, Ha_flux_ivar, Ha_flux_mask, Ha_sigma, Ha_sigma_ivar, Ha_sigma_mask = extract_data(DRP_FOLDER, gal_ID)
+        
+        star_vel, star_vel_err = extract_Pipe3D_data(PIPE3D_FOLDER, gal_ID)
+        """
+        if Ha_vel is None:
         
             print('No data for', gal_ID, '\n', flush=True)
             
-            output_tuple = (None, None, None, None, None, None)
+            output_tuple = (None, None, None, None, None)
             return_queue.put(output_tuple)
             
             continue
-        
-        
+        """
         print( gal_ID, "extracted", flush=True)
         ########################################################################
-
-
-        ########################################################################
-        # Calculate degree of smoothness of velocity map
-        #-----------------------------------------------------------------------
-        can_fit = True
         
-        if V_type == 'Ha':
-            map_smoothness = how_smooth( maps['Ha_vel'], maps['Ha_vel_mask'])
-            
-            map_smoothness_5sigma = how_smooth(maps['Ha_vel'], 
-                                               np.logical_or(maps['Ha_vel_mask'] > 0, 
-                                                             np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar'])) < 5))
-                                                             
-            if (map_smoothness > map_smoothness_max) and (map_smoothness_5sigma > map_smoothness_max):
-                can_fit = False
+        
+        ########################################################################
+        # Construct mask for the stellar velocity map
+        #
+        # Following Aquino-Ortiz et al. (2020), we require a maximum error of 
+        # 25 km/s in the derived velocities.
+        #-----------------------------------------------------------------------
+        star_vel_mask = (star_vel_err > 25) | np.isnan(star_vel) | (star_vel == 0)
         ########################################################################
 
 
-        if can_fit:
+        ########################################################################
+        # Extract the necessary data from the DRP table.
+        #-----------------------------------------------------------------------
+        axis_ratio = DRP_table['NSA_ba'][i_DRP]
+        phi_EofN_deg = DRP_table['NSA_phi'][i_DRP]
+
+        z = DRP_table['NSA_redshift'][i_DRP]
+        ########################################################################
+        
+        
+        if axis_ratio > -9999:
             ####################################################################
-            # Extract the necessary data from the DRP table.
+            # Subtract systemic velocity from stellar velocity map
             #-------------------------------------------------------------------
-            axis_ratio = DRP_table['nsa_elpetro_ba'][i_DRP]
-            phi_EofN_deg = DRP_table['nsa_elpetro_phi'][i_DRP]
-
-            z = DRP_table['nsa_z'][i_DRP]
+            star_vel -= (z*const.c.to('km/s')).value
             ####################################################################
             
             
-            if axis_ratio > -9999:
-                ################################################################
-                # Extract rotation curve data for the .fits file in question and 
-                # create an astropy Table containing said data.
-                #---------------------------------------------------------------
-                start = datetime.datetime.now()
-                
-                try:
-                    param_outputs, masked_gal_flag, fit_flag = fit_vel_map(maps[V_type + '_vel'], 
-                                                                           maps[V_type + '_vel_ivar'], 
-                                                                           maps[V_type + '_vel_mask'], 
-                                                                           maps['Ha_sigma'], 
-                                                                           maps['Ha_sigma_ivar'], 
-                                                                           maps['Ha_sigma_mask'], 
-                                                                           maps['Ha_flux'], 
-                                                                           maps['Ha_flux_ivar'], 
-                                                                           maps['Ha_flux_mask'], 
-                                                                           maps['r_band'], 
-                                                                           maps['r_band_ivar'], 
-                                                                           axis_ratio, 
-                                                                           phi_EofN_deg, 
-                                                                           z, 
-                                                                           gal_ID, 
-                                                                           vel_function, 
-                                                                           V_type=V_type,
-                                                                           IMAGE_DIR=IMAGE_DIR, 
-                                                                           IMAGE_FORMAT=IMAGE_FORMAT
-                                                                           )
-                except:
-                    print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', 
-                          flush=True)
-                    
-                    raise
-                    
-                fit_time = datetime.datetime.now() - start
-
-                with num_masked_gal.get_lock():
-                    num_masked_gal.value += masked_gal_flag
-
-                print(gal_ID, "velocity map fit", fit_time, flush=True)
-                ################################################################
-
-
-                ################################################################
-                # Estimate the total mass within the galaxy
-                #---------------------------------------------------------------
-                i_NSA = NSA_index[NSA_ID]
-
-                R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
-                
-                if param_outputs is not None:
-                    mass_outputs = estimate_total_mass([param_outputs['v_max'], 
-                                                        param_outputs['r_turn'], 
-                                                        param_outputs['alpha']], 
-                                                       R90, 
-                                                       z, 
-                                                       vel_function, 
-                                                       gal_ID)
-                ################################################################
-                
-            else:
-                print(gal_ID, 'is missing photometric measurements.', 
+            ####################################################################
+            # Extract rotation curve data for the .fits file in question and 
+            # create an astropy Table containing said data.
+            #-------------------------------------------------------------------
+            start = datetime.datetime.now()
+            
+            try:
+                param_outputs, masked_gal_flag, fit_flag = fit_vel_map(star_vel, 
+                                                                       1/star_vel_err**2, 
+                                                                       star_vel_mask, 
+                                                                       Ha_sigma, 
+                                                                       Ha_sigma_ivar, 
+                                                                       Ha_sigma_mask, 
+                                                                       Ha_flux, 
+                                                                       Ha_flux_ivar, 
+                                                                       Ha_flux_mask, 
+                                                                       r_band, 
+                                                                       r_band_ivar, 
+                                                                       axis_ratio, 
+                                                                       phi_EofN_deg, 
+                                                                       z, 
+                                                                       gal_ID, 
+                                                                       vel_function, 
+                                                                       IMAGE_DIR=IMAGE_DIR, 
+                                                                       IMAGE_FORMAT=IMAGE_FORMAT
+                                                                       )
+            except:
+                print(gal_ID, 'CRASHED! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', 
                       flush=True)
                 
-                with num_missing_photo.get_lock():
-                    num_missing_photo.value += 1
+                raise
                 
-                param_outputs = None
+            fit_time = datetime.datetime.now() - start
+
+            with num_masked_gal.get_lock():
+                num_masked_gal.value += masked_gal_flag
+
+            print(gal_ID, "velocity map fit", fit_time, flush=True)
+            ####################################################################
+
+
+            ####################################################################
+            # Estimate the total mass within the galaxy
+            #-------------------------------------------------------------------
+            R90 = DRP_table['NSA_elpetro_th90'][i_DRP]
+            
+            if param_outputs is not None:
+                mass_outputs = estimate_total_mass([param_outputs['v_max'], 
+                                                    param_outputs['r_turn'], 
+                                                    param_outputs['alpha']], 
+                                                   R90, 
+                                                   z, 
+                                                   vel_function, 
+                                                   gal_ID)
+            else:
                 mass_outputs = None
-                fit_flag = None
-                R90 = None
-
+            ####################################################################
+            
         else:
-            print(gal_ID, "is not smooth enough to fit.", flush=True)
-
-            with num_not_smooth.get_lock():
-                num_not_smooth.value += 1
-
+            print(gal_ID, 'is missing photometric measurements.', 
+                  flush=True)
+            
+            with num_missing_photo.get_lock():
+                num_missing_photo.value += 1
+            
             param_outputs = None
             mass_outputs = None
-            fit_flag = None
-            
-            if NSA_ID >= 0:
-                R90 = NSA_table['ELPETRO_TH90_R'][NSA_index[NSA_ID]]
-            else:
-                R90 = None
 
 
         print('\n', flush=True)
@@ -277,7 +240,7 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Add output values to return queue
         #-----------------------------------------------------------------------
-        output_tuple = (map_smoothness, param_outputs, mass_outputs, fit_flag, R90, i_DRP)
+        output_tuple = (param_outputs, mass_outputs, i_DRP)
         return_queue.put(output_tuple)
         ########################################################################
 
@@ -302,15 +265,8 @@ IMAGE_FORMAT = 'eps'
 ################################################################################
 # Fitting routine restrictions
 #-------------------------------------------------------------------------------
-# Maximum allowed map smoothness score
-map_smoothness_max = 1.85
-
 # Velocity function to use (options are 'BB' or 'tanh')
 vel_function = 'BB'
-
-# Velocity map to use
-V_type = 'Ha'
-#V_type = 'star'
 ################################################################################
 
 
@@ -327,23 +283,39 @@ LOCAL_PATH = os.path.dirname(__file__)
 if LOCAL_PATH == '':
     LOCAL_PATH = './'
 
-IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
+IMAGE_DIR = LOCAL_PATH + 'Images/Pipe3D_star/'
 
 # Create directory if it does not already exist
 if not os.path.isdir( IMAGE_DIR):
     os.makedirs( IMAGE_DIR)
 
-MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
-#MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr16/manga/spectro/'
-VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
-DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
+MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/'
 
-NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
-#NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
+PIPE3D_FOLDER = MANGA_FOLDER + 'dr15/manga/spectro/pipe3d/v2_4_3/2.4.3/'
+DRP_FOLDER = MANGA_FOLDER + 'dr16/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/'
+#DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
+FITS_FILENAME = 'DRP-master_file_vflag_BB_smooth1p85_mapFit_N2O2_HIdr2_morph_v6.txt'
+
+#NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
 ################################################################################
 
 
 
+################################################################################
+# Open the fits file
+#-------------------------------------------------------------------------------
+fits = Table.read(FITS_FILENAME, format='ascii.commented_header')
+
+fits_index = {}
+
+for i in range(len(fits)):
+    gal_ID = str(fits['MaNGA_plate'][i]) + '-' + str(fits['MaNGA_IFU'][i])
+    
+    fits_index[gal_ID] = i
+################################################################################
+
+
+"""
 ################################################################################
 # Open the DRPall file
 #-------------------------------------------------------------------------------
@@ -373,17 +345,59 @@ for i in range(len(NSA_table)):
 
     NSA_index[NSA_ID] = i
 ################################################################################
-
+"""
 
 
 ################################################################################
 # Create a list of galaxy IDs for which to extract a rotation curve.
 #-------------------------------------------------------------------------------
-N_files = len(DRP_table)
+# Only fit those which have good fits
+#-------------------------------------------------------------------------------
+# Calculate the velocity at R90
+#-------------------------------------------------------------------------------
+# Convert r from arcsec to kpc
+#-------------------------------------------------------------------------------
+H0 = 100 # Hubble's constant in units of h km/s/Mpc
 
-FILE_IDS = list(DRP_index.keys())
+dist_to_galaxy_Mpc = (fits['NSA_redshift']*const.c.to('km/s')/H0).value
+dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
 
-DRP_table = add_columns(DRP_table, vel_function)
+fits['R90_kpc'] = dist_to_galaxy_kpc*np.tan(fits['NSA_elpetro_th90']*(1./60)*(1./60)*(np.pi/180))
+#-------------------------------------------------------------------------------
+
+fits['V90_kms'] = rot_fit_BB(fits['R90_kpc'], 
+                             [fits['Vmax_map'], 
+                              fits['Rturn_map'], 
+                              fits['alpha_map']])
+#-------------------------------------------------------------------------------
+# Calculate the mass ratio
+#-------------------------------------------------------------------------------
+fits['M90_Mdisk_ratio'] = 10**(fits['M90_map'] - fits['M90_disk_map'])
+#-------------------------------------------------------------------------------
+
+bad_boolean = np.logical_or.reduce([np.isnan(fits['M90_map']), 
+                                    np.isnan(fits['M90_disk_map']), 
+                                    fits['alpha_map'] > 99, 
+                                    fits['ba_map'] > 0.998, 
+                                    fits['V90_kms']/fits['Vmax_map'] < 0.9, 
+                                    (fits['Tidal'] & (fits['DL_merge'] > 0.97)), 
+                                    fits['map_frac_unmasked'] < 0.05, 
+                                    (fits['map_frac_unmasked'] > 0.13) & (fits['DRP_map_smoothness'] > 1.96), 
+                                    (fits['map_frac_unmasked'] > 0.07) & (fits['DRP_map_smoothness'] > 2.9), 
+                                    (fits['map_frac_unmasked'] > -0.0638*fits['DRP_map_smoothness'] + 0.255) & (fits['DRP_map_smoothness'] > 1.96), 
+                                    fits['M90_Mdisk_ratio'] > 1050])
+
+N_files = len(fits) - np.sum(bad_boolean)
+
+FILE_IDS = []
+
+for i in range(len(fits)):
+    
+    if not bad_boolean[i]:
+    
+        FILE_IDS.append(str(fits['MaNGA_plate'][i]) + '-' + str(fits['MaNGA_IFU'][i]))
+
+fits = add_star_columns(fits, vel_function)
 ################################################################################
 
 
@@ -393,17 +407,12 @@ DRP_table = add_columns(DRP_table, vel_function)
 # the 'files' array.
 #-------------------------------------------------------------------------------
 #num_masked_gal = 0 # Number of completely masked galaxies
-#num_not_smooth = 0 # Number of galaxies which do not have smooth velocity maps
 
 num_masked_gal = Value(c_long)
-num_not_smooth = Value(c_long)
 num_missing_photo = Value(c_long)
 
 with num_masked_gal.get_lock():
     num_masked_gal.value = 0
-
-with num_not_smooth.get_lock():
-    num_not_smooth.value = 0
     
 with num_missing_photo.get_lock():
     num_missing_photo.value = 0
@@ -418,35 +427,25 @@ num_tasks = len(FILE_IDS)
 for i,gal_ID in enumerate(FILE_IDS):
         
     job_queue.put(gal_ID)
-    '''
-    if i > 10:
-        num_tasks = 12
-        break
-    '''
-    
 
 
 print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
-for i in range(12): # This number is the number of processes
+for i in range(12):
 
     p = Process(target=process_1_galaxy, args=(job_queue, i, 
                                                return_queue, 
                                                num_masked_gal, 
-                                               num_not_smooth, 
                                                num_missing_photo,
-                                               VEL_MAP_FOLDER, 
+                                               DRP_FOLDER, 
+                                               PIPE3D_FOLDER, 
                                                IMAGE_DIR, 
                                                IMAGE_FORMAT, 
-                                               DRP_index, 
-                                               map_smoothness_max, 
-                                               DRP_table, 
-                                               vel_function, 
-                                               V_type, 
-                                               NSA_index, 
-                                               NSA_table))
+                                               fits_index, 
+                                               fits, 
+                                               vel_function))
     
     p.start()
 
@@ -472,29 +471,19 @@ while num_processed < num_tasks:
     # Write the best-fit values and calculated parameters to a text file in 
     # ascii format.
     #---------------------------------------------------------------------------
-    map_smoothness, param_outputs, mass_outputs, fit_flag, R90, i_DRP = return_tuple
+    param_outputs, mass_outputs, i_fits = return_tuple
     
     #print('Writing', i_DRP, flush=True)
 
-    if map_smoothness is not None:
-        DRP_table = fillin_output_table(DRP_table, 
-                                        map_smoothness, 
-                                        i_DRP, 
-                                        col_name='smoothness_score')
-    
-    if R90 is not None:
-        DRP_table = fillin_output_table(DRP_table, 
-                                        R90, 
-                                        i_DRP, 
-                                        col_name='nsa_elpetro_th90')
-
     if param_outputs is not None:
-        DRP_table = fillin_output_table(DRP_table, param_outputs, i_DRP)
-        DRP_table = fillin_output_table(DRP_table, mass_outputs, i_DRP)
-        DRP_table = fillin_output_table(DRP_table, 
-                                        fit_flag, 
-                                        i_DRP, 
-                                        col_name='fit_flag')
+        fits = fillin_output_table(fits, 
+                                   param_outputs, 
+                                   i_fits, 
+                                   col_suffix='_star')
+        fits = fillin_output_table(fits, 
+                                   mass_outputs, 
+                                   i_fits, 
+                                   col_suffix='_star')
     ############################################################################
     
     num_processed += 1
@@ -518,8 +507,8 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('DRP_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.fits', 
-                format='fits', overwrite=True)
+fits.write('Pipe3D_starVel_map_results_' + vel_function + '.fits', 
+           format='fits', overwrite=True)
 ################################################################################
 
 
@@ -527,7 +516,6 @@ DRP_table.write('DRP_vel_map_results_' + vel_function + '_smooth_lt_' + str(map_
 # Print number of galaxies that were completely masked
 #-------------------------------------------------------------------------------
 print('There were', num_masked_gal.value, 'galaxies that were completely masked.', flush=True)
-print('There were', num_not_smooth.value, 'galaxies without smooth velocity maps.', flush=True)
 print('There were', num_missing_photo.value, 'galaxies missing photometry.', flush=True)
 ################################################################################
 

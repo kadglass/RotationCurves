@@ -55,11 +55,13 @@ def add_columns(data_table, fit_function):
     
     data_table['chi2'] = np.nan
 
-    if fit_function == 'BB':
-        data_table['alpha'] = np.nan*np.ones(N, dtype=float)
-        data_table['alpha_err'] = np.nan*np.ones(N, dtype=float)
-    elif fit_function != 'tanh':
-        print('This fit_function is not known.  Please update add_columns function.')
+    #if fit_function == 'BB':
+    data_table['alpha'] = np.nan*np.ones(N, dtype=float)
+    data_table['alpha_err'] = np.nan*np.ones(N, dtype=float)
+    data_table['b'] = np.nan*np.ones(N, dtype=float)
+    data_table['b_err'] = np.nan*np.ones(N, dtype=float)
+    #elif fit_function != 'tanh':
+    #    print('This fit_function is not known.  Please update add_columns function.')
 
     data_table['nsa_elpetro_th90'] = np.nan*np.ones(N, dtype=float)
 

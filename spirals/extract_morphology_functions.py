@@ -290,3 +290,76 @@ def match_morph_dl(data):
     return data
 
 
+def match_morph_DL_vis(master_table):
+    '''
+    Locate the galaxy morphology from the MaNGA Deep Learning and Visual morphology catalogs 
+    and add it to the given data table.
+
+
+    PARAMETERS
+    ==========
+
+    data : astropy table (may or may not have quantities)
+        Table of galaxies
+
+
+    RETURNS
+    =======
+
+    data : astropy table (may or may not have quantities)
+        Table of galaxies, with the added morphology data:
+          - DL_ttype : Likelihood that the galaxy is edge-on
+          - DL_merge : Likelihood of a bar
+          - vis_tidal : Likelihood that the galaxy is a spiral
+    '''
+
+    master_table['DL_ttype'] = np.nan*np.ones(len(master_table), dtype=float)
+    master_table['vis_tidal'] = np.nan*np.ones(len(master_table), dtype=float)
+
+    DL_fn = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/manga-morphology-dl-DR17.fits'
+    vis_fn = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/manga_visual_morpho-2.0.1.fits'
+
+    DL = Table.read(DL_fn, format='fits')
+    vis = Table.read(vis_fn, format='fits')
+
+
+    ####################################################################
+    # Extract data from deep learning catalog
+    #-------------------------------------------------------------------
+
+    for i in range(0, len(DL)):
+        
+        gal_ID = DL['PLATEIFU'][i].strip() # removing spaces from gal_ID
+
+        ####################################################################
+        # Find gal in master_table
+        #-------------------------------------------------------------------
+        i_master = np.where(master_table['plateifu'] == gal_ID)[0]
+
+        ####################################################################
+        # Add TType info to master_table
+        #-------------------------------------------------------------------
+
+        master_table['DL_ttype'][i_master] = DL['T-Type'][i]
+
+
+    ####################################################################
+    # Extract data from visual morphology catalog
+    #-------------------------------------------------------------------
+    for i in range(0, len(vis)):
+
+        gal_ID = vis['plateifu'][i].strip() # removing spaces from gal_ID
+
+
+        ####################################################################
+        # Find gal in master_table
+        #-------------------------------------------------------------------
+
+        i_master = np.where(master_table['plateifu'] == gal_ID)[0]
+
+        ####################################################################
+        # Add tidal info to master_table
+        #-------------------------------------------------------------------
+        master_table['vis_tidal'][i_master] = vis['Tidal'][i]
+
+    return master_table

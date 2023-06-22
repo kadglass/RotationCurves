@@ -97,8 +97,8 @@ def plot_Ha_sigma(Ha_sigma,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir( IMAGE_DIR + FOLDER_NAME):
-            os.makedirs( IMAGE_DIR + FOLDER_NAME)
+        #if not os.path.isdir( IMAGE_DIR + FOLDER_NAME):
+        #    os.makedirs( IMAGE_DIR + FOLDER_NAME)
         ########################################################################
 
         ########################################################################
@@ -276,28 +276,50 @@ def plot_rot_curve(mvel,
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
     #Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    Hessian = np.load('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+    Hessian = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    #Hessian = np.load(gal_ID + '_Hessian.npy')
     hess_inv = 2*np.linalg.inv(Hessian)
 
     N_samples = 10000
 
-    random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
+    if fit_function=='BB':
+        random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
                                                         best_fit_values['r_turn'],
                                                         best_fit_values['alpha']],
                                                   cov=hess_inv[-3:,-3:],
                                                   size=N_samples)
 
     # Remove bad samples (those with negative values for any of the parameters)
-    is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0)
-    good_randoms = random_sample[is_good_random, :]
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0)
+        good_randoms = random_sample[is_good_random, :]
 
-    for i in range(len(r)):
+        for i in range(len(r)):
         # Calculate values of curve at this location
-        y_sample = rot_fit_BB(r[i], [good_randoms[:,0],
+            y_sample = rot_fit_BB(r[i], [good_randoms[:,0],
                                      good_randoms[:,1],
                                      good_randoms[:,2]])
 
-    stdevs = np.std(y_sample, axis=0)
+
+    if fit_function=='tail':
+        random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
+                                                        best_fit_values['r_turn'],
+                                                        best_fit_values['alpha'],
+                                                        best_fit_values['b']],
+                                                  cov=hess_inv[-4:,-4:],
+                                                  size=N_samples)  
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0) & (random_sample[:,3] > 0)
+        good_randoms = random_sample[is_good_random, :]
+
+        for i in range(len(r)):
+        # Calculate values of curve at this location
+            y_sample = rot_fit_tail(r[i], [good_randoms[:,0],
+                                     good_randoms[:,1],
+                                     good_randoms[:,2],
+                                     good_randoms[:,3]])
+
+
+    stdevs = np.std(y_sample, axis=0)                                              
+
     ############################################################################
 
 
@@ -325,8 +347,8 @@ def plot_rot_curve(mvel,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function):
-            os.makedirs(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function)
+        #if not os.path.isdir(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function):
+        #    os.makedirs(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function)
         ########################################################################
 
         ########################################################################
@@ -436,8 +458,8 @@ def plot_residual(model_map,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
-            os.makedirs(IMAGE_DIR + FOLDER_NAME)
+        #if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
+        #    os.makedirs(IMAGE_DIR + FOLDER_NAME)
 
         ########################################################################
 
@@ -551,8 +573,8 @@ def plot_residual_norm(model_map,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
-            os.makedirs(IMAGE_DIR + FOLDER_NAME)
+        #if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
+        #    os.makedirs(IMAGE_DIR + FOLDER_NAME)
         ########################################################################
 
         ########################################################################
@@ -676,8 +698,8 @@ def plot_chi2(model_map,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
-            os.makedirs(IMAGE_DIR + FOLDER_NAME)
+        #if not os.path.isdir(IMAGE_DIR + FOLDER_NAME):
+        #    os.makedirs(IMAGE_DIR + FOLDER_NAME)
         ########################################################################
 
         ########################################################################
@@ -800,8 +822,8 @@ def plot_diagnostic_panel(r_band,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir(IMAGE_DIR + '/diagnostic_panels'):
-            os.makedirs(IMAGE_DIR + '/diagnostic_panels')
+        #if not os.path.isdir(IMAGE_DIR + '/diagnostic_panels'):
+        #    os.makedirs(IMAGE_DIR + '/diagnostic_panels')
         ########################################################################
 
         ########################################################################

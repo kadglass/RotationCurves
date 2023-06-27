@@ -72,6 +72,14 @@ def build_map_mask(gal_ID,
         - 4 : non-AGN (Ha_vel_mask + spaxels with high Ha velocity dispersion)
         - 5 : S/N > 5 (Ha_vel_mask + spaxels with S/N < 5)
 
+    Fit flag system:
+        # default mask: 0
+        # continuous mask: 1
+        # S/N mask: S/N_cut/10
+        # residual mask: 2
+        # non-AGN mask: 3
+        # any mask with initial 5 sigma mask for smoothness score: fit flag+0.5
+
     mHa_vel : numpy ndarray of shape (n,n)
         masked H-alpha velocity map
 
@@ -100,27 +108,27 @@ def build_map_mask(gal_ID,
     ############################################################################
 
 
-    if fit_flag == -3:
+    if fit_flag == 1:
         ########################################################################
         # Mask spaxels that have velocities which are not continuous
         #-----------------------------------------------------------------------
         _,_, bitmask = find_vel_bounds(mHa_vel, gal_ID)
         ########################################################################
 
-    elif fit_flag == -4:
+    elif fit_flag == 3:
         ########################################################################
         # Mask spaxels that have large velocity widths
         #-----------------------------------------------------------------------
         _, bitmask = find_sigma_bounds(mHa_sigma, gal_ID)
         ########################################################################
 
-    elif fit_flag > 0:
+    elif fit_flag == 0.5:
         ########################################################################
         # Mask spaxels that have S/N smaller than fit_flag
         #-----------------------------------------------------------------------
         SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
 
-        bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < fit_flag)
+        bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < fit_flag*10)
         ########################################################################
 
 
@@ -176,7 +184,8 @@ def find_sigma_bounds(mHa_sigma, gal_ID):
                   '9501-3704', '8257-6101', '8483-6101', '8244-6101',
                   '8131-6101', '8338-6103', '8985-6104', '8935-6104',
                   '8591-6104', '8944-6104', '8239-9101', '8154-9101',
-                  '8320-9101', '8086-9102', '8081-9102', '9184-9102']:
+                  '8320-9101', '8086-9102', '8081-9102', '9184-9102',
+                  '7958-6101']:
         bin_width = 20
     elif gal_ID in ['8341-12704']:
         bin_width = 5
@@ -644,6 +653,9 @@ def calculate_chi2_flat(params,
                         flat_vel_map,
                         flat_vel_map_ivar,
                         map_mask,
+                        HI_vel,
+                        HI_vel_err,
+                        R90_kpc,
                         pix_scale,
                         fit_function):
     '''
@@ -701,7 +713,30 @@ def calculate_chi2_flat(params,
     ############################################################################
     # Calculate chi2 of current fit
     #---------------------------------------------------------------------------
-    chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
+
+
+    if HI_vel is not None:
+        
+        if fit_function == 'tail':
+
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:])
+
+            chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
+        
+        else:
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:])
+
+            chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
+
+    
+    else:
+        
+        chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2)
+
+
+
+
+    
     #chi2 = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
     #chi2_norm = chi2/(len(flat_vel_map) - len(params))
@@ -718,6 +753,9 @@ def calculate_chi2_flat(params,
 def calculate_residual_flat(params,
                             flat_vel_map,
                             map_mask,
+                            HI_vel,
+                            HI_vel_err, 
+                            R90_kpc,
                             pix_scale,
                             fit_function):
     '''
@@ -772,9 +810,33 @@ def calculate_residual_flat(params,
     ############################################################################
     # Calculate residual of current fit
     #---------------------------------------------------------------------------
-    residual = np.sum((flat_vel_map_model - flat_vel_map)**2)
 
-    residual_norm = residual/(len(flat_vel_map) - len(params))
+
+
+
+    if HI_vel is not None:
+
+        if fit_function == 'tail':
+
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:])
+            residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
+            residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
+
+
+        else:
+
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:])
+            residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
+            residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
+
+    
+    else:
+        residual = np.sum((flat_vel_map_model - flat_vel_map)**2)
+        residual_norm = residual/(len(flat_vel_map) - len(params))
+
+
+
+
     ############################################################################
 
 
@@ -1049,6 +1111,10 @@ def find_vel_map(gal_ID,
                  mHa_flux,
                  mHa_flux_ivar,
                  z,
+                 HI_vel,
+                 HI_vel_err,
+                 R90,
+                 mask_5sigma,
                  i_center_guess,
                  j_center_guess,
                  sys_vel_guess,
@@ -1130,11 +1196,18 @@ def find_vel_map(gal_ID,
 
 
     ############################################################################
+    # If available, use HI vel as initial guess for maximum velocity
     # Use the maximum velocity in the data as the initial guess for the maximum
     # velocity of the rotation curve.
     #---------------------------------------------------------------------------
+    
     v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
-    v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
+    if HI_vel is not None:
+        v_max_guess = HI_vel
+    
+    else:
+        v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
+
 
     #print("v_max_guess:", v_max_guess)
     ############################################################################
@@ -1180,6 +1253,17 @@ def find_vel_map(gal_ID,
 
 
     ############################################################################
+    # Set the initial guess for the velocity to be 1000 km/s if the velocity
+    # exceeds the upper bound
+    #---------------------------------------------------------------------------
+    if v_max_guess > v_max_high:
+
+        v_max_guess = 1000
+
+
+    ############################################################################
+
+    ############################################################################
     # Set the initial guess for r_turn to be equal to half of the radius where
     # the maximum velocity occurs
     #---------------------------------------------------------------------------
@@ -1194,6 +1278,8 @@ def find_vel_map(gal_ID,
 
     if r_turn_guess_kpc < r_turn_low:
         r_turn_guess_kpc = 1.1*r_turn_low
+    if r_turn_guess_kpc > r_turn_high:
+        r_turn_guess_kpc = 0.9*r_turn_high
     ############################################################################
 
 
@@ -1308,16 +1394,25 @@ def find_vel_map(gal_ID,
         #-----------------------------------------------------------------------
         print('Fitting entire map', flush=True)
 
+        R90_kpc = dist_to_galaxy_kpc*np.tan(R90*(1./60)*(1./60)*(np.pi/180))
+
+        #print(np.concatenate([pos_guesses, vel_guesses]))
+        #print([pos_bounds, vel_bounds])
+
         result_all = minimize(calculate_chi2_flat,
                               np.concatenate([pos_guesses, vel_guesses]),
                               method='Powell',
-                              args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                              args=(mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, 
+                                    HI_vel, HI_vel_err, R90_kpc, pix_scale_factor, fit_function),
                               bounds=np.concatenate([pos_bounds, vel_bounds]),
                               options={'disp':True})
 
     
         # Calculate the normalized chi2 for the fit
-        result_all.fun /= (len(mHa_vel_flat) - len(result_all.x))
+        if HI_vel == None:
+            result_all.fun /= (len(mHa_vel_flat) - len(result_all.x))
+        else:
+            result_all.fun /= (len(mHa_vel_flat) - len(result_all.x) + 1)
         ########################################################################
 
 
@@ -1360,12 +1455,17 @@ def find_vel_map(gal_ID,
             result_continuous = minimize(calculate_chi2_flat,
                                          np.concatenate([pos_guesses, vel_guesses]),
                                          method='Powell',
-                                         args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                                         args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, 
+                                                HI_vel, HI_vel_err, R90_kpc,pix_scale_factor, fit_function),
                                          bounds=np.concatenate([pos_bounds, vel_bounds]),
                                          options={'disp':True})
 
             # Calculate normalize chi2 of fit
-            result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x))
+            if HI_vel == None:
+                result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x))
+            else:
+                result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x) + 1)
+
         ########################################################################
 
 
@@ -1376,7 +1476,8 @@ def find_vel_map(gal_ID,
         result_residual = minimize(calculate_residual_flat,
                                    np.concatenate([pos_guesses, vel_guesses]),
                                    method='Powell',
-                                   args=(mHa_vel_flat, mHa_vel.mask, pix_scale_factor, fit_function),
+                                   args=(mHa_vel_flat, mHa_vel.mask, HI_vel, HI_vel_err, R90_kpc,
+                                            pix_scale_factor, fit_function),
                                    bounds=np.concatenate([pos_bounds, vel_bounds]),
                                    options={'disp':True})
 
@@ -1385,11 +1486,17 @@ def find_vel_map(gal_ID,
                                                   mHa_vel_flat,
                                                   mHa_vel_ivar_flat,
                                                   mHa_vel.mask,
+                                                  HI_vel, 
+                                                  HI_vel_err, 
+                                                  R90_kpc,
                                                   pix_scale_factor,
                                                   fit_function)
 
          # Calculate normalized chi2 of the fit
-        result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x))
+        if HI_vel == None:
+            result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x))
+        else:
+            result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x) + 1)
         ########################################################################
 
 
@@ -1399,11 +1506,15 @@ def find_vel_map(gal_ID,
         print('Fitting S/N > 5', flush=True)
         #-----------------------------------------------------------------------
         # Remove spaxels with S/N < 5% of the maximum S/N in the data map (up to
-        # a S/N = 1)
+        # a S/N = 10)
+        # NOTE: if the S/N_cut >= 10, fit flag values will be wrong
         #-----------------------------------------------------------------------
         SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
 
         SN_cut = 5
+
+        if SN_cut >= 10:
+            print('Fit flag error: S/N >= 10')
         '''
         SN_cut = 0.05*np.max(SN)
         if SN_cut > 1:
@@ -1427,12 +1538,16 @@ def find_vel_map(gal_ID,
             result_SN = minimize(calculate_chi2_flat,
                                  np.concatenate([pos_guesses, vel_guesses]),
                                  method='Powell',
-                                 args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, pix_scale_factor, fit_function),
+                                 args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask, 
+                                        HI_vel, HI_vel_err, R90_kpc,pix_scale_factor, fit_function),
                                  bounds=np.concatenate([pos_bounds, vel_bounds]),
                                  options={'disp':True})
             
             # Calculate normalized chi2 of fit
-            result_SN.fun /= (len(modified_mHa_vel_flat) - len(result_SN.x))
+            if HI_vel == None:
+                result_SN.fun /= (len(modified_mHa_vel_flat) - len(result_SN.x))
+            else:
+                result_SN.fun /= (len(modified_mHa_vel_flat) - len(result_SN.x) + 1)
         ########################################################################
 
 
@@ -1473,10 +1588,15 @@ def find_vel_map(gal_ID,
             result_nonAGN = minimize(calculate_chi2_flat,
                                      np.concatenate([pos_guesses, vel_guesses]),
                                      method='Powell',
-                                     args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask_sigma, pix_scale_factor, fit_function),
+                                     args=(modified_mHa_vel_flat, modified_mHa_vel_ivar_flat, modified_mask_sigma, 
+                                            HI_vel, HI_vel_err, R90_kpc, pix_scale_factor, fit_function),
                                      bounds=np.concatenate([pos_bounds, vel_bounds]),
                                      options={'disp':True})
-            result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x))
+            
+            if HI_vel == None:
+                result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x))
+            else:
+                result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x) + 1)
         ########################################################################
 
 
@@ -1506,6 +1626,38 @@ def find_vel_map(gal_ID,
         else:
             min_pos = np.argmin(fit_chi2)
 
+
+        ########################################################################
+        # Fit flag system:
+        # default mask: 0
+        # continuous mask: 1
+        # S/N mask: S/N_cut/10
+        # residual mask: 2
+        # non-AGN mask: 3
+        # any mask with initial 5 sigma mask for smoothness score: fit flag+0.5
+        #-----------------------------------------------------------------------
+
+        if min_pos == 0:
+            fit_flag = 0
+            result = result_all
+        elif min_pos == 1:
+            fit_flag = 1
+            result = result_continuous
+        elif min_pos == 2:
+            fit_flag = SN_cut/10
+            result = result_SN
+        elif min_pos == 3:
+            fit_flag = 2
+            result = result_residual
+        else:
+            fit_flag = 3
+            result = result_nonAGN
+
+        if mask_5sigma and fit_flag != 0.5:
+            fit_flag = fit_flag + 0.5
+
+
+        '''
         if min_pos == 0:
             fit_flag = -1
             result = result_all
@@ -1521,6 +1673,7 @@ def find_vel_map(gal_ID,
         else:
             fit_flag = -4
             result = result_nonAGN
+        '''
         ########################################################################
 
 
@@ -1542,8 +1695,10 @@ def find_vel_map(gal_ID,
             # For use when Hessian is not provided by fit method
             #hessian = ndt.Hessian(calculate_chi2)
             #hess = hessian(result.x, mHa_vel, mHa_vel_ivar, pix_scale_factor, fit_function)
+            #print(result.x)
             hessian = ndt.Hessian(calculate_chi2_flat)
-            hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, pix_scale_factor, fit_function)
+            hess = hessian(result.x, mHa_vel_flat, mHa_vel_ivar_flat, mHa_vel.mask, 
+                            HI_vel, HI_vel_err, R90_kpc, pix_scale_factor, fit_function)
 
             # for DR17 hessian is nans -- saving Hessian as identity matrix so rest of fitting can proceed
             # ignore uncertainties
@@ -1551,7 +1706,9 @@ def find_vel_map(gal_ID,
 
             # Save Hessian matrix (for uncertainty calculations)
             #np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
-            np.save('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
+            #np.save('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
+            np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
+            #np.save(gal_ID + '_Hessian.npy', hess)
 
             #print('Hessian:', hess)
             try:
@@ -1595,6 +1752,8 @@ def find_vel_map(gal_ID,
             if fit_function == 'BB':
                 best_fit_values['alpha'] = result.x[7]
                 best_fit_values['alpha_err'] = fit_params_err[7]
+                best_fit_values['b'] = 0.
+                best_fit_values['b_err'] = 0.
 
             elif fit_function == 'tail':
                 best_fit_values['alpha'] = result.x[7]

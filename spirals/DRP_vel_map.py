@@ -80,6 +80,10 @@ def fit_vel_map(vel,
                 axis_ratio,
                 phi_EofN_deg,
                 z,
+                HI_vel,
+                HI_vel_err,
+                R90,
+                mask_5sigma,
                 gal_ID,
                 fit_function,
                 V_type='Ha',
@@ -177,6 +181,15 @@ def fit_vel_map(vel,
     num_masked_gal : float
         Cumulative number of completely masked galaxies
     '''
+
+
+    ############################################################################
+    # Change default mask to 5 sigma mask if necessary
+    #---------------------------------------------------------------------------
+    if mask_5sigma:
+        vel_mask = np.logical_or(vel_mask > 0, np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5)
+
+
 
     ############################################################################
     # Apply mask to all data arrays
@@ -412,6 +425,20 @@ def fit_vel_map(vel,
 
 
     ############################################################################
+    # If more than 95% of the map is masked, set output to None
+    #---------------------------------------------------------------------------
+    elif len(mvel[mvel.mask])/len(np.ndarray.flatten(mvel)) > 0.95:
+
+        param_outputs = None
+
+        fit_flag = np.nan
+
+        num_masked_gal += 1
+
+        print("More than 95 %% of the map is masked!!!", flush=True)
+    ############################################################################
+
+    ############################################################################
     # If there is unmasked data in the data array, fit the velocity map.
     #---------------------------------------------------------------------------
     else:
@@ -423,6 +450,10 @@ def fit_vel_map(vel,
                                                                     mHa_flux,
                                                                     mHa_flux_ivar,
                                                                     z,
+                                                                    HI_vel,
+                                                                    HI_vel_err,
+                                                                    R90,
+                                                                    mask_5sigma,
                                                                     i_center_guess,
                                                                     j_center_guess,
                                                                     sys_vel_guess,
@@ -587,6 +618,7 @@ def fit_vel_map(vel,
     ############################################################################
 
 
+
     return param_outputs, num_masked_gal, fit_flag
 
 
@@ -648,7 +680,8 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     # Calculate velocity at given radius
     #---------------------------------------------------------------------------
     # hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    hess = np.load('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
+    hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    #hess = np.load(gal_ID + '_Hessian.npy')
 
     N_samples = 10000
 
@@ -690,14 +723,19 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     elif fit_function == 'tail':
         v = rot_fit_tail(r_kpc, params)
 
-        param_samples = np.random.multivariate_normal(mean=params,
+        try:
+
+            param_samples = np.random.multivariate_normal(mean=params,
                                                       cov=0.5*hess[-4:,-4:],
                                                       size=N_samples)
-        for i in range(N_samples):
-            if np.all(param_samples[i] > 0):
-                v_samples[i] = rot_fit_tail(r_kpc, param_samples[i])
+            for i in range(N_samples):
+                if np.all(param_samples[i] > 0):
+                    v_samples[i] = rot_fit_tail(r_kpc, param_samples[i])
         
-        v_err = np.std(v_samples[np.isfinite(v_samples)])
+            v_err = np.std(v_samples[np.isfinite(v_samples)])
+        
+        except np.linalg.LinAlgError:
+            v_err = np.nan
 
 
     else:
@@ -711,4 +749,5 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     M, M_err = mass_newton(v, v_err, r_kpc)
     ############################################################################
 
-    return {'M':np.log10(M), 'M_err':np.log10(M_err)}
+    #return {'M':np.log10(M), 'M_err':np.log10(M_err)}
+    return np.log10(M), np.log10(M_err)

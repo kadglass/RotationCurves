@@ -94,11 +94,11 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     [plate, IFU] = gal_ID.split('-')
 
     # for bluehive
-    file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    file_name = DRP_FOLDER + '/' + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
     # file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
 
     # for dr17:
-    #file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    #file_name = DRP_FOLDER + '/manga-' + plate + '/' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
 
     # for sciserver
     #file_name = DRP_FOLDER + '/' + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'

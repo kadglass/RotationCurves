@@ -278,7 +278,14 @@ def plot_rot_curve(mvel,
     #Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
     Hessian = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
     #Hessian = np.load(gal_ID + '_Hessian.npy')
-    hess_inv = 2*np.linalg.inv(Hessian)
+
+    try:
+        hess_inv = 2*np.linalg.inv(Hessian)
+    
+    except:
+        print('Could not invert hessian\n', flush=True)
+        return ma.max(ma.abs(rm_deproj))
+
 
     N_samples = 10000
 

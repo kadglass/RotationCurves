@@ -65,8 +65,8 @@ def plot_rband_image(r_band, gal_ID, IMAGE_DIR=None, IMAGE_FORMAT='eps', ax=None
         #######################################################################
         # Create output directory if it does not already exist
         #----------------------------------------------------------------------
-        if not os.path.isdir( IMAGE_DIR + '/unmasked_r_band'):
-            os.makedirs( IMAGE_DIR + '/unmasked_r_band')
+        #if not os.path.isdir( IMAGE_DIR + '/unmasked_r_band'):
+        #    os.makedirs( IMAGE_DIR + '/unmasked_r_band')
         #######################################################################
 
         #######################################################################
@@ -209,8 +209,8 @@ def plot_vel(vel,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir( IMAGE_DIR + FOLDER_NAME):
-            os.makedirs( IMAGE_DIR + FOLDER_NAME)
+        #if not os.path.isdir( IMAGE_DIR + FOLDER_NAME):
+        #    os.makedirs( IMAGE_DIR + FOLDER_NAME)
         ########################################################################
 
         ########################################################################
@@ -472,8 +472,8 @@ def plot_diagnostic_panel( gal_ID,
         ########################################################################
         # Create output directory if it does not already exist
         #-----------------------------------------------------------------------
-        if not os.path.isdir( IMAGE_DIR + '/diagnostic_panels'):
-            os.makedirs( IMAGE_DIR + '/diagnostic_panels')
+        #if not os.path.isdir( IMAGE_DIR + '/diagnostic_panels'):
+        #    os.makedirs( IMAGE_DIR + '/diagnostic_panels')
         ########################################################################
 
         ########################################################################

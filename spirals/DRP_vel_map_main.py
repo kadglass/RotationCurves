@@ -47,11 +47,17 @@ map_smoothness_max = 2.0 # changed for DR17
 # Velocity function to use (options are 'BB' or 'tanh')
 #vel_function = 'BB'
 #vel_function = 'tanh'
-vel_function = 'tail' 
+#vel_function = 'tail' 
 
 # Velocity map to use
 V_type = 'Ha'
 #V_type = 'star'
+
+#nominal disk thickness
+q0 = 0.2
+
+# require HI_vel
+HI_vel_req = False
 ################################################################################
 
 
@@ -70,7 +76,7 @@ V_type = 'Ha'
 
 
 
-FILE_IDS =  ['10001-3702','7815-3702',  '7990-6104',
+'''FILE_IDS =  ['10001-3702','7815-3702',  '7990-6104',
         '7992-6104', '8077-12704', '8077-6102', '8080-12702',
         '8082-12702', '8082-9102',  '8146-1901',
         '8150-9102', '8153-1901', '8155-12701', '8158-1901',
@@ -107,7 +113,10 @@ FILE_IDS =  ['10001-3702','7815-3702',  '7990-6104',
         '8089-12701', '9495-6101', '9506-1901', '10844-3703', '12769-6104', 
         '10513-1901', '12700-12702',
         '9493-6103', '9494-3701', '10219-1901', '8087-9102',
-        '9863-3701', '10514-3701', '10214-6101', '8934-3701']
+        '9863-3701', '10514-3701', '10214-6101', '8934-3701']'''
+
+
+FILE_IDS = ['10001-12701']
 
 RUN_ALL_GALAXIES = False
 
@@ -137,7 +146,7 @@ if RUN_ALL_GALAXIES:
 else:
     #IMAGE_DIR = None
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
-    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/RD_test/'
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/HI_test/'
 
 
 # for bluehive
@@ -155,7 +164,9 @@ else:
 MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
 NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
-DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
+#DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
+DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/disk_masses_HIdr3_err_morph_v2.fits'
+
 
 # old
 # MANGA_FOLDER = '/home/kelly/Documents/Data/SDSS/dr16/manga/spectro/'
@@ -256,6 +267,10 @@ for gal_ID in FILE_IDS:
             print('Unknown velocity data type (V_type).')
             continue
 
+        if maps is None:
+            print('\n')
+            continue
+
         print( gal_ID, "extracted")
         ########################################################################
 
@@ -273,8 +288,45 @@ for gal_ID in FILE_IDS:
                                                              np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar'])) < 5))
             if (map_smoothness > map_smoothness_max) and (map_smoothness_5sigma > map_smoothness_max):
                 can_fit = False
+
+                if can_fit == False:
+                    print("Galaxy's map is not smooth enough to fit.")
+                    num_not_smooth += 1
+        ########################################################################
+
+
+
+        ########################################################################
+        # Check if galaxy is late type
+        #-----------------------------------------------------------------------
+        if DRP_table['DL_ttype'][i_DRP] <= 0:
+            can_fit = False
+
+            print('Not a late type galaxy.')
+            print('T-Type: ' , DRP_table['DL_ttype'][i_DRP])
         ########################################################################
         
+        
+        
+        ########################################################################
+        # Check if galaxy has HI velocity
+        #-----------------------------------------------------------------------
+        HI_vel = DRP_table['WF50'][i_DRP]
+        HI_vel_err = DRP_table['WF50_err'][i_DRP]
+
+        if HI_vel < 0:
+            HI_vel = None
+            HI_vel_err = None
+
+        if HI_vel_req == True:
+
+            if HI_vel == None:
+                can_fit = False
+                print('Galaxy does not have HI velocity data.')
+        ########################################################################
+        HI_vel = None
+        HI_vel_err = None
+
 
         if can_fit:
             ####################################################################
@@ -285,7 +337,17 @@ for gal_ID in FILE_IDS:
 
             z = DRP_table['nsa_z'][i_DRP]
             NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
+
             ####################################################################
+
+
+            ####################################################################
+            # If the smoothness score exceeds the max, use 5sigma mask as the 
+            # minimum mask
+            #-------------------------------------------------------------------
+            mask_5sigma = False
+            if map_smoothness > map_smoothness_max:
+                mask_5sigma = True
 
 
             if axis_ratio > -9999:
@@ -294,6 +356,32 @@ for gal_ID in FILE_IDS:
                 # create an astropy Table containing said data.
                 #---------------------------------------------------------------
                 start = datetime.datetime.now()
+
+                ################################################################
+                # Set fit function using axis ratio
+                #---------------------------------------------------------------
+                cosi2 = (axis_ratio**2 - q0**2)/(1 - q0**2)
+                
+                if cosi2 < (np.cos(85*np.pi/180))**2:
+                    vel_function = 'BB'
+                else:
+                    vel_function = 'tail'
+                
+                #vel_function = 'tail'
+
+                print('Fit function: ', vel_function)
+
+
+
+                ################################################################
+                # Extract the necessary data from the NSA table.
+                #---------------------------------------------------------------
+
+                
+
+                i_NSA = NSA_index[NSA_ID] 
+                R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
+                ################################################################
 
                 param_outputs, num_masked_gal, fit_flag = fit_vel_map(maps[V_type + '_vel'],
                                                                       maps[V_type + '_vel_ivar'],
@@ -309,6 +397,10 @@ for gal_ID in FILE_IDS:
                                                                       axis_ratio,
                                                                       phi_EofN_deg,
                                                                       z,
+                                                                      HI_vel,
+                                                                      HI_vel_err,
+                                                                      R90,
+                                                                      mask_5sigma,
                                                                       gal_ID,
                                                                       vel_function,
                                                                       V_type=V_type,
@@ -321,21 +413,44 @@ for gal_ID in FILE_IDS:
                 print(gal_ID, "velocity map fit", fit_time)
                 ################################################################
 
-                ################################################################
-                # Extract the necessary data from the NSA table.
-                #---------------------------------------------------------------
-                i_NSA = NSA_index[NSA_ID]
-                R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
-                ################################################################
+                
                 if param_outputs is not None:
                     ############################################################
                     # Estimate the total mass within the galaxy
                     #-----------------------------------------------------------
-                    mass_outputs = estimate_total_mass([param_outputs['v_max'],
+
+                    if vel_function == 'BB':
+                        M_R90, M_R90_err = estimate_total_mass([param_outputs['v_max'],
+                                                        param_outputs['r_turn'],
+                                                        param_outputs['alpha']],
+                                                       R90, 
+                                                       z,
+                                                       vel_function,
+                                                       gal_ID)
+                    
+                        M, M_err = estimate_total_mass([param_outputs['v_max'],
+                                                        param_outputs['r_turn'],
+                                                        param_outputs['alpha']],
+                                                       3.5*R90, 
+                                                       z,
+                                                       vel_function,
+                                                       gal_ID)
+
+                    else:
+                        M_R90, M_R90_err = estimate_total_mass([param_outputs['v_max'],
                                                         param_outputs['r_turn'],
                                                         param_outputs['alpha'],
                                                         param_outputs['b']],
-                                                       R90,
+                                                       R90, 
+                                                       z,
+                                                       vel_function,
+                                                       gal_ID)
+                    
+                        M, M_err = estimate_total_mass([param_outputs['v_max'],
+                                                        param_outputs['r_turn'],
+                                                        param_outputs['alpha'],
+                                                        param_outputs['b']],
+                                                       3.5*R90, 
                                                        z,
                                                        vel_function,
                                                        gal_ID)
@@ -357,23 +472,47 @@ for gal_ID in FILE_IDS:
                                                     R90,
                                                     i_DRP,
                                                     col_name='nsa_elpetro_th90')
+                    
 
                     if param_outputs is not None:
                         DRP_table = fillin_output_table(DRP_table,
                                                         param_outputs,
                                                         i_DRP)
                         DRP_table = fillin_output_table(DRP_table,
-                                                        mass_outputs,
-                                                        i_DRP)
+                                                        M_R90,
+                                                        i_DRP,
+                                                        col_name='M_R90')
+                        DRP_table = fillin_output_table(DRP_table,
+                                                        M_R90_err,
+                                                        i_DRP,
+                                                        col_name='M_R90_err')
+                        DRP_table = fillin_output_table(DRP_table,
+                                                        M,
+                                                        i_DRP,
+                                                        col_name='M')
+                        DRP_table = fillin_output_table(DRP_table,
+                                                        M_err,
+                                                        i_DRP,
+                                                        col_name='M_err')                                
                         DRP_table = fillin_output_table(DRP_table,
                                                         fit_flag,
                                                         i_DRP,
                                                         col_name='fit_flag')
+                    
+                    if vel_function == 'BB':
+                        fit_type=0
+                    if vel_function == 'tail':
+                        fit_type=1
+                        
 
+                    DRP_table = fillin_output_table(DRP_table,
+                                                    fit_type,
+                                                    i_DRP,
+                                                    col_name='fit_function')
                     print(gal_ID, "written")
                     ############################################################
 
-                else:
+                #else:
                     ############################################################
                     # Print output to terminal if not analyzing all galaxies
                     #-----------------------------------------------------------
@@ -383,7 +522,9 @@ for gal_ID in FILE_IDS:
                         print('Smoothness score:', map_smoothness)
 
                     print(param_outputs)
-                    print(mass_outputs)
+                    print('M90: ', M_R90, ' M_R90_err: ', M_R90_err)
+                    print('M: ', M, ' M_err: ', M_err)
+                    #print(mass_outputs)
                     print('Fit flag:', fit_flag)
                     ############################################################
 
@@ -391,10 +532,7 @@ for gal_ID in FILE_IDS:
                 print(gal_ID, 'is missing photometric measurements.')
 
         else:
-            print("Galaxy's map is not smooth enough to fit.")
-
-            num_not_smooth += 1
-
+ 
             if RUN_ALL_GALAXIES or TEXT_OUT:
                 DRP_table = fillin_output_table(DRP_table,
                                                 map_smoothness,
@@ -411,7 +549,9 @@ for gal_ID in FILE_IDS:
 ################################################################################
 
 
+DRP_table.write('HI_vel_test_4.fits', format='fits', overwrite=True)
 
+'''
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
@@ -423,10 +563,10 @@ if RUN_ALL_GALAXIES or TEXT_OUT:
         out_filename = 'DRP_starVel_map_resutls_' + vel_function + '.txt'
 
     DRP_table.write('out.fits', format = 'fits', overwrite=True)
-    '''DRP_table.write(out_filename,
+    DRP_table.write(out_filename,
                     format='ascii.commented_header',
-                    overwrite=True)'''
-################################################################################
+                    overwrite=True)
+################################################################################'''
 
 
 

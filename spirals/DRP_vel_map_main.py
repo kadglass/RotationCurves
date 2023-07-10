@@ -345,9 +345,9 @@ for gal_ID in FILE_IDS:
             # If the smoothness score exceeds the max, use 5sigma mask as the 
             # minimum mask
             #-------------------------------------------------------------------
-            mask_5sigma = False
-            if map_smoothness > map_smoothness_max:
-                mask_5sigma = True
+            #mask_5sigma = False
+            #if map_smoothness > map_smoothness_max:
+            #    mask_5sigma = True
 
 
             if axis_ratio > -9999:
@@ -400,7 +400,7 @@ for gal_ID in FILE_IDS:
                                                                       HI_vel,
                                                                       HI_vel_err,
                                                                       R90,
-                                                                      mask_5sigma,
+                                                                      #mask_5sigma,
                                                                       gal_ID,
                                                                       vel_function,
                                                                       V_type=V_type,
@@ -549,7 +549,7 @@ for gal_ID in FILE_IDS:
 ################################################################################
 
 
-DRP_table.write('HI_vel_test_4.fits', format='fits', overwrite=True)
+DRP_table.write('sn_test.fits', format='fits', overwrite=True)
 
 '''
 ################################################################################

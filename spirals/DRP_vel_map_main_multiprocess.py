@@ -105,18 +105,39 @@ def process_1_galaxy(job_queue, i,
         NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
         ########################################################################
 
-
         ########################################################################
-        # Check if galaxy has previously been processed
+        # Check if galaxy has already been processed
         #-----------------------------------------------------------------------
+        
         if gal_ID in processed:
-            print(gal_ID, ' has already been processed.\n', flush=True)
+            print(gal_ID, ' galaxy has already been processed', flush=True)
             output_tuple = (None, None, None, None, None, None, None, None, None, None)
             return_queue.put(output_tuple)
+            
             continue
 
+
+
         ########################################################################
-        
+        # Check if galaxy has HI velocity
+        #-----------------------------------------------------------------------
+        HI_vel = DRP_table['WF50'][i_DRP]
+        HI_vel_err = DRP_table['WF50_err'][i_DRP]
+
+        if HI_vel < 0:
+            HI_vel = None
+            HI_vel_err = None
+
+        if HI_vel_req == True:
+
+            if HI_vel == None:
+                can_fit = False
+                print('Galaxy does not have HI velocity data.', flush=True)
+                output_tuple = (None, None, None, None, None, None, None, None, None, None)
+                return_queue.put(output_tuple)
+            
+                continue
+        ########################################################################
         
         ########################################################################
         # Confirm that object is a galaxy target
@@ -164,6 +185,20 @@ def process_1_galaxy(job_queue, i,
         print( gal_ID, "extracted", flush=True)
         ########################################################################
 
+        ########################################################################
+        # Check if galaxy is late type
+        #-----------------------------------------------------------------------
+        if DRP_table['DL_ttype'][i_DRP] <= 0:
+
+            print('Not a late type galaxy.', flush=True)
+            print('T-Type: ' , DRP_table['DL_ttype'][i_DRP], flush=True)
+            
+            output_tuple = (None, None, None, None, None, None, None, None, None, None)
+            return_queue.put(output_tuple)
+            continue
+
+        ########################################################################
+
 
         ########################################################################
         # Calculate degree of smoothness of velocity map
@@ -192,35 +227,6 @@ def process_1_galaxy(job_queue, i,
 
         ########################################################################
 
-        ########################################################################
-        # Check if galaxy is late type
-        #-----------------------------------------------------------------------
-        if DRP_table['DL_ttype'][i_DRP] <= 0:
-            can_fit = False
-            print('Not a late type galaxy.', flush=True)
-            print('T-Type: ' , DRP_table['DL_ttype'][i_DRP], flush=True)
-        ########################################################################
-
-
-
-        ########################################################################
-        # Check if galaxy has HI velocity
-        #-----------------------------------------------------------------------
-        HI_vel = DRP_table['WF50'][i_DRP]
-        HI_vel_err = DRP_table['WF50_err'][i_DRP]
-
-        if HI_vel < 0:
-            HI_vel = None
-            HI_vel_err = None
-
-        if HI_vel_req == True:
-
-            if HI_vel == None:
-                can_fit = False
-                print('Galaxy does not have HI velocity data.', flush=True)
-        ########################################################################
-
-
         #if map_smoothness <= map_smoothness_max or map_smoothness_5sigma <= map_smoothness_max:
         if can_fit:
             ####################################################################
@@ -237,9 +243,9 @@ def process_1_galaxy(job_queue, i,
             # If the smoothness score exceeds the max, use 5sigma mask as the 
             # minimum mask
             #-------------------------------------------------------------------
-            mask_5sigma = False
-            if map_smoothness > map_smoothness_max:
-                mask_5sigma = True
+            #mask_5sigma = False
+            #if map_smoothness > map_smoothness_max:
+            #    mask_5sigma = True
             ####################################################################
             
             
@@ -290,7 +296,7 @@ def process_1_galaxy(job_queue, i,
                                                                            HI_vel,
                                                                            HI_vel_err,
                                                                            R90, 
-                                                                           mask_5sigma,
+                                                                           #mask_5sigma,
                                                                            gal_ID, 
                                                                            vel_function,
                                                                            V_type='Ha', 
@@ -464,8 +470,8 @@ VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 
 #DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 #DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_errs.fits'
-#DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_err_morph_v2.fits'
-DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel.fits'
+DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_err_morph_v2.fits'
+#DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel.fits'
 
 
 #NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
@@ -521,11 +527,13 @@ DRP_table = add_columns(DRP_table, 'tail')
 ################################################################################
 
 
+
 ################################################################################
 # Create a list of galaxies that have already been processed
 #-------------------------------------------------------------------------------
 pf = open(PROCESSED_GALAXIES, 'r')
 processed = pf.readline().split(',')
+
 
 
 ################################################################################
@@ -659,7 +667,7 @@ while num_processed < num_tasks:
     num_processed += 1
 
     if num_processed % 5 == 0:
-        DRP_table.write('/scratch/nravi3/H_alpha_HIvel' + '.fits', 
+        DRP_table.write('/scratch/nravi3/H_alpha_HIvel_5sigma' + '.fits', 
                 format='fits', overwrite=True)
         print('Table written ', num_processed, flush=True)
     
@@ -682,7 +690,7 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('/scratch/nravi3/H_alpha_HIvel' + '.fits', 
+DRP_table.write('/scratch/nravi3/H_alpha_HIvel_5sigma' + '.fits', 
                 format='fits', overwrite=True)
 ################################################################################
 

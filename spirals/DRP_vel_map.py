@@ -26,7 +26,8 @@ import os.path
 from astropy.io import fits
 from astropy.table import Table, Column
 
-from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+#from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+from dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
 
 from DRP_vel_map_functions import find_vel_map, \
                                   mass_newton, \
@@ -83,7 +84,7 @@ def fit_vel_map(vel,
                 HI_vel,
                 HI_vel_err,
                 R90,
-                mask_5sigma,
+                #mask_5sigma,
                 gal_ID,
                 fit_function,
                 V_type='Ha',
@@ -184,10 +185,10 @@ def fit_vel_map(vel,
 
 
     ############################################################################
-    # Change default mask to 5 sigma mask if necessary
+    # Change default mask to 5 sigma mask
     #---------------------------------------------------------------------------
-    if mask_5sigma:
-        vel_mask = np.logical_or(vel_mask > 0, np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5)
+    #if mask_5sigma:
+    vel_mask = np.logical_or(vel_mask > 0, np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 5)
 
 
 
@@ -336,7 +337,7 @@ def fit_vel_map(vel,
 
     ############################################################################
     # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it
-    # always points through the positive velocity semi-major axis.
+    # always points through the positive velocity semi-major axis.-
     #---------------------------------------------------------------------------
     phi_guess = find_phi(center_guess, phi_EofN_deg, mvel)
 
@@ -453,7 +454,7 @@ def fit_vel_map(vel,
                                                                     HI_vel,
                                                                     HI_vel_err,
                                                                     R90,
-                                                                    mask_5sigma,
+                                                                    #mask_5sigma,
                                                                     i_center_guess,
                                                                     j_center_guess,
                                                                     sys_vel_guess,
@@ -690,6 +691,7 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     if fit_function == 'BB':
         v = rot_fit_BB(r_kpc, params)
 
+        
         try:
 
             param_samples = np.random.multivariate_normal(mean=params,
@@ -699,26 +701,34 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
             for i in range(N_samples):
 
                 if np.all(param_samples[i] > 0):
-                    v_samples[i] = rot_fit_BB(r_kpc, param_samples[i])
+                    
+                    v_samples[i] = rot_fit_BB(r_kpc, 
+                                            [param_samples[i][0], 
+                                            param_samples[i][1],
+                                            param_samples[i][2]])
+                    '''
+                    v_samples[i] = rot_fit_BB(r_kpc, 
+                                              param_samples[i])
+                    '''
 
             v_err = np.std(v_samples[np.isfinite(v_samples)])
 
         except np.linalg.LinAlgError:
             v_err = np.nan
 
-    elif fit_function == 'tanh':
-        v = rot_fit_tanh(r_kpc, params)
+    #elif fit_function == 'tanh':
+    #    v = rot_fit_tanh(r_kpc, params)
 
-        param_samples = np.random.multivariate_normal(mean=params,
-                                                      cov=0.5*hess[-2:,-2:],
-                                                      size=N_samples)
+    #    param_samples = np.random.multivariate_normal(mean=params,
+    #                                                  cov=0.5*hess[-2:,-2:],
+    #                                                  size=N_samples)
 
-        for i in range(N_samples):
+    #    for i in range(N_samples):
 
-            if np.all(param_samples[i] > 0):
-                v_samples[i] = rot_fit_tanh(r_kpc, param_samples[i])
-
-        v_err = np.std(v_samples[np.isfinite(v_samples)])
+    #        if np.all(param_samples[i] > 0):
+    #            v_samples[i] = rot_fit_tanh(r_kpc, param_samples[i])
+    #
+    #    v_err = np.std(v_samples[np.isfinite(v_samples)])
 
     elif fit_function == 'tail':
         v = rot_fit_tail(r_kpc, params)
@@ -730,8 +740,16 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
                                                       size=N_samples)
             for i in range(N_samples):
                 if np.all(param_samples[i] > 0):
-                    v_samples[i] = rot_fit_tail(r_kpc, param_samples[i])
-        
+                    
+                    v_samples[i] = rot_fit_tail(r_kpc,
+                                                [param_samples[i][0], 
+                                                 param_samples[i][1],
+                                                 param_samples[i][2],
+                                                 param_samples[i][3]])
+                    '''
+                    v_samples[i] = rot_fit_tail(r_kpc,
+                                                param_samples[i])
+                    '''
             v_err = np.std(v_samples[np.isfinite(v_samples)])
         
         except np.linalg.LinAlgError:

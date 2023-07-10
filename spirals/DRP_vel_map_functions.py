@@ -8,7 +8,8 @@ from skimage.filters import gaussian
 
 from scipy.optimize import minimize
 
-from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+#from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+from dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
 
 import matplotlib.pyplot as plt
 
@@ -35,7 +36,8 @@ MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radia
 # Fitting function options
 #-------------------------------------------------------------------------------
 fit_options = {'BB': rot_fit_BB,
-               'tanh': rot_fit_tanh
+               #'tanh': rot_fit_tanh
+               'tail': rot_fit_tail
               }
 ################################################################################
 
@@ -66,19 +68,10 @@ def build_map_mask(gal_ID,
 
     fit_flag : float
         Identifies the fit method used to model the velocity map.
-        - 1 : original (only Ha_vel_mask)
-        - 2 : residual (only Ha_vel_mask)
-        - 3 : continuous (Ha_vel_mask + spaxels which are separated from others)
-        - 4 : non-AGN (Ha_vel_mask + spaxels with high Ha velocity dispersion)
-        - 5 : S/N > 5 (Ha_vel_mask + spaxels with S/N < 5)
-
-    Fit flag system:
-        # default mask: 0
-        # continuous mask: 1
-        # S/N mask: S/N_cut/10
-        # residual mask: 2
-        # non-AGN mask: 3
-        # any mask with initial 5 sigma mask for smoothness score: fit flag+0.5
+        0.5 : default mask (Ha_vel_mask + S/N < 5)
+        1.5 : continuous mask (default mask + spaxels which are separated from others)
+        2.5 : residual mask (default mask)
+        3.5 : non-AGN mask (default mask + spaxels with high Ha velocity dispersion)
 
     mHa_vel : numpy ndarray of shape (n,n)
         masked H-alpha velocity map
@@ -102,34 +95,37 @@ def build_map_mask(gal_ID,
 
 
     ############################################################################
-    # By default, the mask will just be the Ha_vel_mask
+    # By default, the mask will just be the Ha_vel_mask with S/N cut
     #---------------------------------------------------------------------------
     bitmask = mHa_vel.mask
     ############################################################################
 
 
-    if fit_flag == 1:
+    if fit_flag == 1.5:
         ########################################################################
         # Mask spaxels that have velocities which are not continuous
         #-----------------------------------------------------------------------
         _,_, bitmask = find_vel_bounds(mHa_vel, gal_ID)
         ########################################################################
 
-    elif fit_flag == 3:
+    elif fit_flag == 3.5:
         ########################################################################
         # Mask spaxels that have large velocity widths
         #-----------------------------------------------------------------------
         _, bitmask = find_sigma_bounds(mHa_sigma, gal_ID)
         ########################################################################
 
+    '''
     elif fit_flag == 0.5:
         ########################################################################
         # Mask spaxels that have S/N smaller than fit_flag
         #-----------------------------------------------------------------------
         SN = ma.abs(mHa_flux*ma.sqrt(mHa_flux_ivar))
 
-        bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < fit_flag*10)
+        #bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < fit_flag*10)
+        bitmask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < 5)
         ########################################################################
+    '''
 
 
     ############################################################################
@@ -572,8 +568,8 @@ def model_vel_map(params, map_shape, scale, fit_function):
             # Rotational velocity at current point
             if fit_function == 'BB':
                 v[i,j] = rot_fit_BB(r*scale, [v_max, r_turn, alpha])
-            elif fit_function == 'tanh':
-                v[i,j] = rot_fit_tanh(r*scale, [v_max, r_turn])
+            #elif fit_function == 'tanh':
+            #    v[i,j] = rot_fit_tanh(r*scale, [v_max, r_turn])
             elif fit_function == 'tail':
                 v[i,j] = rot_fit_tail(r*scale, [v_max, r_turn, alpha, b])
             else:
@@ -719,12 +715,12 @@ def calculate_chi2_flat(params,
         
         if fit_function == 'tail':
 
-            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:])
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())
 
             chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
         
         else:
-            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:])
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())
 
             chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
 
@@ -818,14 +814,14 @@ def calculate_residual_flat(params,
 
         if fit_function == 'tail':
 
-            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:])
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())
             residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
             residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
 
 
         else:
 
-            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:])
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())
             residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
             residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
 
@@ -1114,7 +1110,7 @@ def find_vel_map(gal_ID,
                  HI_vel,
                  HI_vel_err,
                  R90,
-                 mask_5sigma,
+                 #mask_5sigma,
                  i_center_guess,
                  j_center_guess,
                  sys_vel_guess,
@@ -1499,7 +1495,7 @@ def find_vel_map(gal_ID,
             result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x) + 1)
         ########################################################################
 
-
+        '''
         ########################################################################
         # Fit velocity field using only spaxels with S/N > 5
         #-----------------------------------------------------------------------
@@ -1516,9 +1512,9 @@ def find_vel_map(gal_ID,
         if SN_cut >= 10:
             print('Fit flag error: S/N >= 10')
         '''
-        SN_cut = 0.05*np.max(SN)
-        if SN_cut > 1:
-            SN_cut = 1
+        #SN_cut = 0.05*np.max(SN)
+        #if SN_cut > 1:
+        #    SN_cut = 1
         '''
 
         modified_mask = np.logical_or(mHa_vel.mask + mHa_flux.mask, SN < SN_cut)
@@ -1549,7 +1545,7 @@ def find_vel_map(gal_ID,
             else:
                 result_SN.fun /= (len(modified_mHa_vel_flat) - len(result_SN.x) + 1)
         ########################################################################
-
+        '''
 
         ########################################################################
         # Fit velocity map using only spaxels with small line widths
@@ -1603,20 +1599,21 @@ def find_vel_map(gal_ID,
         ########################################################################
         # Choose the best fit (the one with the lowest chi2)
         #-----------------------------------------------------------------------
-        fit_chi2 = np.inf*np.ones(5)
-
+        #fit_chi2 = np.inf*np.ones(5)
+        fit_chi2 = np.inf*np.ones(4)
+        
         alpha_max = alpha_high - 5
 
         if result_all.x[7] < alpha_max:
             fit_chi2[0] = result_all.fun
         if result_continuous.x[7] < alpha_max:
             fit_chi2[1] = result_continuous.fun
-        if result_SN.x[7] < alpha_max:
-            fit_chi2[2] = result_SN.fun
+        #if result_SN.x[7] < alpha_max:
+        #    fit_chi2[2] = result_SN.fun
         if result_residual.x[7] < alpha_max:
-            fit_chi2[3] = result_residual.fun
+            fit_chi2[2] = result_residual.fun
         if result_nonAGN.x[7] < alpha_max:
-            fit_chi2[4] = result_nonAGN.fun
+            fit_chi2[3] = result_nonAGN.fun
 
         print(fit_chi2)
 
@@ -1629,32 +1626,30 @@ def find_vel_map(gal_ID,
 
         ########################################################################
         # Fit flag system:
-        # default mask: 0
-        # continuous mask: 1
-        # S/N mask: S/N_cut/10
-        # residual mask: 2
-        # non-AGN mask: 3
-        # any mask with initial 5 sigma mask for smoothness score: fit flag+0.5
+        # default mask = S/N > 5 mask: 0.5
+        # continuous mask: 1.5
+        # residual mask: 2.5
+        # non-AGN mask: 3.5
         #-----------------------------------------------------------------------
 
         if min_pos == 0:
-            fit_flag = 0
+            fit_flag = 0.5
             result = result_all
         elif min_pos == 1:
-            fit_flag = 1
+            fit_flag = 1.5
             result = result_continuous
+        #elif min_pos == 2:
+        #    fit_flag = SN_cut/10
+        #    result = result_SN
         elif min_pos == 2:
-            fit_flag = SN_cut/10
-            result = result_SN
-        elif min_pos == 3:
-            fit_flag = 2
+            fit_flag = 2.5
             result = result_residual
         else:
-            fit_flag = 3
+            fit_flag = 3.5
             result = result_nonAGN
 
-        if mask_5sigma and fit_flag != 0.5:
-            fit_flag = fit_flag + 0.5
+        #if mask_5sigma and fit_flag != 0.5:
+        #    fit_flag = fit_flag + 0.5
 
 
         '''

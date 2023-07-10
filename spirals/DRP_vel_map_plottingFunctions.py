@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 
 from DRP_vel_map_functions import deproject_spaxel
 
-from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+#from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+from dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
 
 from DRP_rotation_curve_plottingFunctions import plot_rband_image, plot_vel
 
@@ -253,19 +254,39 @@ def plot_rot_curve(mvel,
     # Calculate functional form of rotation curve
     #---------------------------------------------------------------------------
     r = np.linspace(ma.min(rm_deproj), ma.max(rm_deproj), 100)
+    v = np.zeros(len(r))
+
 
     if fit_function == 'BB':
+        
+        for i in range(0, len(r)):
+            v[i] = rot_fit_BB(r[i], [best_fit_values['v_max'],
+                           best_fit_values['r_turn'],
+                           best_fit_values['alpha']])
+        '''
+
         v = rot_fit_BB(r, [best_fit_values['v_max'],
                            best_fit_values['r_turn'],
                            best_fit_values['alpha']])
-    elif fit_function == 'tanh':
-        v = rot_fit_tanh(r, [best_fit_values['v_max'],
-                             best_fit_values['r_turn']])
+        '''
+    #elif fit_function == 'tanh':
+    #    v = rot_fit_tanh(r, [best_fit_values['v_max'],
+    #                         best_fit_values['r_turn']])
+
+
     elif fit_function == 'tail':
+        
+        for i in range(0, len(r)):
+            v[i] = rot_fit_tail(r[i], [best_fit_values['v_max'],
+                           best_fit_values['r_turn'],
+                           best_fit_values['alpha'],
+                           best_fit_values['b']])
+        ''' 
         v = rot_fit_tail(r, [best_fit_values['v_max'],
                            best_fit_values['r_turn'],
                            best_fit_values['alpha'],
-                           best_fit_values['b']])                       
+                           best_fit_values['b']])  
+        '''                     
                 
     else:
         print('Fit function not known.  Please update plot_rot_curve function.')
@@ -290,42 +311,69 @@ def plot_rot_curve(mvel,
     N_samples = 10000
 
     if fit_function=='BB':
-        random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
+
+        try:
+            random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
                                                         best_fit_values['r_turn'],
                                                         best_fit_values['alpha']],
-                                                  cov=hess_inv[-3:,-3:],
-                                                  size=N_samples)
+                                                        cov=hess_inv[-3:,-3:],
+                                                        size=N_samples)
+        except:
+            print('Could not produce samples for plot')
+            return ma.max(ma.abs(rm_deproj))
 
     # Remove bad samples (those with negative values for any of the parameters)
         is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0)
         good_randoms = random_sample[is_good_random, :]
+    
+        y_sample = np.zeros((len(r), len(good_randoms[:,0])))
 
         for i in range(len(r)):
+            
+            for j in range(len(good_randoms[:,0])):
         # Calculate values of curve at this location
-            y_sample = rot_fit_BB(r[i], [good_randoms[:,0],
-                                     good_randoms[:,1],
-                                     good_randoms[:,2]])
-
+                y_sample[i][j] = rot_fit_BB(r[i], [good_randoms[:,0][j],
+                                         good_randoms[:,1][j],
+                                         good_randoms[:,2][j]])
+            '''
+            y_sample[i] = rot_fit_BB(r[i], [good_randoms[:,0],
+                                         good_randoms[:,1],
+                                         good_randoms[:,2]])
+            '''
 
     if fit_function=='tail':
-        random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
-                                                        best_fit_values['r_turn'],
-                                                        best_fit_values['alpha'],
-                                                        best_fit_values['b']],
-                                                  cov=hess_inv[-4:,-4:],
-                                                  size=N_samples)  
+        try:
+            random_sample = np.random.multivariate_normal(mean=[best_fit_values['v_max'],
+                                                            best_fit_values['r_turn'],
+                                                            best_fit_values['alpha'],
+                                                            best_fit_values['b']],
+                                                            cov=hess_inv[-4:,-4:],
+                                                            size=N_samples)  
+        except:
+            print('Could not produce samples for plot')
+            return ma.max(ma.abs(rm_deproj))
+                            
         is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0) & (random_sample[:,3] > 0)
         good_randoms = random_sample[is_good_random, :]
 
+        y_sample = np.zeros((len(r), len(good_randoms[:,0])))
+
         for i in range(len(r)):
-        # Calculate values of curve at this location
-            y_sample = rot_fit_tail(r[i], [good_randoms[:,0],
-                                     good_randoms[:,1],
-                                     good_randoms[:,2],
-                                     good_randoms[:,3]])
+            
+            for j in range(len(good_randoms[:,0])):
+                y_sample[i][j] = rot_fit_tail(r[i], [good_randoms[:,0][j],
+                                         good_randoms[:,1][j],
+                                         good_randoms[:,2][j],
+                                         good_randoms[:,3][j]])
+            '''
+            y_sample[i] = rot_fit_tail(r[i], [good_randoms[:,0],
+                                         good_randoms[:,1],
+                                         good_randoms[:,2],
+                                         good_randoms[:,3]])
+            '''
 
 
-    stdevs = np.std(y_sample, axis=0)                                              
+    stdevs = np.nanstd(y_sample, axis=1)                                              
 
     ############################################################################
 

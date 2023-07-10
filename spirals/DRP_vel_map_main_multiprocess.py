@@ -321,7 +321,11 @@ def process_1_galaxy(job_queue, i,
                 ################################################################
                 # Estimate the total mass within the galaxy
                 #---------------------------------------------------------------
-                
+                M_R90 = None
+                M_R90_err = None
+                M = None
+                M_err = None
+                fit_type = None
                 
                 if param_outputs is not None:
                     if vel_function == 'BB':

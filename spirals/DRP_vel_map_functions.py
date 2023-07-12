@@ -1336,9 +1336,9 @@ def find_vel_map(gal_ID,
         alpha_bounds = (alpha_low, alpha_high)
 
         # b
-        b_guess = 0.
-        b_low = -0.1
-        b_high = 0.1
+        b_guess = 0.01
+        b_low = -0.08
+        b_high = 0.09
         b_bounds = (b_low, b_high)
 
         # Parameter guesses

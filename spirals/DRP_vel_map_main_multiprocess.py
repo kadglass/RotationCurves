@@ -105,6 +105,7 @@ def process_1_galaxy(job_queue, i,
         NSA_ID = DRP_table['nsa_nsaid'][i_DRP]
         ########################################################################
 
+        '''
         ########################################################################
         # Check if galaxy has already been processed
         #-----------------------------------------------------------------------
@@ -115,7 +116,7 @@ def process_1_galaxy(job_queue, i,
             return_queue.put(output_tuple)
             
             continue
-
+        '''
 
 
         ########################################################################
@@ -128,6 +129,7 @@ def process_1_galaxy(job_queue, i,
             HI_vel = None
             HI_vel_err = None
 
+        '''
         if HI_vel_req == True:
 
             if HI_vel == None:
@@ -137,6 +139,17 @@ def process_1_galaxy(job_queue, i,
                 return_queue.put(output_tuple)
             
                 continue
+
+        '''
+        '''
+
+        if HI_vel is not None:
+            print(gal_ID, ' has already been processed, has HI vel', flush=True)
+            output_tuple = (None, None, None, None, None, None, None, None, None, None)
+            return_queue.put(output_tuple)
+            
+            continue
+        '''
         ########################################################################
         
         ########################################################################
@@ -268,6 +281,7 @@ def process_1_galaxy(job_queue, i,
 
                 R90 = NSA_table['ELPETRO_TH90_R'][i_NSA]
 
+                '''
                 ################################################################
                 # Set fit function using axis ratio
                 #---------------------------------------------------------------
@@ -277,6 +291,10 @@ def process_1_galaxy(job_queue, i,
                     vel_function = 'BB'
                 else:
                     vel_function = 'tail'
+                
+                '''
+
+                vel_function = 'BB'
                 
                 try:
                     param_outputs, masked_gal_flag, fit_flag = fit_vel_map(maps['Ha_vel'],
@@ -476,12 +494,12 @@ VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 #DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_errs.fits'
 DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_err_morph_v2.fits'
 #DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel.fits'
-
+#DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel_5sigma_v2.fits'
 
 #NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
 NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
 
-PROCESSED_GALAXIES = '/scratch/nravi3/processed.txt'
+#PROCESSED_GALAXIES = '/scratch/nravi3/processed.txt'
 ################################################################################
 
 
@@ -535,8 +553,8 @@ DRP_table = add_columns(DRP_table, 'tail')
 ################################################################################
 # Create a list of galaxies that have already been processed
 #-------------------------------------------------------------------------------
-pf = open(PROCESSED_GALAXIES, 'r')
-processed = pf.readline().split(',')
+#pf = open(PROCESSED_GALAXIES, 'r')
+#processed = pf.readline().split(',')
 
 
 
@@ -582,7 +600,7 @@ print('Starting processes', datetime.datetime.now(), flush=True)
 
 processes = []
 
-for i in range(10):
+for i in range(12):
 
     p = Process(target=process_1_galaxy, args=(job_queue, i, 
                                                return_queue, 
@@ -671,7 +689,7 @@ while num_processed < num_tasks:
     num_processed += 1
 
     if num_processed % 5 == 0:
-        DRP_table.write('/scratch/nravi3/H_alpha_HIvel_5sigma' + '.fits', 
+        DRP_table.write('/scratch/nravi3/H_alpha_HIvel_BB' + '.fits', 
                 format='fits', overwrite=True)
         print('Table written ', num_processed, flush=True)
     
@@ -694,7 +712,7 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('/scratch/nravi3/H_alpha_HIvel_5sigma' + '.fits', 
+DRP_table.write('/scratch/nravi3/H_alpha_HIvel_BB' + '.fits', 
                 format='fits', overwrite=True)
 ################################################################################
 

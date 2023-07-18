@@ -45,6 +45,7 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
 
     maps : dictionary
         Dictionary of maps.  includes:
+          - Ha_flux, _ivar: H-alpha flux [1e-17 erg/s/cm^2/ang/spaxel]
           - Hb_flux, _ivar: H-beta flux [1e-17 erg/s/cm^2/ang/spaxel]
           - OII_flux, _ivar: [OII] 3728 flux [1e-17 erg/s/cm^2/ang/spaxel]
           - OII2_flux, _ivar: [OII] 3729 flux [1e-17 erg/s/cm^2/ang/spaxel]
@@ -69,6 +70,12 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
     cube = fits.open(file_name)
 
     maps = {}
+
+    # H-alpha maps
+
+    maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[23]
+    maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[23]
+    maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[23]
 
     # H-beta maps
 
@@ -160,22 +167,54 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
 ################################################################################
 
 
-def calc_metallicity():
+def calc_metallicity(R2, N2, R3):
+
+    '''
+    Takes R2, N2, and R3 ratio maps and calculates a metallicity map
 
 
-
-    # upper branch
-    if ma.log10(N2) >= -0.6:
-        z = 8.589 + 0.022*ma.log10(R3/R2) + 0.399*ma.log10(N2) \ 
-            + (-0.137 + 0.164*ma.log10(R3/R2) + 0.589*ma.log10(N2))*ma.log10(N2)
+    PARAMETERS
+    ==========
     
-    # lower branch
-    else:
-        z = 7.932 + 0.944*ma.log10(R3/R2) + 0.695*ma.log10(N2) \
-            + (0.970 - 0.291*ma.log10(R3/R2) - 0.019*ma.log10(N2))*ma.log(R2)
+    R2 : array
+        [OII] doublet / H beta flux mao
+    
+    N2 : array
+        [NII] doublet / H beta flux map
+
+    R3 : array
+        [OIII] doublet / H beta flux map
+
+    RETURNS
+    =======
+
+    z : array
+        metallicity map
+
+    '''
+
+    
+    z = np.ones((len(N2),len(N2)[0]))*np.nan
+
+    for i in range(0, len(z)):
+        for j in range(0, len(z)[0]):
+
+        # upper branch
+        if ma.log10(N2[i][j]) >= -0.6:
+            z[i][j] = 8.589 + 0.022*ma.log10(R3[i][j]/R2[i][j]) + 0.399*ma.log10(N2[i][j]) \ 
+                + (-0.137 + 0.164*ma.log10(R3[i][j]/R2[i][j]) + 0.589*ma.log10(N2[i][j]))*ma.log10(N2[i][j])
+    
+        # lower branch
+        elif ma.log10(N2[i][j]) < -0.6:
+            z[i][j] = 7.932 + 0.944*ma.log10(R3[i][j]/R2[i][j]) + 0.695*ma.log10(N2[i][j]) \
+                + (0.970 - 0.291*ma.log10(R3[i][j]/R2[i][j]) - 0.019*ma.log10(N2[i][j]))*ma.log(R2[i][j])
 
     return z
 
+
+################################################################################
+################################################################################
+################################################################################
 
 
 def mask_AGN(OIII2, Hb, Ha, NII2):
@@ -212,7 +251,44 @@ def mask_AGN(OIII2, Hb, Ha, NII2):
 
     '''
 
-    for spaxel in flux_map:
 
-        #if ma.log10(OIII2 / Hb) > 0.61 / (ma.log(NII2/Halpha) - 0.05) +1.3
-        # mask spaxel
+
+    mask = ma.log10(OIII2/Hb) > 0.61 / (ma.log10(NII2/Ha) - 0.05) + 1.3
+
+    return mask
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def dustCorrection(maps):
+
+    '''
+
+    Takes flux map and applies default mask and dust correction
+
+    PARAMETERS
+    ==========
+
+    map : array
+        flux map
+
+    RETURNS
+    =======
+
+    corrected_map : array
+        dust corrected flux map and inverse variance map
+
+    '''
+
+    rc = pn.RedCorr(law='CCM89')
+
+    H_ratio = maps['mHa'] / maps['mHb']
+
+    rc.setCorr(H_ratio / 2.86, 6563, 4861)  # is H-a 6563 or 6564
+
+
+
+
+

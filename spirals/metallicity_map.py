@@ -19,6 +19,7 @@ import astropy.constants as const
 import math
 
 import pyneb as pn
+import os
 
 
 ################################################################################
@@ -47,7 +48,7 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
         Dictionary of maps.  includes:
           - Ha_flux, _ivar: H-alpha flux [1e-17 erg/s/cm^2/ang/spaxel]
           - Hb_flux, _ivar: H-beta flux [1e-17 erg/s/cm^2/ang/spaxel]
-          - OII_flux, _ivar: [OII] 3728 flux [1e-17 erg/s/cm^2/ang/spaxel]
+          - OII_flux, _ivar: [OII] 3727 flux [1e-17 erg/s/cm^2/ang/spaxel]
           - OII2_flux, _ivar: [OII] 3729 flux [1e-17 erg/s/cm^2/ang/spaxel]
           - OIII_flux, _ivar: [OIII] 4960 flux [1e-17 erg/s/cm^2/ang/spaxel]
           - OIII2_flux, _ivar: [OIII] 5008 flux [1e-17 erg/s/cm^2/ang/spaxel]
@@ -119,48 +120,13 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
     maps['NII2_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[24]
     maps['NII2_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[24]
 
+    wavelengths=np.array([6564, 4862, 3727, 3729, 4960, 5008, 6549, 6585])
 
-    '''
-    # Observed emission lines
-    HbF_map = maps["emline_gflux_hb_4862"]
-    OII_map = maps["emline_gflux_oii_3727"]
-    OIII_map = maps["emline_gflux_oiii_5008"]
-    OIII2_map = maps["emline_gflux_oiii_4960"]
-    NII_map = maps["emline_gflux_nii_6585"]
-    NII2_map = maps["emline_gflux_nii_6549"]
-    HaF_map = maps["emline_gflux_ha_6564"]
-    OII2_map = maps["emline_gflux_oii_3729"]
-    observed = [HbF_map,OII_map,OII2_map,OIII_map,OIII2_map,NII_map,NII2_map,HaF_map,]# Array of observed emission lines
-    names = ['HbF','OII','OII2','OIII','OIII2','NII','NII2','HaF']# Array of names of observed emission lines
-    
-    # Array of masked flux arrays for observed emission lines
-    observed_m = []
-    for line in observed:
-        observed_m.append(line.masked)
-    
-    # Array of masked inverse variance arrays for observed emission lines
-    observed_ivar_m = []
-    for line in observed:
-        observed_ivar_m.append(ma.array(line.ivar,mask=line.mask))
-    '''
 
-    '''
-    maps = {
-        names[0]: {'flux': observed_m[0], 'ivar': observed_ivar_m[0]},
-        names[1]: {'flux': observed_m[1], 'ivar': observed_ivar_m[1]},
-        names[2]: {'flux': observed_m[2], 'ivar': observed_ivar_m[2]},
-        names[3]: {'flux': observed_m[3], 'ivar': observed_ivar_m[3]},
-        names[4]: {'flux': observed_m[4], 'ivar': observed_ivar_m[4]},
-        names[5]: {'flux': observed_m[5], 'ivar': observed_ivar_m[5]},
-        names[6]: {'flux': observed_m[6], 'ivar': observed_ivar_m[6]},
-        names[7]: {'flux': observed_m[7], 'ivar': observed_ivar_m[7]},
-        'wavelength': [4862,3727,5008,4960,6585,6549,6564,3729]# Wavelength of each line
-    }
-    '''
 
     cube.close()
 
-    return maps
+    return maps, wavelengths
 
 ################################################################################
 ################################################################################
@@ -194,20 +160,20 @@ def calc_metallicity(R2, N2, R3):
     '''
 
     
-    z = np.ones((len(N2),len(N2)[0]))*np.nan
+    z = np.ones((len(N2),len(N2[0])))*np.nan
 
     for i in range(0, len(z)):
-        for j in range(0, len(z)[0]):
+        for j in range(0, len(z[0])):
 
         # upper branch
-        if ma.log10(N2[i][j]) >= -0.6:
-            z[i][j] = 8.589 + 0.022*ma.log10(R3[i][j]/R2[i][j]) + 0.399*ma.log10(N2[i][j]) \ 
-                + (-0.137 + 0.164*ma.log10(R3[i][j]/R2[i][j]) + 0.589*ma.log10(N2[i][j]))*ma.log10(N2[i][j])
+            if ma.log10(N2[i][j]) >= -0.6:
+                z[i][j] = 8.589 + 0.022*ma.log10(R3[i][j]/R2[i][j]) + 0.399*ma.log10(N2[i][j]) \
+                    + (-0.137 + 0.164*ma.log10(R3[i][j]/R2[i][j]) + 0.589*ma.log10(N2[i][j]))*ma.log10(N2[i][j])
     
         # lower branch
-        elif ma.log10(N2[i][j]) < -0.6:
-            z[i][j] = 7.932 + 0.944*ma.log10(R3[i][j]/R2[i][j]) + 0.695*ma.log10(N2[i][j]) \
-                + (0.970 - 0.291*ma.log10(R3[i][j]/R2[i][j]) - 0.019*ma.log10(N2[i][j]))*ma.log(R2[i][j])
+            elif ma.log10(N2[i][j]) < -0.6:
+                z[i][j] = 7.932 + 0.944*ma.log10(R3[i][j]/R2[i][j]) + 0.695*ma.log10(N2[i][j]) \
+                    + (0.970 - 0.291*ma.log10(R3[i][j]/R2[i][j]) - 0.019*ma.log10(N2[i][j]))*ma.log(R2[i][j])
 
     return z
 
@@ -217,7 +183,7 @@ def calc_metallicity(R2, N2, R3):
 ################################################################################
 
 
-def mask_AGN(OIII2, Hb, Ha, NII2):
+def mask_AGN(dmaps):
     
     '''
 
@@ -246,49 +212,203 @@ def mask_AGN(OIII2, Hb, Ha, NII2):
     RETURNS
     =======
 
-    mask : array
-        AGN spaxel mask
+    maps : array
+        AGN spaxel mask applied to maps
 
     '''
 
+    OIII2 = dmaps['dmOIII2_flux']
+    Hb = dmaps['dmHb_flux']
+    NII2 = dmaps['dmNII2_flux']
+    Ha = dmaps['dmHa_flux']
+
+    AGN_mask = ma.log10(OIII2/Hb) > 0.61 / (ma.log10(NII2/Ha) - 0.05) + 1.3
+
+    #for m in enum
 
 
-    mask = ma.log10(OIII2/Hb) > 0.61 / (ma.log10(NII2/Ha) - 0.05) + 1.3
+    for m in dmaps:
+        dmaps[m] = ma.array(dmaps[m], mask=dmaps[m].mask + AGN_mask)
 
-    return mask
+    return dmaps
 
 ################################################################################
 ################################################################################
 ################################################################################
 
 
-def dustCorrection(maps):
+def dust_correction(maps, wavelengths, corr_law='CCM89'):
 
     '''
 
-    Takes flux map and applies default mask and dust correction
+    Takes flux maps and applies default mask and dust correction
 
     PARAMETERS
     ==========
 
-    map : array
-        flux map
+    maps : array
+        flux maps
+
+    wavelengths : array
+        list of wavelengths
+    
+    corr_law : string
+        correction law to be used, CCM89 by default
 
     RETURNS
     =======
 
-    corrected_map : array
-        dust corrected flux map and inverse variance map
+    maps : array
+        maps dictionary with new dust corrected maps
 
     '''
 
-    rc = pn.RedCorr(law='CCM89')
+    # set correction law
 
-    H_ratio = maps['mHa'] / maps['mHb']
+    rc = pn.RedCorr(law=corr_law)
 
-    rc.setCorr(H_ratio / 2.86, 6563, 4861)  # is H-a 6563 or 6564
+    # create masked flux and ivar arrays. since Ha, Hb are used for correction, 
+    # minimum mask is Ha + Hb mask
+
+    maps['mHa_flux'] = ma.array(maps['Ha_flux'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mHa_flux_ivar'] = ma.array(maps['Ha_flux_ivar'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    maps['mHb_flux'] = ma.array(maps['Hb_flux'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mHb_flux_ivar'] = ma.array(maps['Hb_flux_ivar'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    maps['mOII_flux'] = ma.array(maps['OII_flux'], mask=maps['OII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOII_flux_ivar'] = ma.array(maps['OII_flux_ivar'], mask=maps['OII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'] )
+
+    maps['mOII2_flux'] = ma.array(maps['OII2_flux'], mask=maps['OII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOII2_flux_ivar'] = ma.array(maps['OII2_flux_ivar'], mask=maps['OII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    maps['mOIII_flux'] = ma.array(maps['OIII_flux'], mask=maps['OIII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOIII_flux_ivar'] = ma.array(maps['OIII_flux_ivar'], mask=maps['OIII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    maps['mOIII2_flux'] = ma.array(maps['OIII2_flux'], mask=maps['OIII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOIII2_flux_ivar'] = ma.array(maps['OIII2_flux_ivar'], mask=maps['OIII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    maps['mNII_flux'] = ma.array(maps['NII_flux'], mask=maps['NII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mNII_flux_ivar'] = ma.array(maps['NII_flux_ivar'], mask=maps['NII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    maps['mNII2_flux'] = ma.array(maps['NII2_flux'], mask=maps['NII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mNII2_flux_ivar'] = ma.array(maps['NII2_flux_ivar'], mask=maps['NII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+
+    # set the correction coefficient based on H-alpha and H-beta maps
+
+    H_ratio = ma.array(maps['mHa_flux'] / maps['mHb_flux'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'] + (maps['mHa_flux'] / maps['mHb_flux'] ==0))
+
+    H_ratio[H_ratio.mask] = np.nan
+
+    rc.setCorr(H_ratio / 2.86, 6564, 4862)
+
+    
+
+    # deredden
+
+    dmaps = {}
+
+    #corr = np.ones(len(wavelengths))
+    #for i in range(0, len(wavelengths)):
+    #    corr[i] = rc.getCorrHb(wavelengths[i])
+
+    wavelengths=np.array([6564, 4862, 3727, 3729, 4960, 5008, 6549, 6585])
+
+    corr = rc.getCorrHb(wavelengths)
+
+
+
+    dmaps['dmHa_flux'] = maps['mHa_flux'] * corr[0]
+    dmaps['dmHa_flux_ivar'] = maps['mHa_flux_ivar'] / corr[0]**2
+
+    dmaps['dmHb_flux'] = maps['mHb_flux'] * corr[1]
+    dmaps['dmHb_flux_ivar'] = maps['mHb_flux_ivar'] / corr[1]**2
+
+    dmaps['dmOII_flux'] = maps['mOII_flux'] * corr[2]
+    dmaps['dmOII_flux_ivar'] = maps['mOII_flux_ivar'] / corr[2]**2
+
+    dmaps['dmOII2_flux'] = maps['mOII2_flux'] * corr[3]
+    dmaps['dmOII2_flux_ivar'] = maps['mOII2_flux_ivar'] / corr[3]**2
+
+    dmaps['dmOIII_flux'] = maps['mOIII_flux'] * corr[4]
+    dmaps['dmOIII_flux_ivar'] = maps['mOIII_flux_ivar'] / corr[4]**2
+
+    dmaps['dmOIII2_flux'] = maps['mOIII_flux'] * corr[5]
+    dmaps['dmOIII2_flux_ivar'] = maps['mOIII_flux_ivar'] / corr[5]**2
+
+    dmaps['dmNII_flux'] = maps['mNII_flux'] * corr[6]
+    dmaps['dmNII_flux_ivar'] = maps['mNII_flux_ivar'] / corr[6]**2
+
+    dmaps['dmNII2_flux'] = maps['mNII2_flux'] * corr[7]
+    dmaps['dmNII2_flux_ivar'] = maps['mNII2_flux_ivar'] / corr[7]**2
+
+    return dmaps
 
 
 
 
 
+
+################################################################################
+################################################################################
+################################################################################
+
+def calc_metallicity_ratios(maps):
+    return
+
+################################################################################
+################################################################################
+################################################################################
+
+def plot_metallicity_map(IMAGE_DIR, metallicity_map):
+
+    plt.imshow(metallicity_map, vmin=8,vmax=9)
+    plt.gca().invert_yaxis()
+    plt.title(gal_ID)
+    plt.xlabel('spaxel')
+    plt.ylabel('spaxel')
+    plt.colorbar(label='12+log(O/H) (dex)')
+    plt.savefig(IMAGE_DIR + gal_ID + '_metallicity_map.eps')
+    plt.close()
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
+
+    # extract metallicity maps
+    maps, wavelengths = extract_metallicity_data(DRP_FOLDER, gal_ID)
+
+    # apply default mask + dust correction
+    dmaps = dust_correction(maps, wavelengths, corr_law='CCM89')
+
+    # mask AGN
+    AGN_masked_maps = mask_AGN(dmaps)
+    #AGN_masked_maps = dmaps
+
+
+    # calculate metallicity ratios
+
+    R2 = (AGN_masked_maps['dmOII_flux'] + AGN_masked_maps['dmOII2_flux']) / AGN_masked_maps['dmHb_flux']
+    N2 = (AGN_masked_maps['dmNII_flux'] + AGN_masked_maps['dmNII2_flux']) / AGN_masked_maps['dmHb_flux']
+    R3 = (AGN_masked_maps['dmOIII_flux'] + AGN_masked_maps['dmOIII2_flux']) / AGN_masked_maps['dmHb_flux']
+
+    # calculate metallicity map
+
+    metallicity_map = calc_metallicity(R2,N2,R3)
+
+    # plot maps and save figures
+
+    plt.imshow(metallicity_map, vmin=8,vmax=9)
+    plt.gca().invert_yaxis()
+    plt.title(gal_ID)
+    plt.xlabel('spaxel')
+    plt.ylabel('spaxel')
+    plt.colorbar(label='12+log(O/H) (dex)')
+    plt.savefig(gal_ID + '_metallicity_map.eps')
+    plt.close()
+
+    #return metallicity_map, metallicity_sigma_map

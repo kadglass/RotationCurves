@@ -1,5 +1,5 @@
 import time
-START = datetime.datetime.now()
+#START = datetime.datetime.now()
 
 
 from astropy.table import Table
@@ -7,7 +7,7 @@ import os
 from astropy.io import fits
 from metallicity_map import *
 
-IMAGE_FORMAT = 'eps'
+'''IMAGE_FORMAT = 'eps'
 
 FILE_IDS = ['8082-12702']
 
@@ -32,4 +32,9 @@ for gal_ID in FILE_IDS:
     i_DRP = DRP_index[gal_ID]
 
     maps = extract_metallicity_data(VEL_MAP_FOLDER, gal_ID)
-    print( gal_ID, "extracted")
+    print( gal_ID, "extracted")'''
+
+
+DRP_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17'
+
+get_metallicity_map(DRP_FOLDER, '8082-9102')

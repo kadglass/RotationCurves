@@ -35,6 +35,8 @@ for gal_ID in FILE_IDS:
     print( gal_ID, "extracted")'''
 
 
-DRP_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17'
+DRP_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17/'
+IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/metallicity_maps/'
+corr_law = 'K76'
 
-get_metallicity_map(DRP_FOLDER, '8082-9102')
+get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, '8082-9102')

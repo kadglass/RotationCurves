@@ -62,7 +62,7 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
     [plate, IFU] = gal_ID.split('-')
 
     # for dr17:
-    file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    file_name = DRP_FOLDER + 'manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
 
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
@@ -224,7 +224,6 @@ def mask_AGN(dmaps):
 
     AGN_mask = ma.log10(OIII2/Hb) > 0.61 / (ma.log10(NII2/Ha) - 0.05) + 1.3
 
-    #for m in enum
 
 
     for m in dmaps:
@@ -360,7 +359,7 @@ def calc_metallicity_ratios(maps):
 ################################################################################
 ################################################################################
 
-def plot_metallicity_map(IMAGE_DIR, metallicity_map):
+def plot_metallicity_map(IMAGE_DIR, metallicity_map, gal_ID, corr_law):
 
     plt.imshow(metallicity_map, vmin=8,vmax=9)
     plt.gca().invert_yaxis()
@@ -368,7 +367,7 @@ def plot_metallicity_map(IMAGE_DIR, metallicity_map):
     plt.xlabel('spaxel')
     plt.ylabel('spaxel')
     plt.colorbar(label='12+log(O/H) (dex)')
-    plt.savefig(IMAGE_DIR + gal_ID + '_metallicity_map.eps')
+    plt.savefig(IMAGE_DIR + corr_law + '_' + gal_ID + '_metallicity_map.png')
     plt.close()
 
 
@@ -383,11 +382,10 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
     maps, wavelengths = extract_metallicity_data(DRP_FOLDER, gal_ID)
 
     # apply default mask + dust correction
-    dmaps = dust_correction(maps, wavelengths, corr_law='CCM89')
+    dmaps = dust_correction(maps, wavelengths, corr_law)
 
     # mask AGN
     AGN_masked_maps = mask_AGN(dmaps)
-    #AGN_masked_maps = dmaps
 
 
     # calculate metallicity ratios
@@ -402,13 +400,7 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
 
     # plot maps and save figures
 
-    plt.imshow(metallicity_map, vmin=8,vmax=9)
-    plt.gca().invert_yaxis()
-    plt.title(gal_ID)
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.colorbar(label='12+log(O/H) (dex)')
-    plt.savefig(gal_ID + '_metallicity_map.eps')
-    plt.close()
+    plot_metallicity_map(IMAGE_DIR, metallicity_map, gal_ID, corr_law)
+
 
     #return metallicity_map, metallicity_sigma_map

@@ -37,6 +37,6 @@ for gal_ID in FILE_IDS:
 
 DRP_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17/'
 IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/metallicity_maps/'
-corr_law = 'K76'
+corr_law = 'CCM89'
 
-get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, '8082-9102')
+fit_metallicity_gradient(DRP_FOLDER, IMAGE_DIR, corr_law, '8082-9102')

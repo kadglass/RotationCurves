@@ -10,6 +10,8 @@ from DRP_rotation_curve import extract_data
 
 from astropy.table import Table
 
+from metallicity_map_plottingFunctions import plot_broadband_image
+
 
 
 ################################################################################
@@ -58,7 +60,9 @@ def extract_broadband_images(FOLDER, gal_ID):
 ################################################################################
 ################################################################################
 
-def B_band_map(g,r, A_g, A_r, Ha_flux, Ha_flux_ivar, Ha_vel_mask):
+def B_band_map(IMAGE_DIR,
+                gal_ID,
+                 g,r, A_g, A_r, Ha_flux, Ha_flux_ivar, Ha_vel_mask):
 
     '''
     
@@ -119,10 +123,7 @@ def B_band_map(g,r, A_g, A_r, Ha_flux, Ha_flux_ivar, Ha_vel_mask):
     Bab = (g_ab + A_g) + 0.2354 + 0.3915*(((g_ab+A_g)-(r_ab+ A_r)) - 0.6102)
     Bvega = Bab + 0.09
 
-    plt.imshow(Bvega)
-    plt.colorbar()
-    plt.savefig('test3.png')
-    plt.close()
+    plot_broadband_image(IMAGE_DIR, gal_ID, Bvega, 'B')
 
     return Bvega
 
@@ -217,37 +218,29 @@ def asinh_magnitude(filter, flux):
 ################################################################################
 
 
+def fit_surface_brightness_profile(DRP_FOLDER, IMAGE_DIR, gal_ID, A_g, A_r):
+    
+    maps = extract_broadband_images(DRP_FOLDER, gal_ID)
 
-MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-MAP_FOLDER = 'DR17/'
-gal_ID = '8082-12702'
-master_fn = MANGA_FOLDER + 'output_files/DR17/H_alpha_HIvel_BB_extinction.fits'
+    drp_maps = extract_data(DRP_FOLDER, gal_ID, ['Ha_vel', 'Ha_flux'])
 
-
-maps = extract_broadband_images(MANGA_FOLDER + MAP_FOLDER, gal_ID)
-other_maps = extract_data(MANGA_FOLDER + MAP_FOLDER, gal_ID, ['Ha_vel', 'Ha_flux'])
-
-print(gal_ID, ' maps extracted')
-
-master_table=Table.read(master_fn, format='fits')
-
-i_master = np.where(master_table['plateifu'] == gal_ID)[0][0]
-
-A_g = master_table['A_g'][i_master]
-A_r = master_table['A_r'][i_master]
-
-print('A_g = '+ str(A_g))
-print('A_r = ' + str(A_r))
-
-B_map = B_band_map(maps['g_band'], 
+    B_map = B_band_map(IMAGE_DIR,
+                    gal_ID,
+                    maps['g_band'], 
                     maps['r_band'], 
                     A_g, A_r, 
-                    other_maps['Ha_flux'], 
-                    other_maps['Ha_flux_ivar'],
-                    other_maps['Ha_vel_mask'])
+                    drp_maps['Ha_flux'], 
+                    drp_maps['Ha_flux_ivar'],
+                    drp_maps['Ha_vel_mask'])
+
+    # deproject map
+
+    # fit to sersic profile
+
+    # plot sersic profile with best fit
+
+    # return best fit values
+
+    return None
 
 
-plt.imshow(B_map)
-plt.colorbar()
-plt.savefig('B_map.png')
-plt.close()

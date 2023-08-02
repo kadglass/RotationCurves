@@ -112,7 +112,7 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     maps = {}
 
     if 'r_band' in which_maps:
-        maps['r_band'] = cube['SPX_MFLUX'].data
+        maps['r_band'] = cube['SPX_MFLUX'].data # this is actually g-band lol
         maps['r_band_ivar'] = cube['SPX_MFLUX_IVAR'].data
 
 

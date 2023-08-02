@@ -6,6 +6,7 @@ from astropy.table import Table
 import os
 from astropy.io import fits
 from metallicity_map import *
+from metallicity_map_broadband_functions import *
 
 '''IMAGE_FORMAT = 'eps'
 
@@ -39,4 +40,56 @@ DRP_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17
 IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/metallicity_maps/'
 corr_law = 'CCM89'
 
-fit_metallicity_gradient(DRP_FOLDER, IMAGE_DIR, corr_law, '8082-9102')
+# check if target is a galaxy
+# want to choose center_coord, phi, inclination from fit if available
+# else choose nsa values (conversion necessary for phi, inclination)
+
+center_coord = (35.87824489216855, 36.74558166296378)
+phi = 238.93509026934055
+ba = 0.9447460099859973
+z = 0.0259804
+A_g = 0.319
+A_r = 0.22
+gal_ID = '8082-12702'
+
+
+#master_table=Table.read(master_fn, format='fits')
+
+#i_master = np.where(master_table['plateifu'] == gal_ID)[0][0]
+
+#A_g = master_table['A_g'][i_master]
+#A_r = master_table['A_r'][i_master]
+
+metallicity_param_outputs = fit_metallicity_gradient(DRP_FOLDER, 
+                        IMAGE_DIR, 
+                        corr_law, 
+                        gal_ID,
+                        center_coord, 
+                        phi, 
+                        ba,
+                        z)
+if metallicity_param_outputs is not None:
+
+    print(metallicity_param_outputs)
+
+    # add values to table
+
+    surface_brightness_param_outputs = fit_surface_brightness_profile(DRP_FOLDER,
+                                                                        IMAGE_DIR,
+                                                                        gal_ID,
+                                                                        A_g,
+                                                                        A_r
+                                                                        #center_coord,
+                                                                        #phi,
+                                                                        #ba,
+                                                                        #z
+                                                                        )
+
+                                                                
+    
+#    if surface_brightness_param_outputs is not None:
+
+#        R25, R25_err = surface_brightness_param_outputs['R25'], surface_brightness_param_outputs['R25_err'] 
+
+#        Z_12logOH, Z_12logOH_err = linear_metallicity_gradient_sigma(R25, R25_err, MOREPARAMS)
+

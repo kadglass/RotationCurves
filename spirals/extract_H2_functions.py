@@ -38,7 +38,10 @@ def galaxies_dict(ref_table):
 
     for i in range(len(ref_table)):
 
-        galaxy_ID = (ref_table['MaNGA_plate'][i], ref_table['MaNGA_IFU'][i])
+        #galaxy_ID = (ref_table['MaNGA_plate'][i], ref_table['MaNGA_IFU'][i])
+        #galaxy_ID = (ref_table['plate'][i], ref_table['ifudsgn'][i])
+        galaxy_ID = ref_table['plateifu'][i]
+        
 
         ref_dict[galaxy_ID] = i
 
@@ -95,7 +98,7 @@ def galaxies_dict_SDSS(ref_table):
 ################################################################################
 ################################################################################
 
-def match_H2_MASCOT(master_table, units=False):
+def match_H2_MASCOT(master_table, MASCOT_FILE_NAME, units=False):
     '''
     Locate the H2 mass for each galaxy from the MASCOT survey.
 
@@ -131,24 +134,23 @@ def match_H2_MASCOT(master_table, units=False):
         if units:
             master_table['logH2'] = np.nan*np.ones(len(master_table), 
                                                    dtype=float) * u.dex(u.M_sun)
-            master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
-                                                       dtype=float) * u.dex(u.M_sun)
+            #master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
+            #                                           dtype=float) * u.dex(u.M_sun)
         else:
             master_table['logH2'] = np.nan*np.ones(len(master_table), 
                                                    dtype=float)
-            master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
-                                                       dtype=float)
+            #master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
+            #                                           dtype=float)
 
-        master_table['H2_source'] = np.zeros(len(master_table), dtype=int)
+        #master_table['H2_source'] = np.zeros(len(master_table), dtype=int)
     ############################################################################
 
 
     ############################################################################
     # Load in H2 data
     #---------------------------------------------------------------------------
-    MASCOT_filename = '/Users/kellydouglass/Documents/Research/data/H2/MASCOT/MASCOT-dr1.fits'
 
-    MASCOT = Table.read(MASCOT_filename, format='fits')
+    MASCOT = Table.read(MASCOT_FILE_NAME, format='fits')
     ############################################################################
 
 
@@ -167,15 +169,21 @@ def match_H2_MASCOT(master_table, units=False):
         ########################################################################
         # Deconstruct galaxy ID
         #-----------------------------------------------------------------------
-        plate, IFU = MASCOT['MaNGA ID'][i].split('-')
+        #plate, IFU = MASCOT['MaNGA ID'][i].split('-')
+
+        #IFU, _ = IFU.split(' ', 1)
+
+        plateifu, _ = MASCOT['MaNGA ID'][i].split(' ', 1)
         ########################################################################
 
 
-        if (int(plate), int(IFU)) in master_table_dict:
+        #if (int(plate), int(IFU)) in master_table_dict:
+        if plateifu in master_table_dict:
             ####################################################################
             # Find galaxy's row number in master_table
             #-------------------------------------------------------------------
-            gal_i = master_table_dict[(int(plate), int(IFU))]
+            #gal_i = master_table_dict[(int(plate), int(IFU))]
+            gal_i = master_table_dict[plateifu]
             ####################################################################
 
 
@@ -187,7 +195,7 @@ def match_H2_MASCOT(master_table, units=False):
             else:
                 master_table['logH2'][gal_i] = MASCOT['log(H2_mass)'][i]
 
-            master_table['H2_source'][gal_i] = 1
+            #master_table['H2_source'][gal_i] = 1
             ####################################################################
     ############################################################################
 

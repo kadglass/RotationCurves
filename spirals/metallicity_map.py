@@ -21,13 +21,33 @@ import math
 import pyneb as pn
 import os
 
+from scipy.optimize import curve_fit
+
 from DRP_vel_map_functions import deproject_spaxel
-from metallicity_map_plotingFunctions import plot_metallicity_map
+from metallicity_map_plottingFunctions import plot_metallicity_map, plot_metallicity_gradient
+from metallicity_map_functions import linear_metallicity_gradient
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+
+q0 = 0.2 #nominal disk thickness
+ln10 = ma.log(10)
+H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458 # Speed of light in units of km/s
+MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
 
 
 ################################################################################
 ################################################################################
 ################################################################################
+
+
+
 
 
 def extract_metallicity_data(DRP_FOLDER, gal_ID):
@@ -65,7 +85,7 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
     [plate, IFU] = gal_ID.split('-')
 
     # for dr17:
-    file_name = DRP_FOLDER + 'manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    file_name = DRP_FOLDER +  '/' + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
 
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
@@ -168,7 +188,7 @@ def calc_metallicity(R2, R2_ivar, N2, N2_ivar, R3, R3_ivar):
     dydN2 = np.ones((len(N2),len(N2[0])))*np.nan
     dydR3 = np.ones((len(N2),len(N2[0])))*np.nan
 
-    ln10 = ma.log(10)
+
 
 
     for i in range(0, len(z)):
@@ -428,7 +448,7 @@ def calc_intensity_ratio(maps, line):
 ################################################################################
 
 
-def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law='CCM89', gal_ID):
+def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
 
     # extract metallicity maps
     maps, wavelengths = extract_metallicity_data(DRP_FOLDER, gal_ID)
@@ -459,7 +479,13 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law='CCM89', gal_ID):
 
     plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_ID)
 
+    return metallicity_map, metallicity_map_ivar
+
     
+
+
+
+
 
 ################################################################################
 ################################################################################
@@ -471,15 +497,67 @@ def fit_metallicity_gradient(   DRP_FOLDER,
                                 gal_ID,
                                 center_coord,
                                 phi,
-                                inclination):
+                                ba,
+                                z):
 
+    
+
+    # scaling constants
+
+    dist_to_galaxy_Mpc = c*z/H_0
+    dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+    pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
+    
     # get metallicity map and uncertainty
+
 
     metallicity_map, metallicity_map_ivar = get_metallicity_map(DRP_FOLDER, 
                                                                 IMAGE_DIR, 
                                                                 corr_law,
                                                                 gal_ID)
 
+
     # deproject maps
 
-    deproject_spaxel(coords, center, phi, i_angle)
+    cosi2 = (ba**2 - q0**2)/(1 - q0**2)
+    i_angle = np.arccos(np.sqrt(cosi2))
+
+    r_kpc = np.zeros((len(metallicity_map), len(metallicity_map[0])))
+
+    for i in range(len(metallicity_map)):
+        for j in range(len(metallicity_map[0])):
+
+            r_spax, _ = deproject_spaxel((i,j), center_coord, phi, i_angle)
+            r_kpc[i][j] = 0.5*r_spax*pix_scale_factor
+
+
+    # apply linear fit
+
+    nan_mask = np.isnan(metallicity_map)
+
+    r_flat = ma.array(r_kpc, mask=nan_mask).compressed()
+    m = ma.array(metallicity_map, mask=nan_mask).compressed()
+    m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
+
+
+    popt, pcov = curve_fit(linear_metallicity_gradient, 
+                                    r_flat, 
+                                    m,
+                                    sigma=m_sigma
+                                    )
+
+    
+    np.save('metallicity_' + gal_ID + '_cov.npy', pcov) # for bluehive
+
+    perr = np.sqrt(np.diag(pcov))
+
+    best_fit_values = {'grad': popt[0], 
+                        'grad_err': perr[0], 
+                        '12logOH_0': popt[1], 
+                        '12logOH_0_err': perr[1]}
+
+
+    plot_metallicity_gradient(IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
+
+
+    return best_fit_values

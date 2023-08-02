@@ -21,6 +21,9 @@ import math
 import pyneb as pn
 import os
 
+from DRP_vel_map_functions import deproject_spaxel
+from metallicity_map_plotingFunctions import plot_metallicity_map
+
 
 ################################################################################
 ################################################################################
@@ -133,7 +136,7 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
 ################################################################################
 
 
-def calc_metallicity(R2, N2, R3):
+def calc_metallicity(R2, R2_ivar, N2, N2_ivar, R3, R3_ivar):
 
     '''
     Takes R2, N2, and R3 ratio maps and calculates a metallicity map
@@ -161,6 +164,12 @@ def calc_metallicity(R2, N2, R3):
 
     
     z = np.ones((len(N2),len(N2[0])))*np.nan
+    dydR2 = np.ones((len(N2),len(N2[0])))*np.nan
+    dydN2 = np.ones((len(N2),len(N2[0])))*np.nan
+    dydR3 = np.ones((len(N2),len(N2[0])))*np.nan
+
+    ln10 = ma.log(10)
+
 
     for i in range(0, len(z)):
         for j in range(0, len(z[0])):
@@ -169,13 +178,34 @@ def calc_metallicity(R2, N2, R3):
             if ma.log10(N2[i][j]) >= -0.6:
                 z[i][j] = 8.589 + 0.022*ma.log10(R3[i][j]/R2[i][j]) + 0.399*ma.log10(N2[i][j]) \
                     + (-0.137 + 0.164*ma.log10(R3[i][j]/R2[i][j]) + 0.589*ma.log10(N2[i][j]))*ma.log10(N2[i][j])
+
+                dydR2[i][j] = -0.022/(R2[i][j] * ln10) - 0.164*R2[i][j]*ma.log10(R2[i][j])/ln10 \
+                    + (-0.137 + 0.164*ma.log10(R3[i][j]/R2[i][j]) + 0.589*ma.log10(N2[i][j]))*(1/(R2[i][j] * ln10))
+
+                dydR3[i][j] = 0.022/(R3[i][j]*ln10) + 0.164*ma.log10(R3[i][j])/(R3[i][j]*ln10)
+
+                dydN2[i][j] = 0.399/(N2[i][j]*ln10) + 0.589*ma.log10(R2[i][j])/(N2[i][j]*ln10)
+                
+
     
         # lower branch
             elif ma.log10(N2[i][j]) < -0.6:
                 z[i][j] = 7.932 + 0.944*ma.log10(R3[i][j]/R2[i][j]) + 0.695*ma.log10(N2[i][j]) \
                     + (0.970 - 0.291*ma.log10(R3[i][j]/R2[i][j]) - 0.019*ma.log10(N2[i][j]))*ma.log(R2[i][j])
 
-    return z
+                dydR2[i][j] = -0.944/(R2[i][j] * ln10) +0.291*R2[i][j]*ma.log10(R2[i][j])/ln10 \
+                    + (0.970 - 0.291*ma.log10(R3[i][j]/R2[i][j]) - 0.019*ma.log10(N2[i][j]))*(1/(R2[i][j] * ln10))
+
+                dydR3[i][j] = 0.944/(R3[i][j]*ln10) - 0.291*ma.log10(R3[i][j])/(R3[i][j]*ln10)
+
+                dydN2[i][j] = 0.695/(N2[i][j]*ln10) - 0.019*ma.log10(R2[i][j])/(N2[i][j]*ln10)
+
+    z_ivar = 1 / (dydR2**2/R2_ivar + dydN2**2 / N2_ivar + dydR3**2 / R3_ivar)
+
+
+  
+
+    return z,z_ivar
 
 
 ################################################################################
@@ -344,7 +374,52 @@ def dust_correction(maps, wavelengths, corr_law='CCM89'):
     return dmaps
 
 
+################################################################################
+################################################################################
+################################################################################
 
+def calc_intensity_ratio(maps, line):
+
+    '''
+    Calculates the doublet line intensity ratio with H-beta and their uncertainties
+
+    PARAMETERS
+    ==========
+
+    maps : dictionary
+        maps dictionary containing flux maps
+
+    line : string
+        emission lines to calculate the ratio with H-beta
+
+    RETURNS
+    =======
+
+    y : array
+        map of line intensity ratio with H-beta
+
+    y_ivar : array
+        inverse variance of y
+
+
+
+
+    '''
+
+    x1 = maps['dm' + line + '_flux']
+    x1_ivar = maps['dm' + line + '_flux_ivar']
+
+    x2 = maps['dm' + line + '2_flux']
+    x2_ivar = maps['dm' + line + '2_flux_ivar']
+
+    x3 = maps['dmHb_flux']
+    x3_ivar = maps['dmHb_flux_ivar']
+
+    y = (x1 + x2) / x3
+    
+    y_ivar = x3**2 / ((1 / x1_ivar) + (1 / x2_ivar) + (y**2 / x3_ivar))
+
+    return y, y_ivar
 
 
 
@@ -352,31 +427,8 @@ def dust_correction(maps, wavelengths, corr_law='CCM89'):
 ################################################################################
 ################################################################################
 
-def calc_metallicity_ratios(maps):
-    return
 
-################################################################################
-################################################################################
-################################################################################
-
-def plot_metallicity_map(IMAGE_DIR, metallicity_map, gal_ID, corr_law):
-
-    plt.imshow(metallicity_map, vmin=8,vmax=9)
-    plt.gca().invert_yaxis()
-    plt.title(gal_ID)
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.colorbar(label='12+log(O/H) (dex)')
-    plt.savefig(IMAGE_DIR + corr_law + '_' + gal_ID + '_metallicity_map.png')
-    plt.close()
-
-
-################################################################################
-################################################################################
-################################################################################
-
-
-def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
+def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law='CCM89', gal_ID):
 
     # extract metallicity maps
     maps, wavelengths = extract_metallicity_data(DRP_FOLDER, gal_ID)
@@ -390,17 +442,44 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
 
     # calculate metallicity ratios
 
-    R2 = (AGN_masked_maps['dmOII_flux'] + AGN_masked_maps['dmOII2_flux']) / AGN_masked_maps['dmHb_flux']
-    N2 = (AGN_masked_maps['dmNII_flux'] + AGN_masked_maps['dmNII2_flux']) / AGN_masked_maps['dmHb_flux']
-    R3 = (AGN_masked_maps['dmOIII_flux'] + AGN_masked_maps['dmOIII2_flux']) / AGN_masked_maps['dmHb_flux']
+    R2, R2_ivar = calc_intensity_ratio(AGN_masked_maps, 'OII')
+    N2, N2_ivar = calc_intensity_ratio(AGN_masked_maps, 'NII')
+    R3, R3_ivar = calc_intensity_ratio(AGN_masked_maps, 'OIII')
 
     # calculate metallicity map
 
-    metallicity_map = calc_metallicity(R2,N2,R3)
+    metallicity_map, metallicity_map_ivar = calc_metallicity(R2, 
+                                                            R2_ivar, 
+                                                            N2, 
+                                                            N2_ivar, 
+                                                            R3, 
+                                                            R3_ivar)
 
     # plot maps and save figures
 
-    plot_metallicity_map(IMAGE_DIR, metallicity_map, gal_ID, corr_law)
+    plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_ID)
 
+    
 
-    #return metallicity_map, metallicity_sigma_map
+################################################################################
+################################################################################
+################################################################################
+
+def fit_metallicity_gradient(   DRP_FOLDER, 
+                                IMAGE_DIR, 
+                                corr_law, 
+                                gal_ID,
+                                center_coord,
+                                phi,
+                                inclination):
+
+    # get metallicity map and uncertainty
+
+    metallicity_map, metallicity_map_ivar = get_metallicity_map(DRP_FOLDER, 
+                                                                IMAGE_DIR, 
+                                                                corr_law,
+                                                                gal_ID)
+
+    # deproject maps
+
+    deproject_spaxel(coords, center, phi, i_angle)

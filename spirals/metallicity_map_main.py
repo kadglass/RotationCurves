@@ -44,13 +44,13 @@ corr_law = 'CCM89'
 # want to choose center_coord, phi, inclination from fit if available
 # else choose nsa values (conversion necessary for phi, inclination)
 
-center_coord = (35.87824489216855, 36.74558166296378)
-phi = 238.93509026934055
-ba = 0.9447460099859973
-z = 0.0259804
-A_g = 0.319
-A_r = 0.22
-gal_ID = '8082-12702'
+center_coord = (26.348064449203378, 24.578296983961433)
+phi = 201.61168900325225
+ba = 0.5187071826939094
+z = 0.0183422
+A_g = 0.082
+A_r = 0.057
+gal_ID = '7443-6103'
 
 
 #master_table=Table.read(master_fn, format='fits')
@@ -64,7 +64,7 @@ metallicity_param_outputs = fit_metallicity_gradient(DRP_FOLDER,
                         IMAGE_DIR, 
                         corr_law, 
                         gal_ID,
-                        center_coord, 
+                        center_coord,
                         phi, 
                         ba,
                         z)
@@ -78,12 +78,11 @@ if metallicity_param_outputs is not None:
                                                                         IMAGE_DIR,
                                                                         gal_ID,
                                                                         A_g,
-                                                                        A_r
-                                                                        #center_coord,
-                                                                        #phi,
-                                                                        #ba,
-                                                                        #z
-                                                                        )
+                                                                        A_r,
+                                                                        center_coord,
+                                                                        phi, 
+                                                                        ba,
+                                                                        z)
 
                                                                 
     

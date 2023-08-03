@@ -528,7 +528,7 @@ def fit_metallicity_gradient(   DRP_FOLDER,
         for j in range(len(metallicity_map[0])):
 
             r_spax, _ = deproject_spaxel((i,j), center_coord, phi, i_angle)
-            r_kpc[i][j] = 0.5*r_spax*pix_scale_factor
+            r_kpc[i][j] = r_spax*pix_scale_factor
 
 
     # apply linear fit

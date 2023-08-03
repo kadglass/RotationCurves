@@ -4,14 +4,31 @@ import numpy as np
 
 from astropy.io import fits
 
+import matplotlib
+
 import matplotlib.pyplot as plt
 
 from DRP_rotation_curve import extract_data
+
+from DRP_vel_map_functions import deproject_spaxel
 
 from astropy.table import Table
 
 from metallicity_map_plottingFunctions import plot_broadband_image
 
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+B_sol = 5.25 # magnitude of the usun in B-band Vega photometric system
+q0 = 0.2 #nominal disk thickness
+ln10 = ma.log(10)
+H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458 # Speed of light in units of km/s
+MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
 
 
 ################################################################################
@@ -120,7 +137,7 @@ def B_band_map(IMAGE_DIR,
     # apply extinction correction and convert to B band magnitude
 
 
-    Bab = (g_ab + A_g) + 0.2354 + 0.3915*(((g_ab+A_g)-(r_ab+ A_r)) - 0.6102)
+    Bab = (g_ab - A_g) + 0.2354 + 0.3915*(((g_ab-A_g)-(r_ab- A_r)) - 0.6102)
     Bvega = Bab + 0.09
 
     plot_broadband_image(IMAGE_DIR, gal_ID, Bvega, 'B')
@@ -208,7 +225,10 @@ def asinh_magnitude(filter, flux):
 
     f0 = 10e9 # [nanomaggies]
 
-    mag = -2.5/ma.log(10) * (ma.arcsinh((flux/f0)/(2*b)) + ma.log(b))
+    #mag = -2.5/ma.log(10) * (ma.arcsinh((flux/f0)/(2*b)) + ma.log(b))
+
+    mag = 22.5 - 2.5*ma.log10(flux)
+
 
     return mag
 
@@ -217,8 +237,51 @@ def asinh_magnitude(filter, flux):
 ################################################################################
 ################################################################################
 
+def B_mag_to_lum(B_mag,d):
 
-def fit_surface_brightness_profile(DRP_FOLDER, IMAGE_DIR, gal_ID, A_g, A_r):
+    '''
+    Converts B-band magnitude to luminosity in solar units
+
+    PARAMETERS
+    ==========
+    B_mag : float or array
+        B-band magnitude map
+
+    RETURNS
+    =======
+    L : float or array
+        luminosity in solar units
+
+
+    '''
+
+    B_mag = B_mag-5*ma.log10(d*1000/10)
+
+    L = 10**((B_sol - B_mag)/2.5)
+
+    plt.imshow(L)
+    plt.colorbar()
+    plt.savefig('L_test2.png')
+    plt.close()
+
+    return L
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def fit_surface_brightness_profile(DRP_FOLDER, 
+                                    IMAGE_DIR, 
+                                    gal_ID, 
+                                    A_g, 
+                                    A_r,
+                                    center_coord, 
+                                    phi, 
+                                    ba,
+                                    z):
     
     maps = extract_broadband_images(DRP_FOLDER, gal_ID)
 
@@ -233,7 +296,48 @@ def fit_surface_brightness_profile(DRP_FOLDER, IMAGE_DIR, gal_ID, A_g, A_r):
                     drp_maps['Ha_flux_ivar'],
                     drp_maps['Ha_vel_mask'])
 
-    # deproject map
+    print('B map min:')
+    print(np.min(B_map))
+
+    dist_to_galaxy_Mpc = c*z/H_0
+    dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+    pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
+
+    print(pix_scale_factor)
+
+    B_lum_map = B_mag_to_lum(B_map, dist_to_galaxy_kpc)
+
+    # deproject map into lum/pc^2 from lum/px
+    # change this section to just read in deprojected map from before
+
+    # scaling constants
+
+    
+
+    # deproject maps
+
+    cosi2 = (ba**2 - q0**2)/(1 - q0**2)
+    i_angle = np.arccos(np.sqrt(cosi2))
+
+    r_pc = np.zeros((len(B_lum_map), len(B_lum_map[0])))
+
+    for i in range(len(B_lum_map)):
+        for j in range(len(B_lum_map[0])):
+
+            r_spax, _ = deproject_spaxel((i,j), center_coord, phi, i_angle)
+            r_pc[i][j] = r_spax*pix_scale_factor*1000 
+
+    B_lum_map_pc2 = B_lum_map / (pix_scale_factor*1000)**2
+
+    plt.imshow(B_lum_map_pc2)
+    plt.colorbar(norm=matplotlib.colors.LogNorm())
+    plt.savefig('B_lum_Lpc22.png')
+    plt.close()
+
+    plt.scatter(r_pc.flatten()/5820, np.log10(B_lum_map_pc2.flatten()))
+    #plt.yscale('log')
+    plt.savefig('B_lum_Lpc22_flat.png')
+    plt.close()
 
     # fit to sersic profile
 

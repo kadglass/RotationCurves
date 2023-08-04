@@ -319,30 +319,48 @@ def dust_correction(maps, wavelengths, corr_law='CCM89'):
     # create masked flux and ivar arrays. since Ha, Hb are used for correction, 
     # minimum mask is Ha + Hb mask
 
-    maps['mHa_flux'] = ma.array(maps['Ha_flux'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mHa_flux_ivar'] = ma.array(maps['Ha_flux_ivar'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mHa_flux'] = ma.array(maps['Ha_flux'], 
+                                mask=np.logical_or(maps['Ha_flux_mask'], 
+                                    np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar']) < 3)))
+    maps['mHa_flux_ivar'] = ma.array(maps['Ha_flux_ivar'], mask=maps['mHa_flux'].mask)
 
-    maps['mHb_flux'] = ma.array(maps['Hb_flux'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mHb_flux_ivar'] = ma.array(maps['Hb_flux_ivar'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mHb_flux'] = ma.array(maps['Hb_flux'], 
+                                mask = np.logical_or(maps['Hb_flux_mask'], 
+                                    np.abs(maps['Hb_flux']*np.sqrt(maps['Hb_flux_ivar']) < 3)))
+    maps['mHb_flux_ivar'] = ma.array(maps['Hb_flux_ivar'], mask=maps['mHb_flux'].mask)
 
-    maps['mOII_flux'] = ma.array(maps['OII_flux'], mask=maps['OII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mOII_flux_ivar'] = ma.array(maps['OII_flux_ivar'], mask=maps['OII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'] )
+    maps['mOII_flux'] = ma.array(maps['OII_flux'], 
+                                mask= np.logical_or(maps['OII_flux_mask'], 
+                                    np.abs(maps['OII_flux']*np.sqrt(maps['OII_flux_ivar']) < 3)))
+    maps['mOII_flux_ivar'] = ma.array(maps['OII_flux_ivar'], mask=maps['mOII_flux'].mask)
 
-    maps['mOII2_flux'] = ma.array(maps['OII2_flux'], mask=maps['OII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mOII2_flux_ivar'] = ma.array(maps['OII2_flux_ivar'], mask=maps['OII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOII2_flux'] = ma.array(maps['OII2_flux'], 
+                                mask= np.logical_or(maps['OII2_flux_mask'], 
+                                    np.abs(maps['OII2_flux']*np.sqrt(maps['OII2_flux_ivar']) < 3)))
+    maps['mOII2_flux_ivar'] = ma.array(maps['OII2_flux_ivar'], mask=maps['mOII2_flux'].mask)
 
-    maps['mOIII_flux'] = ma.array(maps['OIII_flux'], mask=maps['OIII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mOIII_flux_ivar'] = ma.array(maps['OIII_flux_ivar'], mask=maps['OIII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOIII_flux'] = ma.array(maps['OIII_flux'], 
+                                mask= np.logical_or(maps['OIII_flux_mask'], 
+                                    np.abs(maps['OIII_flux']*np.sqrt(maps['OIII_flux_ivar']) < 3)))
+    maps['mOIII_flux_ivar'] = ma.array(maps['OIII_flux_ivar'], mask=maps['mOIII_flux'].mask)
 
-    maps['mOIII2_flux'] = ma.array(maps['OIII2_flux'], mask=maps['OIII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mOIII2_flux_ivar'] = ma.array(maps['OIII2_flux_ivar'], mask=maps['OIII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mOIII2_flux'] = ma.array(maps['OIII2_flux'], 
+                                    mask= np.logical_or(maps['OIII2_flux_mask'], 
+                                    np.abs(maps['OIII2_flux']*np.sqrt(maps['OIII2_flux_ivar']) < 3)))
+    maps['mOIII2_flux_ivar'] = ma.array(maps['OIII2_flux_ivar'], mask=maps['mOIII2_flux'].mask)
 
-    maps['mNII_flux'] = ma.array(maps['NII_flux'], mask=maps['NII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mNII_flux_ivar'] = ma.array(maps['NII_flux_ivar'], mask=maps['NII_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mNII_flux'] = ma.array(maps['NII_flux'], 
+                                mask= np.logical_or(maps['NII_flux_mask'], 
+                                    np.abs(maps['NII_flux']*np.sqrt(maps['NII_flux_ivar']) < 3)))
+    maps['mNII_flux_ivar'] = ma.array(maps['NII_flux_ivar'], mask=maps['mNII_flux'].mask)
 
-    maps['mNII2_flux'] = ma.array(maps['NII2_flux'], mask=maps['NII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
-    maps['mNII2_flux_ivar'] = ma.array(maps['NII2_flux_ivar'], mask=maps['NII2_flux_mask'] + maps['Ha_flux_mask'] + maps['Hb_flux_mask'])
+    maps['mNII2_flux'] = ma.array(maps['NII2_flux'],  
+                                mask= np.logical_or(maps['NII2_flux_mask'], 
+                                    np.abs(maps['NII2_flux']*np.sqrt(maps['NII2_flux_ivar']) < 3)))
+    maps['mNII2_flux_ivar'] = ma.array(maps['NII2_flux_ivar'], mask=maps['mNII2_flux'].mask)
+    
 
+    
     # set the correction coefficient based on H-alpha and H-beta maps
 
     H_ratio = ma.array(maps['mHa_flux'] / maps['mHb_flux'], mask=maps['Ha_flux_mask'] + maps['Hb_flux_mask'] + (maps['mHa_flux'] / maps['mHb_flux'] ==0))
@@ -491,7 +509,8 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
 ################################################################################
 ################################################################################
 
-def fit_metallicity_gradient(   DRP_FOLDER, 
+def fit_metallicity_gradient(   MANGA_FOLDER,
+                                DRP_FOLDER, 
                                 IMAGE_DIR, 
                                 corr_law, 
                                 gal_ID,
@@ -546,8 +565,8 @@ def fit_metallicity_gradient(   DRP_FOLDER,
                                     sigma=m_sigma
                                     )
 
-    
-    np.save('metallicity_' + gal_ID + '_cov.npy', pcov) # for bluehive
+    cov_dir = MANGA_FOLDER + 'metallicity_cov/'
+    np.save(cov_dir + 'metallicity_' + gal_ID + '_cov.npy', pcov) 
 
     perr = np.sqrt(np.diag(pcov))
 
@@ -557,7 +576,7 @@ def fit_metallicity_gradient(   DRP_FOLDER,
                         '12logOH_0_err': perr[1]}
 
 
-    plot_metallicity_gradient(IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
+    plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
 
 
-    return best_fit_values
+    return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc

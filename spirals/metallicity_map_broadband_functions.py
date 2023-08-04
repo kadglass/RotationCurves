@@ -14,7 +14,7 @@ from DRP_vel_map_functions import deproject_spaxel
 
 from astropy.table import Table
 
-from metallicity_map_plottingFunctions import plot_broadband_image
+from metallicity_map_plottingFunctions import plot_broadband_image, plot_surface_brightness
 
 
 
@@ -246,6 +246,8 @@ def B_mag_to_lum(B_mag,d):
     ==========
     B_mag : float or array
         B-band magnitude map
+    d : float
+        distance to galaxy [kpc]
 
     RETURNS
     =======
@@ -278,14 +280,77 @@ def fit_surface_brightness_profile(DRP_FOLDER,
                                     gal_ID, 
                                     A_g, 
                                     A_r,
-                                    center_coord, 
-                                    phi, 
-                                    ba,
-                                    z):
+                                    r_kpc,
+                                    scale,
+                                    d_kpc):
+
+
+
+    '''
+    PARAMETERS
+    ==========
+
+    DRP_FOLDER : string
+        directory containing maps
+
+    IMAGE_DIR : string
+        directory to save plots
+
+    gal_ID : string
+        PLATE-IFU for galaxy
+
+    A_g : float
+        g-band extinction correction
+
+    A_r : float
+        r-band extinction correction
+
+    r_kpc : array
+        deprojected distances of spaxels from center of galaxy spaxel [kpc]
+
+    scale : float
+        scale factor to convert spaxel distance to kpc [kpc/spax]
+
+    d_kpc : float
+        distance to galaxy [kpc]
+
+    RETURNS
+    =======
+
+
+
+
+    '''
     
+    # extract necessary maps
+
     maps = extract_broadband_images(DRP_FOLDER, gal_ID)
 
     drp_maps = extract_data(DRP_FOLDER, gal_ID, ['Ha_vel', 'Ha_flux'])
+
+    # temp plot g and r band map
+
+    plt.imshow(maps['g_band'])
+    plt.xlabel('spaxel')
+    plt.ylabel('spaxel')
+    plt.gca().invert_yaxis()
+    plt.colorbar(label='nanomaggies')
+    plt.title(gal_ID + ' g-band')
+    plt.savefig(gal_ID + 'g-band.png')
+    plt.close()
+
+    plt.imshow(maps['r_band'])
+    plt.xlabel('spaxel')
+    plt.ylabel('spaxel')
+    plt.gca().invert_yaxis()
+    plt.colorbar(label='nanomaggies')
+    plt.title(gal_ID + ' r-band')
+    plt.savefig(gal_ID + 'r-band.png')
+    plt.close()
+
+
+
+    # generate B-band map from g-band and r-band maps
 
     B_map = B_band_map(IMAGE_DIR,
                     gal_ID,
@@ -299,45 +364,29 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     print('B map min:')
     print(np.min(B_map))
 
-    dist_to_galaxy_Mpc = c*z/H_0
-    dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
-    pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
+    # convert apparent B-band magnitude to solar luminosity/pc^2
 
-    print(pix_scale_factor)
+    B_lum_map = B_mag_to_lum(B_map, d_kpc)
 
-    B_lum_map = B_mag_to_lum(B_map, dist_to_galaxy_kpc)
+    # convert deprojected 
 
-    # deproject map into lum/pc^2 from lum/px
-    # change this section to just read in deprojected map from before
+    r_pc = r_kpc.flatten() * 1000
 
-    # scaling constants
+    #B_lum_map_pc2 = B_lum_map / (scale*1000)**2
 
+    #plt.imshow(B_lum_map_pc2)
+    #plt.colorbar(norm=matplotlib.colors.LogNorm())
+    #plt.savefig('B_lum_Lpc22.png')
+    #plt.close()
+
+    surface_brightness = B_lum_map.flatten() / (scale*1000)**2
     
+    plot_surface_brightness(IMAGE_DIR, gal_ID, surface_brightness, r_pc)
 
-    # deproject maps
-
-    cosi2 = (ba**2 - q0**2)/(1 - q0**2)
-    i_angle = np.arccos(np.sqrt(cosi2))
-
-    r_pc = np.zeros((len(B_lum_map), len(B_lum_map[0])))
-
-    for i in range(len(B_lum_map)):
-        for j in range(len(B_lum_map[0])):
-
-            r_spax, _ = deproject_spaxel((i,j), center_coord, phi, i_angle)
-            r_pc[i][j] = r_spax*pix_scale_factor*1000 
-
-    B_lum_map_pc2 = B_lum_map / (pix_scale_factor*1000)**2
-
-    plt.imshow(B_lum_map_pc2)
-    plt.colorbar(norm=matplotlib.colors.LogNorm())
-    plt.savefig('B_lum_Lpc22.png')
-    plt.close()
-
-    plt.scatter(r_pc.flatten()/5820, np.log10(B_lum_map_pc2.flatten()))
+    #plt.scatter(r_pc.flatten(), np.log10(B_lum_map_pc2.flatten()))
     #plt.yscale('log')
-    plt.savefig('B_lum_Lpc22_flat.png')
-    plt.close()
+    #plt.savefig('B_lum_Lpc22_flat.png')
+    #plt.close()
 
     # fit to sersic profile
 

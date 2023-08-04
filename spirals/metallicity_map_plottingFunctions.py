@@ -33,7 +33,7 @@ def plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_I
 ################################################################################
 ################################################################################
 
-def plot_metallicity_gradient(IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
+def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
 
 
     grad, met_0 = popt
@@ -41,7 +41,7 @@ def plot_metallicity_gradient(IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
     r_depro = np.linspace(0, np.max(r), 1000)
 
 
-    cov = np.load('metallicity_' + gal_ID + '_cov.npy')
+    cov = np.load(cov_dir + 'metallicity_' + gal_ID + '_cov.npy')
 
     N_samples = 1000
 
@@ -90,4 +90,14 @@ def plot_broadband_image(IMAGE_DIR, gal_ID, im_map, band):
     plt.ylabel('spaxel')
     plt.title(gal_ID)
     plt.savefig(IMAGE_DIR + band + '_band/' + gal_ID + '_' + band + '_band.eps')
+    plt.close()
+
+
+def plot_surface_brightness(IMAGE_DIR, gal_ID, sb, r_pc):
+
+    plt.scatter(r_pc, np.log10(sb), marker='.', color='k')
+    plt.xlabel('radius [pc]')
+    plt.ylabel('$log\Sigma_L\ (L\odot/pc^2)$')
+    plt.title(gal_ID)
+    plt.savefig(IMAGE_DIR + 'surface_brightness/' + gal_ID + '_surface_brightness.eps')
     plt.close()

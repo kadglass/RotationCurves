@@ -35,39 +35,41 @@ for gal_ID in FILE_IDS:
     maps = extract_metallicity_data(VEL_MAP_FOLDER, gal_ID)
     print( gal_ID, "extracted")'''
 
-
-DRP_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17/'
+MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
+DRP_FOLDER = MANGA_FOLDER + 'DR17/'
 IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/metallicity_maps/'
+
+DRP_TABLE_FN = MANGA_FOLDER + 'output_files/DR17/H_alpha_HIvel_BB_extinction_H2_R90.fits'
+
 corr_law = 'CCM89'
+
+gal_ID = '7443-6103'
+
+DRP_table = Table.read(DRP_TABLE_FN, format='fits')
+i_DRP = np.where(DRP_table['plateifu'] == gal_ID)[0][0]
 
 # check if target is a galaxy
 # want to choose center_coord, phi, inclination from fit if available
 # else choose nsa values (conversion necessary for phi, inclination)
 
-center_coord = (26.348064449203378, 24.578296983961433)
-phi = 201.61168900325225
-ba = 0.5187071826939094
-z = 0.0183422
-A_g = 0.082
-A_r = 0.057
-gal_ID = '7443-6103'
+center_coord = (DRP_table['x0'][i_DRP], DRP_table['y0'][i_DRP])
+phi = DRP_table['phi'][i_DRP]
+ba = DRP_table['ba'][i_DRP]
+z = DRP_table['nsa_z'][i_DRP]
+A_g = DRP_table['A_g'][i_DRP]
+A_r = DRP_table['A_r'][i_DRP]
 
 
-#master_table=Table.read(master_fn, format='fits')
 
-#i_master = np.where(master_table['plateifu'] == gal_ID)[0][0]
-
-#A_g = master_table['A_g'][i_master]
-#A_r = master_table['A_r'][i_master]
-
-metallicity_param_outputs = fit_metallicity_gradient(DRP_FOLDER, 
-                        IMAGE_DIR, 
-                        corr_law, 
-                        gal_ID,
-                        center_coord,
-                        phi, 
-                        ba,
-                        z)
+metallicity_param_outputs, r_kpc, scale, d_kpc = fit_metallicity_gradient(MANGA_FOLDER,
+                                                    DRP_FOLDER, 
+                                                    IMAGE_DIR, 
+                                                    corr_law, 
+                                                    gal_ID,
+                                                    center_coord,
+                                                    phi, 
+                                                    ba,
+                                                    z)
 if metallicity_param_outputs is not None:
 
     print(metallicity_param_outputs)
@@ -79,10 +81,13 @@ if metallicity_param_outputs is not None:
                                                                         gal_ID,
                                                                         A_g,
                                                                         A_r,
-                                                                        center_coord,
-                                                                        phi, 
-                                                                        ba,
-                                                                        z)
+                                                                        #center_coord,
+                                                                        #phi, 
+                                                                        #ba,
+                                                                        #z,
+                                                                        r_kpc,
+                                                                        scale,
+                                                                        d_kpc)
 
                                                                 
     

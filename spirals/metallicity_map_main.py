@@ -61,7 +61,7 @@ A_r = DRP_table['A_r'][i_DRP]
 
 
 
-metallicity_param_outputs, r_kpc, scale, d_kpc = fit_metallicity_gradient(MANGA_FOLDER,
+metallicity_param_outputs, r_kpc, scale, d_kpc, metallicity_mask = fit_metallicity_gradient(MANGA_FOLDER,
                                                     DRP_FOLDER, 
                                                     IMAGE_DIR, 
                                                     corr_law, 
@@ -87,7 +87,8 @@ if metallicity_param_outputs is not None:
                                                                         #z,
                                                                         r_kpc,
                                                                         scale,
-                                                                        d_kpc)
+                                                                        d_kpc,
+                                                                        metallicity_mask)
 
                                                                 
     

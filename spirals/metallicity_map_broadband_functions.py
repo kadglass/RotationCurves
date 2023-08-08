@@ -8,6 +8,8 @@ import matplotlib
 
 import matplotlib.pyplot as plt
 
+from scipy.optimize import minimize
+
 from DRP_rotation_curve import extract_data
 
 from DRP_vel_map_functions import deproject_spaxel
@@ -79,7 +81,7 @@ def extract_broadband_images(FOLDER, gal_ID):
 
 def B_band_map(IMAGE_DIR,
                 gal_ID,
-                 g,r, A_g, A_r, Ha_flux, Ha_flux_ivar, Ha_vel_mask):
+                 g,r, A_g, A_r, Ha_flux, Ha_flux_ivar, Ha_vel_mask, metallicity_mask):
 
     '''
     
@@ -109,7 +111,7 @@ def B_band_map(IMAGE_DIR,
         MaNGA H-alpha flux inverse variance map
 
     Ha_vel_mask : array
-        MaNGA H-alpha velocity map nasj
+        MaNGA H-alpha velocity map mask
 
     RETURNS
     =======
@@ -123,8 +125,8 @@ def B_band_map(IMAGE_DIR,
 
     SN_3_mask = np.logical_or(Ha_vel_mask > 0, np.abs(Ha_flux*np.sqrt(Ha_flux_ivar)) < 3)
 
-    g = ma.array(g, mask=SN_3_mask)
-    r = ma.array(r, mask=SN_3_mask)
+    g = ma.array(g, mask=SN_3_mask + metallicity_mask)
+    r = ma.array(r, mask=SN_3_mask + metallicity_mask)
 
 
     # convert g-band and r-band nanomaggies to asinh mag
@@ -173,7 +175,7 @@ def sersic_profile(params, r):
 
     Sigma_e, Re, n, Sigma_0_in, h_in, Sigma_0_out, h_out, R_break = params
 
-    bn = 0
+    bn = 2*n - 1/3
 
     if r <= R_break:
         Sigma = Sigma_e * np.exp(-bn*((r/Re)**(1/n) - 1)) + Sigma_0_in*np.exp(-r/h_in)
@@ -275,6 +277,37 @@ def B_mag_to_lum(B_mag,d):
 ################################################################################
 
 
+def calculate_sigma(params, surface_brightness, r_pc):
+
+
+    # calc model values
+
+    surface_brightness_model = np.zeros(len(surface_brightness.mask))
+
+    for i in range(0,len(surface_brightness_model)):
+
+            surface_brightness_model[i] = sersic_profile(params, r_pc[i])
+
+    # flatten and remove nans
+
+    msurface_brightness_model = ma.array(surface_brightness_model, mask = surface_brightness.mask)
+    flat_surface_brightness_model = msurface_brightness_model.compressed()
+
+    flat_surface_brightness = surface_brightness.compressed()
+
+    sigma = np.sqrt(np.sum((flat_surface_brightness_model/flat_surface_brightness - 1)**2) / len(flat_surface_brightness))
+
+    return sigma
+
+
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
 def fit_surface_brightness_profile(DRP_FOLDER, 
                                     IMAGE_DIR, 
                                     gal_ID, 
@@ -282,7 +315,8 @@ def fit_surface_brightness_profile(DRP_FOLDER,
                                     A_r,
                                     r_kpc,
                                     scale,
-                                    d_kpc):
+                                    d_kpc,
+                                    metallicity_mask):
 
 
 
@@ -328,28 +362,6 @@ def fit_surface_brightness_profile(DRP_FOLDER,
 
     drp_maps = extract_data(DRP_FOLDER, gal_ID, ['Ha_vel', 'Ha_flux'])
 
-    # temp plot g and r band map
-
-    plt.imshow(maps['g_band'])
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.gca().invert_yaxis()
-    plt.colorbar(label='nanomaggies')
-    plt.title(gal_ID + ' g-band')
-    plt.savefig(gal_ID + 'g-band.png')
-    plt.close()
-
-    plt.imshow(maps['r_band'])
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.gca().invert_yaxis()
-    plt.colorbar(label='nanomaggies')
-    plt.title(gal_ID + ' r-band')
-    plt.savefig(gal_ID + 'r-band.png')
-    plt.close()
-
-
-
     # generate B-band map from g-band and r-band maps
 
     B_map = B_band_map(IMAGE_DIR,
@@ -359,7 +371,8 @@ def fit_surface_brightness_profile(DRP_FOLDER,
                     A_g, A_r, 
                     drp_maps['Ha_flux'], 
                     drp_maps['Ha_flux_ivar'],
-                    drp_maps['Ha_vel_mask'])
+                    drp_maps['Ha_vel_mask'],
+                    metallicity_mask)
 
     print('B map min:')
     print(np.min(B_map))
@@ -370,29 +383,71 @@ def fit_surface_brightness_profile(DRP_FOLDER,
 
     # convert deprojected 
 
-    r_pc = r_kpc.flatten() * 1000
 
-    #B_lum_map_pc2 = B_lum_map / (scale*1000)**2
 
-    #plt.imshow(B_lum_map_pc2)
-    #plt.colorbar(norm=matplotlib.colors.LogNorm())
-    #plt.savefig('B_lum_Lpc22.png')
-    #plt.close()
+    r_pc = ma.array(r_kpc.flatten() * 1000, mask = B_map.mask.flatten())
 
-    surface_brightness = B_lum_map.flatten() / (scale*1000)**2
-    
+    surface_brightness = ma.array(B_lum_map.flatten() / (scale*1000)**2,mask = B_map.mask.flatten())
+    '''
     plot_surface_brightness(IMAGE_DIR, gal_ID, surface_brightness, r_pc)
-
-    #plt.scatter(r_pc.flatten(), np.log10(B_lum_map_pc2.flatten()))
-    #plt.yscale('log')
-    #plt.savefig('B_lum_Lpc22_flat.png')
-    #plt.close()
+    '''
 
     # fit to sersic profile
+
+    #break rad guess = 2000
+
+    '''
+    Sigma_e_guess = 10 # L/pc^2
+    Re_guess = 100 # pc
+    n_guess = 5
+    Sigma_0_in_guess = 100 #L/pc^2
+    h_in_guess = 50 #pc
+    Sigma_0_out_guess = 5 # L/pc^2
+    h_out_guess = 500 #pc
+    R_break_guess = 2000 # pc
+
+    guesses = [Sigma_e_guess, Re_guess, n_guess, Sigma_0_in_guess, 
+                h_in_guess, Sigma_0_out_guess, h_out_guess, R_break_guess]
+
+
+    print('fitting')
+
+    result = minimize(calculate_sigma,
+                        guesses,
+                        method='Powell',
+                        args = (surface_brightness,r_pc),
+                        options={'disp':True})
+
+                        
+
+    print('fitting done!')
+    print(result.x)
+    '''
 
     # plot sersic profile with best fit
 
     # return best fit values
+
+    # TEMP
+
+    surface_brightness_model = np.zeros(len(r_pc))
+    p = [7.82121654e+03, 1.04503516e+02,  1.38814393e+06, -4.27257651e+04, 
+        6.36970124e+01,  1.61773647e+02,  1.19415002e+03,  1.99986707e+03]
+
+    for i in range(0, len(r_pc)):
+        surface_brightness_model[i] = sersic_profile(p, r_pc[i])
+
+    good = surface_brightness_model[surface_brightness_model >= 0]
+    good_r = r_pc[surface_brightness_model >= 0]
+
+    plt.scatter(r_pc, np.log10(surface_brightness), marker='.', color='k')
+    plt.scatter(good_r, np.log10(good))
+    plt.xlabel('radius [pc]')
+    plt.ylabel('$log\Sigma_L\ (L\odot/pc^2)$')
+    plt.title(gal_ID)
+    plt.savefig('TEST_SB.eps')
+    plt.close()
+
 
     return None
 

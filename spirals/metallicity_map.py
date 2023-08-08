@@ -375,9 +375,6 @@ def dust_correction(maps, wavelengths, corr_law='CCM89'):
 
     dmaps = {}
 
-    #corr = np.ones(len(wavelengths))
-    #for i in range(0, len(wavelengths)):
-    #    corr[i] = rc.getCorrHb(wavelengths[i])
 
     wavelengths=np.array([6564, 4862, 3727, 3729, 4960, 5008, 6549, 6585])
 
@@ -579,4 +576,4 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
 
 
-    return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc
+    return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc, nan_mask

@@ -129,15 +129,15 @@ def match_H2_MASCOT(master_table, MASCOT_FILE_NAME, units=False):
     ############################################################################
     # Initialize H2 column in master_table
     #---------------------------------------------------------------------------
-    if 'logH2' not in master_table.colnames:
+    if 'logH2_M' not in master_table.colnames:
 
         if units:
-            master_table['logH2'] = np.nan*np.ones(len(master_table), 
+            master_table['logH2_M'] = np.nan*np.ones(len(master_table), 
                                                    dtype=float) * u.dex(u.M_sun)
             #master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
             #                                           dtype=float) * u.dex(u.M_sun)
         else:
-            master_table['logH2'] = np.nan*np.ones(len(master_table), 
+            master_table['logH2_M'] = np.nan*np.ones(len(master_table), 
                                                    dtype=float)
             #master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
             #                                           dtype=float)
@@ -191,9 +191,9 @@ def match_H2_MASCOT(master_table, MASCOT_FILE_NAME, units=False):
             # Insert H2 data into master table
             #-------------------------------------------------------------------
             if units:
-                master_table['logH2'][gal_i] = MASCOT['log(H2_mass)'][i] * u.dex(u.M_sun)
+                master_table['logH2_M'][gal_i] = MASCOT['log(H2_mass)'][i] * u.dex(u.M_sun)
             else:
-                master_table['logH2'][gal_i] = MASCOT['log(H2_mass)'][i]
+                master_table['logH2_M'][gal_i] = MASCOT['log(H2_mass)'][i]
 
             #master_table['H2_source'][gal_i] = 1
             ####################################################################
@@ -319,7 +319,7 @@ def match_H2_ALMaQUEST(master_table, units=False):
 ################################################################################
 ################################################################################
 
-def match_H2_xCOLDGASS(master_table, units=False):
+def match_H2_xCOLDGASS(master_table, COLD_GASS_FILE_NAME, units=False):
     '''
     Locate the H2 mass from the xCOLDGASS survey.
 
@@ -350,29 +350,29 @@ def match_H2_xCOLDGASS(master_table, units=False):
     ############################################################################
     # Initialize H2 columns in master_table
     #---------------------------------------------------------------------------
-    if 'logH2' not in master_table.colnames:
+    if 'logH2_CG' not in master_table.colnames:
 
         if units:
-            master_table['logH2'] = np.nan*np.ones(len(master_table), 
+            master_table['logH2_CG'] = np.nan*np.ones(len(master_table), 
                                                    dtype=float) * u.dex(u.M_sun)
-            master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
+            master_table['logH2_CG_err'] = np.nan*np.ones(len(master_table), 
                                                        dtype=float) * u.dex(u.M_sun)
         else:
-            master_table['logH2'] = np.nan*np.ones(len(master_table), 
+            master_table['logH2_CG'] = np.nan*np.ones(len(master_table), 
                                                    dtype=float)
-            master_table['logH2_err'] = np.nan*np.ones(len(master_table), 
+            master_table['logH2_CG_err'] = np.nan*np.ones(len(master_table), 
                                                        dtype=float)
 
-        master_table['H2_source'] = np.zeros(len(master_table), dtype=int)
+        #master_table['H2_source'] = np.zeros(len(master_table), dtype=int)
     ############################################################################
 
 
     ############################################################################
     # Load in H2 data
     #---------------------------------------------------------------------------
-    xCOLDGASS_filename = '/Users/kellydouglass/Documents/Research/data/H2/xCOLDGASS/xCOLDGASS_PubCat.fits'
+    #xCOLDGASS_filename = '/Users/kellydouglass/Documents/Research/data/H2/xCOLDGASS/xCOLDGASS_PubCat.fits'
 
-    xCOLDGASS = Table.read(xCOLDGASS_filename, format='fits')
+    xCOLDGASS = Table.read(COLD_GASS_FILE_NAME, format='fits')
     ############################################################################
 
 
@@ -409,13 +409,13 @@ def match_H2_xCOLDGASS(master_table, units=False):
             # Insert H2 data into master table
             #-------------------------------------------------------------------
             if units:
-                master_table['logH2'][gal_i] = xCOLDGASS['LOGMH2'][i] * u.dex(u.M_sun)
-                master_table['logH2_err'][gal_i] = xCOLDGASS['LOGMH2_ERR'][i] * u.dex(u.M_sun)
+                master_table['logH2_CG'][gal_i] = xCOLDGASS['LOGMH2'][i] * u.dex(u.M_sun)
+                master_table['logH2_CG_err'][gal_i] = xCOLDGASS['LOGMH2_ERR'][i] * u.dex(u.M_sun)
             else:
-                master_table['logH2'][gal_i] = xCOLDGASS['LOGMH2'][i]
-                master_table['logH2_err'][gal_i] = xCOLDGASS['LOGMH2_ERR'][i]
+                master_table['logH2_CG'][gal_i] = xCOLDGASS['LOGMH2'][i]
+                master_table['logH2_CG_err'][gal_i] = xCOLDGASS['LOGMH2_ERR'][i]
 
-            master_table['H2_source'][gal_i] = 3
+            #master_table['H2_source'][gal_i] = 3
             ####################################################################
     ############################################################################
 

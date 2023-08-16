@@ -40,6 +40,8 @@ ln10 = ma.log(10)
 H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458 # Speed of light in units of km/s
 MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
+fHep = 0.2485 # primordial Helium fraction
+grad_Hep_z = 1.41 
 
 
 ################################################################################
@@ -497,6 +499,98 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
     return metallicity_map, metallicity_map_ivar
 
     
+################################################################################
+################################################################################
+################################################################################
+
+
+def find_global_metallicity(R25_pc, gradient, met_0):
+
+    '''
+
+    Calculate the global metallicity as the metallicity at 0.4 x R25
+    De Vis et al. (2019)
+
+    PARAMETERS
+    ==========
+
+    R25_pc : float
+        R25 B-band radius [pc]
+
+    gradient : float
+        metallicity gradient [dex/kpc]
+
+    met_0 : float
+        central metallicity [dex]
+
+    RETURNS
+    =======
+    
+    met_glob : float
+        global metallicity [dex]
+
+    '''
+
+    met_glob = gradient * R25_pc / 1000 * 0.4 + met_0
+
+    return met_glob
+
+################################################################################
+################################################################################
+################################################################################
+
+def calculate_metal_mass(met_glob, M_HI, M_H2, M_star):
+
+    '''
+
+    calculate metal mass (minus metals locked up in dust) and dust mass (including metals in dust)
+    according to De Vis et al. (2019) for PG16R metallicity calibration 
+    dust mass(incl metals) / (metal mass  + metal mass in dust) = 0.206
+
+
+    PARAMETERS
+    ==========
+
+    met_glob : float
+        global metallicity defined as metallicity at 0.4 R25
+
+    M_HI : float
+        HI mass
+
+    M_H2 : float
+        H2 mass
+    
+    M_star : float
+        stellar mass
+
+    RETURNS
+    =======
+
+    Mz : float
+        heavy metal mass (not including metals in dust)
+
+    Md : float 
+        dust mass (includes metals in dust)
+
+    '''
+
+    Mz = None
+    Md = None
+
+    if met_glob > 8.2:
+
+        if M_H2 == None:
+            M_H2 = M_HI * 10**(-0.72*np.log(M_HI/M_star) - 0.78)
+        
+        fz = 27.36 * 10**(met_glob - 12)
+        xi = 1 / (1 - (fHep + fz * grad_Hep_z) - fz)
+        Mg = xi * M_HI * (1 + M_H2/MHI)
+
+        Mz = fz*Mg
+        Md = Mz / (1/0.206 - 1)
+
+
+    return Mz, Md
 
 
 
@@ -516,15 +610,24 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
                                 ba,
                                 z):
 
+
     
+    ################################################################################
+    # calculate scales for deprojection
+    ################################################################################
 
-    # scaling constants
+    # temp
+    dist_to_galaxy_Mpc = 89.1
 
-    dist_to_galaxy_Mpc = c*z/H_0
+    #dist_to_galaxy_Mpc = c*z/H_0
+    #print(dist_to_galaxy_Mpc)
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
     pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
+
     
-    # get metallicity map and uncertainty
+    ################################################################################
+    # get metallicity map and uncertainties
+    ################################################################################
 
 
     metallicity_map, metallicity_map_ivar = get_metallicity_map(DRP_FOLDER, 
@@ -533,7 +636,9 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
                                                                 gal_ID)
 
 
-    # deproject maps
+    ################################################################################
+    # deproject metallicity maps, flatten and remove nans
+    ################################################################################
 
     cosi2 = (ba**2 - q0**2)/(1 - q0**2)
     i_angle = np.arccos(np.sqrt(cosi2))
@@ -547,13 +652,15 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
             r_kpc[i][j] = r_spax*pix_scale_factor
 
 
-    # apply linear fit
-
     nan_mask = np.isnan(metallicity_map)
 
     r_flat = ma.array(r_kpc, mask=nan_mask).compressed()
     m = ma.array(metallicity_map, mask=nan_mask).compressed()
     m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
+
+    ################################################################################
+    # fit metallicity map to linear metallicity gradient
+    ################################################################################
 
 
     popt, pcov = curve_fit(linear_metallicity_gradient, 
@@ -562,11 +669,16 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
                                     sigma=m_sigma
                                     )
 
+
+    ################################################################################
+    # unpack and plot results
+    ################################################################################
+
     cov_dir = MANGA_FOLDER + 'metallicity_cov/'
     np.save(cov_dir + 'metallicity_' + gal_ID + '_cov.npy', pcov) 
 
     perr = np.sqrt(np.diag(pcov))
-
+    
     best_fit_values = {'grad': popt[0], 
                         'grad_err': perr[0], 
                         '12logOH_0': popt[1], 

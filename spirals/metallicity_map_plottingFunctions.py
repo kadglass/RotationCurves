@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma as ma
 
 from metallicity_map_functions import linear_metallicity_gradient
+
+from metallicity_map_broadband_functions import surface_brightness_profile
 
 
 
@@ -63,12 +66,14 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
     stdevs = np.nanstd(y_sample, axis=0)
 
 
-    plt.plot(r_depro, y, 'c', zorder=3)
-    plt.fill_between(r_depro, y - stdevs, y + stdevs, facecolor='aliceblue', alpha=0.5, zorder=2)
+    plt.plot(r_depro, y, 'c', zorder=2)
+    #plt.fill_between(r_depro, y - stdevs, y + stdevs, facecolor='red', zorder=3)
 
     plt.errorbar(r, m, 
  #               yerr=m_sigma, 
                 fmt='.', zorder=1, color='k')
+
+    plt.text(2,9,'$12+log(O/H)_0 = $' + str(met_0) + '\n$grad = $' + str(grad), fontsize=10)
 
 
 
@@ -93,10 +98,36 @@ def plot_broadband_image(IMAGE_DIR, gal_ID, im_map, band):
     plt.close()
 
 
-def plot_surface_brightness(IMAGE_DIR, gal_ID, sb, r_pc):
+def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_vals):
 
-    plt.scatter(r_pc, np.log10(sb), marker='.', color='k')
-    plt.xlabel('radius [pc]')
+    '''
+
+    PARAMETERS
+    ==========
+    sb_mean : array
+        binned surface brightness data
+
+    r_bins : array
+        binned radius
+
+    r_pc : array
+        radius data
+
+    best_fit_vals : list
+        best fit params for surface brightnes profile
+
+
+    '''
+
+    r = np.linspace(np.min(r_pc), np.max(r_pc), 1000)
+    sb_model = np.zeros(len(r))
+
+    for i in range(0, len(r)):
+        sb_model[i] = surface_brightness_profile(best_fit_vals, r[i])
+
+    plt.scatter(r_bins/1000, ma.log10(sb_mean), marker='.', color='k')
+    plt.plot(r/1000, ma.log10(sb_model))
+    plt.xlabel('radius [kpc]')
     plt.ylabel('$log\Sigma_L\ (L\odot/pc^2)$')
     plt.title(gal_ID)
     plt.savefig(IMAGE_DIR + 'surface_brightness/' + gal_ID + '_surface_brightness.eps')

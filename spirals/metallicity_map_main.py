@@ -6,7 +6,7 @@ from astropy.table import Table
 import os
 from astropy.io import fits
 from metallicity_map import *
-from metallicity_map_broadband_functions import *
+from metallicity_map_broadband import *
 
 '''IMAGE_FORMAT = 'eps'
 
@@ -58,6 +58,10 @@ ba = DRP_table['ba'][i_DRP]
 z = DRP_table['nsa_z'][i_DRP]
 A_g = DRP_table['A_g'][i_DRP]
 A_r = DRP_table['A_r'][i_DRP]
+r50 = DRP_table['nsa_elpetro_th50_r'][i_DRP]
+M_HI = DRP_table['logMHI'][i_DRP]
+M_H2 = DRP_table['logMH2'][i_DRP]
+M_star = DRP_table['M_disk'][i_DRP]
 
 
 
@@ -85,10 +89,13 @@ if metallicity_param_outputs is not None:
                                                                         #phi, 
                                                                         #ba,
                                                                         #z,
+                                                                        r50,
                                                                         r_kpc,
                                                                         scale,
                                                                         d_kpc,
                                                                         metallicity_mask)
+
+
 
                                                                 
     

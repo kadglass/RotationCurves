@@ -578,19 +578,22 @@ def calculate_metal_mass(met_glob, M_HI, M_H2, M_star):
     Md = None
 
     if met_glob > 8.2:
+        print('global metallicity', met_glob)
 
         if M_H2 == None:
-            M_H2 = M_HI * 10**(-0.72*np.log(M_HI/M_star) - 0.78)
+            print(M_HI)
+            M_H2 = M_HI * 10**(-0.72*np.log10(M_HI/M_star) - 0.78)
+            print('MH2: ', np.log10(M_H2))
         
         fz = 27.36 * 10**(met_glob - 12)
         xi = 1 / (1 - (fHep + fz * grad_Hep_z) - fz)
-        Mg = xi * M_HI * (1 + M_H2/MHI)
+        Mg = xi * M_HI * (1 + M_H2/M_HI)
 
         Mz = fz*Mg
         Md = Mz / (1/0.206 - 1)
 
 
-    return Mz, Md
+    return ma.log10(Mz), ma.log10(Md)
 
 
 
@@ -608,7 +611,8 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
                                 center_coord,
                                 phi,
                                 ba,
-                                z):
+                                z
+                                ):
 
 
     
@@ -658,17 +662,52 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     m = ma.array(metallicity_map, mask=nan_mask).compressed()
     m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
 
+
+    '''
+    ################################################################################
+    # bin metallicity by radius, using median
+    ################################################################################
+
+    bin_edges = np.linspace(0, np.max(r_flat), 20)
+    step_size = (bin_edges[0] + bin_edges[1]) / 2
+    bin_centers = bin_edges[:-1] + step_size 
+
+    m_median = np.zeros(len(bin_centers))
+    m_sigma_med = np.zeros(len(bin_centers))
+
+    for i in range(0, len(bin_centers)):
+
+        if i == 0:
+            m_median[i] = ma.median(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
+            m_sigma_med[i] = ma.median(m_sigma[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
+        
+        else:
+
+            m_median[i] = ma.median(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
+            m_sigma_med[i] = ma.median(m_sigma[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
+
+
+    print(m_median)
+
     ################################################################################
     # fit metallicity map to linear metallicity gradient
     ################################################################################
+    '''
 
-
+    
     popt, pcov = curve_fit(linear_metallicity_gradient, 
                                     r_flat, 
                                     m,
                                     sigma=m_sigma
                                     )
+    '''
 
+    popt, pcov = curve_fit(linear_metallicity_gradient, 
+                                    bin_centers, 
+                                    m_median,
+                                    sigma=m_sigma_med
+                                    )
+    '''
 
     ################################################################################
     # unpack and plot results
@@ -678,7 +717,7 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     np.save(cov_dir + 'metallicity_' + gal_ID + '_cov.npy', pcov) 
 
     perr = np.sqrt(np.diag(pcov))
-    
+
     best_fit_values = {'grad': popt[0], 
                         'grad_err': perr[0], 
                         '12logOH_0': popt[1], 
@@ -686,6 +725,15 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
 
 
     plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
+
+    r = np.linspace(np.min(r_flat), np.max(r_flat), 1000)
+    '''
+    plt.scatter(bin_centers, m_median, color='k', marker='.')
+    plt.plot(r, linear_metallicity_gradient(r, popt[0], popt[1]))
+    plt.xlabel('r [kpc]')
+    plt.ylabel('12 + log(O/H)')
+    plt.savefig('metallicity_gradient.eps')
+    '''
 
 
     return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc, nan_mask

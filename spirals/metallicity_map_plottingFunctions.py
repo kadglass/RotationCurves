@@ -14,7 +14,8 @@ from metallicity_map_broadband_functions import surface_brightness_profile
 
 def plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_ID):
 
-    plt.imshow(metallicity_map, vmin=8,vmax=9)
+    #plt.imshow(metallicity_map, vmin=8,vmax=9)
+    plt.imshow(metallicity_map)
     plt.gca().invert_yaxis()
     plt.title(gal_ID)
     plt.xlabel('spaxel')
@@ -77,10 +78,12 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
 
 
 
-    plt.ylim(np.min(m) - 0.5,np.max(m) + 0.5)
+    plt.ylim(np.min(m) - 0.05,np.max(m) + 0.05)
     plt.title(gal_ID)
     plt.xlabel('r [kpc]')
     plt.ylabel('12 + log(O/H) (dex)')
+    plt.axvline(0.4*5.571, color='r', label='$0.4\ R_{25}$')
+    plt.legend()
     plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.eps')
     plt.close()
 
@@ -127,6 +130,8 @@ def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_v
 
     plt.scatter(r_bins/1000, ma.log10(sb_mean), marker='.', color='k')
     plt.plot(r/1000, ma.log10(sb_model))
+    plt.axvline(5.571, color='r', label='$R_{25} = 5.57\ kpc$')
+    plt.legend()
     plt.xlabel('radius [kpc]')
     plt.ylabel('$log\Sigma_L\ (L\odot/pc^2)$')
     plt.title(gal_ID)

@@ -475,11 +475,13 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     for i in range(0, len(bin_centers)):
 
         if i == 0:
-            sb_mean[i] = ma.mean(flat_sb[np.logical_and(flat_r_pc >= bin_edges[i], flat_r_pc <= bin_edges[i+1])])
+            sb_mean[i] = ma.median(flat_sb[np.logical_and(flat_r_pc >= bin_edges[i], flat_r_pc <= bin_edges[i+1])])
         
         else:
 
-            sb_mean[i] = ma.mean(flat_sb[np.logical_and(flat_r_pc > bin_edges[i], flat_r_pc <= bin_edges[i+1])])
+            sb_mean[i] = ma.median(flat_sb[np.logical_and(flat_r_pc > bin_edges[i], flat_r_pc <= bin_edges[i+1])])
+
+        print(len(flat_sb[np.logical_and(flat_r_pc >= bin_edges[i], flat_r_pc <= bin_edges[i+1])]))
 
     print('mean sbs:')
     print(sb_mean)
@@ -487,6 +489,10 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     ################################################################################
     # fit data to bulge + exponential break profile
     ################################################################################
+
+    plt.scatter(flat_r_pc, flat_sb)
+    plt.savefig('test.png')
+    plt.close()
 
     
 

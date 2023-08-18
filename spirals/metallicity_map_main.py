@@ -39,7 +39,7 @@ MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
 DRP_FOLDER = MANGA_FOLDER + 'DR17/'
 IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/metallicity_maps/'
 
-DRP_TABLE_FN = MANGA_FOLDER + 'output_files/DR17/H_alpha_HIvel_BB_extinction_H2_R90.fits'
+DRP_TABLE_FN = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/H_alpha_HIvel_BB_extinction_H2_MxCG_R90_v3p5.fits'
 
 corr_law = 'CCM89'
 
@@ -59,9 +59,11 @@ z = DRP_table['nsa_z'][i_DRP]
 A_g = DRP_table['A_g'][i_DRP]
 A_r = DRP_table['A_r'][i_DRP]
 r50 = DRP_table['nsa_elpetro_th50_r'][i_DRP]
-M_HI = DRP_table['logMHI'][i_DRP]
-M_H2 = DRP_table['logMH2'][i_DRP]
-M_star = DRP_table['M_disk'][i_DRP]
+log_M_HI = DRP_table['logHI'][i_DRP] 
+log_M_H2 = DRP_table['logH2'][i_DRP]
+log_M_star = DRP_table['M_disk'][i_DRP]
+
+
 
 
 
@@ -96,7 +98,26 @@ if metallicity_param_outputs is not None:
                                                                         metallicity_mask)
 
 
+    R25_pc = surface_brightness_param_outputs['R25_pc']
+    grad = metallicity_param_outputs['grad']
+    Z0 = metallicity_param_outputs['12logOH_0']
 
+    Z = find_global_metallicity(R25_pc, grad, Z0)
+
+    M_HI = 10**(log_M_HI)
+    M_H2 = None
+    M_star = None
+
+    if log_M_H2 > 0:
+        M_H2 = 10**(log_M_H2)
+
+    else:
+        M_star = 10**(log_M_star)
+
+    Mz, Md = calculate_metal_mass(Z, M_HI, M_H2, M_star)
+
+    print('Mz: ', Mz)
+    print('Md: ', Md)
                                                                 
     
 #    if surface_brightness_param_outputs is not None:

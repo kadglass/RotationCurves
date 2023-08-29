@@ -320,6 +320,30 @@ def L_difference(r, L_25, params):
     return np.abs(L_25 - surface_brightness_profile(params, r))
 
 
+################################################################################
+################################################################################
+################################################################################
+
+def calculate_chi2(params, r, sb_median, sigma_asym):
+
+    sb_model = np.zeros(len(r))
+    for i in range(len(r)):
+        sb_model[i] = surface_brightness_profile(params, r[i])
+
+    sigma = np.ones(len(r))*np.nan
+
+    for i in range(0, len(r)):
+        if sb_model[i] >= sb_median[i]:
+            sigma[i] = sigma_asym[i][1]
+
+        if sb_model[i] < sb_median[i]:
+            sigma[i] = sigma_asym[i][0]
+
+    chi2 = np.sum((sb_model - sb_median)**2/sigma**2)
+
+    return chi2
+
+
 
 
 ################################################################################
@@ -438,7 +462,8 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     n_guess = 5
     n_bounds = (1,10)  # from pilyugin breaks in disc galaxy abundance gradients
 
-    Sigma_0_in_guess = 10**2.2 #L/pc^2
+    #Sigma_0_in_guess = 10**2.2 #L/pc^2
+    Sigma_0_in_guess = ma.max(surface_brightness)
     Sigma_0_in_bounds = (50, 10**4)
 
     h_in_guess = r50_pc/2 #pc
@@ -470,21 +495,24 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     step_size = (bin_edges[0] + bin_edges[1]) / 2
     bin_centers = bin_edges[:-1] + step_size 
 
-    sb_mean = np.zeros(len(bin_centers))
+    sb_median = np.zeros(len(bin_centers))
+    sigma_asym = np.zeros((len(bin_centers), 2))
 
     for i in range(0, len(bin_centers)):
 
         if i == 0:
-            sb_mean[i] = ma.median(flat_sb[np.logical_and(flat_r_pc >= bin_edges[i], flat_r_pc <= bin_edges[i+1])])
+            vals = flat_sb[np.logical_and(flat_r_pc >= bin_edges[i], flat_r_pc <= bin_edges[i+1])]
         
         else:
+            vals = flat_sb[np.logical_and(flat_r_pc > bin_edges[i], flat_r_pc <= bin_edges[i+1])]
 
-            sb_mean[i] = ma.median(flat_sb[np.logical_and(flat_r_pc > bin_edges[i], flat_r_pc <= bin_edges[i+1])])
+        sb_median[i] = ma.median(vals)
+        sigma_asym[i] = np.quantile(vals, [0.16,0.84])
 
-        print(len(flat_sb[np.logical_and(flat_r_pc >= bin_edges[i], flat_r_pc <= bin_edges[i+1])]))
 
-    print('mean sbs:')
-    print(sb_mean)
+    print('sb_med', sb_median)
+    print('sigma_asym', sigma_asym)
+
 
     ################################################################################
     # fit data to bulge + exponential break profile
@@ -500,12 +528,22 @@ def fit_surface_brightness_profile(DRP_FOLDER,
 
     print('starting fit!')
     
+    '''
 
     result = minimize(calculate_sigma,
                         guesses,
                         method='Powell',
-                        args = (sb_mean, bin_centers),
+                        args = (sb_median, bin_centers),
                         bounds = bounds,
+                        options={'disp':True})
+
+    '''
+
+    result = minimize(calculate_chi2,
+                        guesses,
+                        method='Powell',
+                        args=(bin_centers,sb_median,sigma_asym),
+                        bounds=bounds,
                         options={'disp':True})
 
 
@@ -524,11 +562,7 @@ def fit_surface_brightness_profile(DRP_FOLDER,
 
 
 
-    ################################################################################
-    # plot data and model
-    ################################################################################
-
-    plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, bin_centers, flat_r_pc, best_fit_vals)
+    
 
 
     ################################################################################
@@ -545,6 +579,12 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     
     r25_pc = r25_res.x[0]
     print('R25 [pc] = ', r25_pc)
+
+    ################################################################################
+    # plot data and model
+    ################################################################################
+
+    plot_surface_brightness(IMAGE_DIR, gal_ID, sb_median, bin_centers, flat_r_pc, best_fit_vals, r25_pc)
     
 
 

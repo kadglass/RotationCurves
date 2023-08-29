@@ -473,9 +473,17 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
     # apply default mask + dust correction
     dmaps = dust_correction(maps, wavelengths, corr_law)
 
+    # get super mask
+    super_mask = ma.array(np.zeros((len(dmaps['dmHb_flux']), len(dmaps['dmHb_flux'][0]))))
+
+    for m in dmaps:
+        super_mask = ma.array(super_mask, mask = super_mask.mask + dmaps[m].mask)
+
+
     # mask AGN
     AGN_masked_maps = mask_AGN(dmaps)
-
+    #AGN_masked_maps = dmaps
+ 
 
     # calculate metallicity ratios
 
@@ -496,7 +504,7 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
 
     plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_ID)
 
-    return metallicity_map, metallicity_map_ivar
+    return metallicity_map, metallicity_map_ivar, super_mask
 
     
 ################################################################################
@@ -621,9 +629,9 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     ################################################################################
 
     # temp
-    dist_to_galaxy_Mpc = 89.1
+    #dist_to_galaxy_Mpc = 89.1
 
-    #dist_to_galaxy_Mpc = c*z/H_0
+    dist_to_galaxy_Mpc = c*z/H_0
     #print(dist_to_galaxy_Mpc)
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
     pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
@@ -634,7 +642,7 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     ################################################################################
 
 
-    metallicity_map, metallicity_map_ivar = get_metallicity_map(DRP_FOLDER, 
+    metallicity_map, metallicity_map_ivar, super_mask = get_metallicity_map(DRP_FOLDER, 
                                                                 IMAGE_DIR, 
                                                                 corr_law,
                                                                 gal_ID)
@@ -663,6 +671,33 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
 
 
+    ################################################################################
+    # bin metallicity by radius, use weighted average
+    ################################################################################
+
+    bin_edges = np.linspace(0, np.max(r_flat), 20)
+    step_size = (bin_edges[0] + bin_edges[1]) / 2
+    bin_centers = bin_edges[:-1] + step_size 
+
+    m_avg = np.zeros(len(bin_centers))
+    m_avg_sigma = np.zeros(len(bin_centers))
+
+    for i in range(0, len(bin_centers)):
+        if i == 0:
+            weights = 1 / m_sigma[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])]**2
+            m_avg[i] = ma.median(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
+            m_avg_sigma[i] = ma.sqrt(1/ma.sum(weights))
+
+        else:
+            weights = 1/m_sigma[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])]**2
+            m_avg[i] = ma.median(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
+            m_avg_sigma[i] = ma.sqrt(1/ma.sum(weights))
+    
+    print(m_avg)
+    print(m_avg_sigma)
+
+
+
     '''
     ################################################################################
     # bin metallicity by radius, using median
@@ -679,12 +714,12 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
 
         if i == 0:
             m_median[i] = ma.median(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
-            m_sigma_med[i] = ma.median(m_sigma[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
+            m_sigma_med[i] = ma.median(ma.abs(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])] - m_median[i]))
         
         else:
 
             m_median[i] = ma.median(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
-            m_sigma_med[i] = ma.median(m_sigma[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
+            m_sigma_med[i] = ma.median(ma.abs(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])] - m_median[i]))
 
 
     print(m_median)
@@ -694,20 +729,30 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     ################################################################################
     '''
 
-    
+    '''
+    #all data pts
     popt, pcov = curve_fit(linear_metallicity_gradient, 
                                     r_flat, 
                                     m,
                                     sigma=m_sigma
                                     )
     '''
-
+    '''
+    #median
     popt, pcov = curve_fit(linear_metallicity_gradient, 
                                     bin_centers, 
                                     m_median,
                                     sigma=m_sigma_med
                                     )
     '''
+    #weighted avg
+    popt, pcov = curve_fit(linear_metallicity_gradient, 
+                                    bin_centers, 
+                                    m_avg,
+                                    sigma=m_avg_sigma
+                                    )
+
+
 
     ################################################################################
     # unpack and plot results
@@ -726,14 +771,25 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
 
     plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
 
-    r = np.linspace(np.min(r_flat), np.max(r_flat), 1000)
     '''
+
+    r = np.linspace(np.min(r_flat), np.max(r_flat), 1000)
+    
     plt.scatter(bin_centers, m_median, color='k', marker='.')
     plt.plot(r, linear_metallicity_gradient(r, popt[0], popt[1]))
     plt.xlabel('r [kpc]')
     plt.ylabel('12 + log(O/H)')
-    plt.savefig('metallicity_gradient.eps')
+    plt.savefig('metallicity_gradient.png')
     '''
 
+    r = np.linspace(np.min(r_flat), np.max(r_flat), 1000)
+    
+    plt.scatter(bin_centers, m_avg, color='k', marker='.')
+    plt.plot(r, linear_metallicity_gradient(r, popt[0], popt[1]))
+    plt.xlabel('r [kpc]')
+    plt.ylabel('12 + log(O/H)')
+    plt.savefig('metallicity_gradient_avg.png')
+    
 
-    return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc, nan_mask
+
+    return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc, super_mask

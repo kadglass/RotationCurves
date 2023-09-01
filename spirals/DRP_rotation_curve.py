@@ -56,7 +56,7 @@ from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
 ################################################################################
 ################################################################################
 
-def extract_data( DRP_FOLDER, gal_ID, which_maps):
+def extract_data(DRP_FOLDER, gal_ID, which_maps, dr=15):
     """
     Open the MaNGA .fits file and extract data.
 
@@ -77,6 +77,9 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
           - Ha_flux
           - Ha_sigma
           - star_vel
+          
+    dr : integer
+        SDSS data release.  Default is 15.
 
     
     RETURNS
@@ -92,7 +95,16 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     """
 
     [plate, IFU] = gal_ID.split('-')
-    file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+    
+    if dr in [15, 16]:
+        file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+        map_idx = 18
+    elif dr == 17:
+        file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+        map_idx = 23
+    else:
+        print('DR', dr, 'not known.')
+        return None
 
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
@@ -107,19 +119,19 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
         maps['r_band_ivar'] = cube['SPX_MFLUX_IVAR'].data
 
     if 'Ha_flux' in which_maps:
-        maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[18]
-        maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[18]
-        maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[18]
+        maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[map_idx]
+        maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[map_idx]
+        maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[map_idx]
     
     if 'Ha_vel' in which_maps:
-        maps['Ha_vel'] = cube['EMLINE_GVEL'].data[18]
-        maps['Ha_vel_ivar'] = cube['EMLINE_GVEL_IVAR'].data[18]
-        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[18]
+        maps['Ha_vel'] = cube['EMLINE_GVEL'].data[map_idx]
+        maps['Ha_vel_ivar'] = cube['EMLINE_GVEL_IVAR'].data[map_idx]
+        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[map_idx]
 
     if 'Ha_sigma' in which_maps:
-        maps['Ha_sigma'] = cube['EMLINE_GSIGMA'].data[18]
-        maps['Ha_sigma_ivar'] = cube['EMLINE_GSIGMA_IVAR'].data[18]
-        maps['Ha_sigma_mask'] = cube['EMLINE_GSIGMA_MASK'].data[18]
+        maps['Ha_sigma'] = cube['EMLINE_GSIGMA'].data[map_idx]
+        maps['Ha_sigma_ivar'] = cube['EMLINE_GSIGMA_IVAR'].data[map_idx]
+        maps['Ha_sigma_mask'] = cube['EMLINE_GSIGMA_MASK'].data[map_idx]
 
     if 'star_vel' in which_maps:
         maps['star_vel'] = cube['STELLAR_VEL'].data

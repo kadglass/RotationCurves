@@ -6,11 +6,13 @@ import datetime
 
 from astropy.io import fits
 
+import numdifftools as ndt
+
 import matplotlib
 
 import matplotlib.pyplot as plt
 
-from scipy.optimize import minimize
+from scipy.optimize import minimize, curve_fit
 
 from DRP_rotation_curve import extract_data
 
@@ -315,9 +317,61 @@ def calculate_sigma(params, surface_brightness, r_pc):
 ################################################################################
 
 
+def L_difference_curvefit(params, r):
+
+    L_25 = params[0]
+    params = params[1:]
+    
+    return np.abs(L_25 - surface_brightness_profile(params, r))
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
 def L_difference(r, L_25, params):
     
     return np.abs(L_25 - surface_brightness_profile(params, r))
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def L_difference_chi2(r, L_25, params, param_errs):
+
+    '''
+    order of params in fit param errs
+    guesses = [Sigma_e_guess, Re_guess, n_guess, Sigma_0_in_guess, 
+                h_in_guess, Sigma_0_out_guess, h_out_guess, R_break_guess]
+
+    '''
+    dSigma_e, dRe, dn, dSigma_0_in, dh_in, dSigma_0_out, dh_out, dR_break, = param_errs
+    Sigma_e, Re, n, Sigma_0_in, h_in, Sigma_0_out, h_out, R_break = params
+    bn = 1.9992*n -0.3271
+
+
+    if r <= R_break:
+        sigma2 = dSigma_0_in**2 * np.exp(-2*r/h_in) \
+        + dSigma_e**2*np.exp(2*(-bn)*(-1 + (r/Re)**(1/n))) \
+        + dh_in**2*np.exp(-2*r/h_in)*r**2*Sigma_0_in**2/h_in**4 \
+        + dRe**2*np.exp(2*(-bn)*(-1 + (r/Re)**(1/n)))*(-bn)**2*(r/Re)**(2/n)*Sigma_e**2/(n**2*Re**2)\
+        + 3.9968*dn**2*np.exp(2*(-bn)*(-1+(r/Re)**(1/n)))*Sigma_e**2/n**4 \
+        * (-n**2 + (r/Re)**(1/n)*(n**2+(0.163615-n)*np.log(r/Re)))**2    
+
+    else: 
+        sigma2 = dSigma_0_out**2 * np.exp(-2*r/h_out) \
+        + dSigma_e**2*np.exp(2*(-bn)*(-1 + (r/Re)**(1/n))) \
+        + dh_out**2*np.exp(-2*r/h_out)*r**2*Sigma_0_out**2/h_in**4 \
+        + dRe**2*np.exp(2*(-bn)*(-1 + (r/Re)**(1/n)))*(-bn)**2*(r/Re)**(2/n)*Sigma_e**2/(n**2*Re**2)\
+        + 3.9968*dn**2*np.exp(2*(-bn)*(-1+(r/Re)**(1/n)))*Sigma_e**2/n**4 \
+        * (-n**2 + (r/Re)**(1/n)*(n**2+(0.163615-n)*np.log(r/Re)))**2    
+
+    
+    return (L_25 - surface_brightness_profile(params, r))**2/sigma2
 
 
 ################################################################################
@@ -438,6 +492,8 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     flat_r_pc = r_pc.compressed()
     flat_sb = surface_brightness.compressed()
 
+    #print(flat_sb)
+
 
 
     ################################################################################
@@ -448,6 +504,7 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     r50_pc = r50_spax * scale * 1000
     print('r50_pc:', r50_pc)
 
+    
 
     ################################################################################
     # pick initial guesses and bounds for surface brightness profile free params
@@ -457,26 +514,32 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     Sigma_e_bounds = (0.5, 1000)
 
     Re_guess = r50_pc # [pc] - use r50 from nsa as initial guess 
-    Re_bounds = (100, 100000)
+    #Re_guess = 200
+    Re_bounds = (100, 1000000)
 
     n_guess = 5
     n_bounds = (1,10)  # from pilyugin breaks in disc galaxy abundance gradients
 
     #Sigma_0_in_guess = 10**2.2 #L/pc^2
     Sigma_0_in_guess = ma.max(surface_brightness)
-    Sigma_0_in_bounds = (50, 10**4)
+    #Sigma_0_in_guess = 10**2.2
+    Sigma_0_in_bounds = (50, 10**6)
 
     h_in_guess = r50_pc/2 #pc
-    h_in_bounds = (0.5, 5000)
+    #h_in_guess = Re_guess
+    h_in_bounds = (0.5, None)
 
-    Sigma_0_out_guess = 1000 # L/pc^2
+    Sigma_0_out_guess = Sigma_0_in_guess # L/pc^2
+    #Sigma_0_out_guess = 10**1.5
     Sigma_0_out_bounds = (10, 10000)
 
     h_out_guess = r50_pc/2 #pc
-    h_out_bounds = (0.5, 5000)
+    #h_out_guess = Re_guess
+    h_out_bounds = (0.5, None)
 
     R_break_guess = r50_pc # pc
-    R_break_bounds = (0.5, 4000)
+    #R_break_guess = 2000
+    R_break_bounds = (0.5, 10000)
 
 
     guesses = [Sigma_e_guess, Re_guess, n_guess, Sigma_0_in_guess, 
@@ -491,13 +554,17 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     ################################################################################
 
     #bin_edges = np.arange(0, np.max(r_pc), 700)
-    bin_edges = np.linspace(0, np.max(r_pc), 40)
+    #bin_edges = np.linspace(0, np.max(r_pc), 35) # this is the default one!
+    bin_edges = np.linspace(0, np.max(r_pc), 50)
     step_size = (bin_edges[0] + bin_edges[1]) / 2
     bin_centers = bin_edges[:-1] + step_size 
 
     sb_median = np.zeros(len(bin_centers))
     sigma_asym = np.zeros((len(bin_centers), 2))
 
+    
+
+    reshape = False
     for i in range(0, len(bin_centers)):
 
         if i == 0:
@@ -506,12 +573,28 @@ def fit_surface_brightness_profile(DRP_FOLDER,
         else:
             vals = flat_sb[np.logical_and(flat_r_pc > bin_edges[i], flat_r_pc <= bin_edges[i+1])]
 
-        sb_median[i] = ma.median(vals)
-        sigma_asym[i] = np.quantile(vals, [0.16,0.84])
+
+        if len(vals) == 0:
+            sb_median[i] = -1
+            sigma_asym[i][0] = -1
+            sigma_asym[i][1] = -1
+            bin_centers[i] = -1
+            reshape = True
+
+        else:
+            sb_median[i] = ma.median(vals)
+            sigma_asym[i] = np.quantile(vals, [0.16,0.84])
 
 
-    print('sb_med', sb_median)
-    print('sigma_asym', sigma_asym)
+    if reshape == True:
+        bin_centers = bin_centers[bin_centers > 0]
+        sb_median = sb_median[sb_median > 0]
+
+        sigma_asym = np.reshape(sigma_asym[sigma_asym > 0], (len(bin_centers),2))
+    
+
+
+  
 
 
     ################################################################################
@@ -559,32 +642,69 @@ def fit_surface_brightness_profile(DRP_FOLDER,
     best_fit_vals = result.x.tolist()
     print(result)
 
+    if result.success:
+
+        hessian = ndt.Hessian(calculate_chi2)
+        hess = hessian(result.x, bin_centers, sb_median, sigma_asym)
+
+        try:
+            hess_inv = 2*np.linalg.inv(hess)
+            fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+
+        except np.linalg.LinAlgError:
+            fit_params_err = np.nan*np.ones(len(result.x))
 
 
+    print('errs',fit_params_err)
 
-    
+    '''
+    order of params in fit param errs
+    guesses = [Sigma_e_guess, Re_guess, n_guess, Sigma_0_in_guess, 
+                h_in_guess, Sigma_0_out_guess, h_out_guess, R_break_guess]
 
-
+    '''
     ################################################################################
     # now where is r25 ? 
     ################################################################################
 
     L_25 = B_mag_to_lum(25, d_kpc) / (scale*1000)**2
+    print('L_25', L_25)
+
+    lb = result.x[7]
+    
 
     r25_res = minimize(L_difference,
-                        r50_pc,
+                        1.1*lb,
                         method='Powell',
                         args=(L_25, best_fit_vals),
+                        bounds=[[0.5, None],[None,10000]],
                         options={'disp':True})
+
+    if r25_res.success:
+
+        hessian2 = ndt.Hessian(L_difference)
+        hess2 = hessian2(r25_res.x, L_25, best_fit_vals)
+        print(hess2)
+
+        try:
+            hess2_inv = 2*np.linalg.inv(hess2)
+            r25_err = np.sqrt(np.diag(np.abs(hess2_inv)))
+
+        except np.linalg.LinAlgError:
+            r25_err = np.nan*np.ones(len(r25_res.x))
+
     
     r25_pc = r25_res.x[0]
     print('R25 [pc] = ', r25_pc)
+    #print('err = ', r25_err)
+    
+
 
     ################################################################################
     # plot data and model
     ################################################################################
 
-    plot_surface_brightness(IMAGE_DIR, gal_ID, sb_median, bin_centers, flat_r_pc, best_fit_vals, r25_pc)
+    plot_surface_brightness(IMAGE_DIR, gal_ID, sb_median, bin_centers, flat_r_pc, best_fit_vals, r25_pc, L_25)
     
 
 

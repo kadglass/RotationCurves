@@ -39,11 +39,24 @@ def plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_I
 
 def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
 
-
+    
     grad, met_0 = popt
 
     r_depro = np.linspace(0, np.max(r), 1000)
 
+    plt.scatter(r, m, zorder=0, color='k', alpha=0.2)
+    #plt.scatter(bin_centers, m_median, color='b', zorder=1)
+    plt.plot(r_depro, grad * r_depro + met_0, zorder=2, color='r')
+    plt.ylim(np.min(m) - 0.05,np.max(m) + 0.05)
+    plt.title(gal_ID)
+    plt.xlabel('r [kpc]')
+    plt.ylabel('12 + log(O/H) (dex)')
+    plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.png')
+    plt.close()
+
+
+
+    '''
 
     cov = np.load(cov_dir + 'metallicity_' + gal_ID + '_cov.npy')
 
@@ -82,11 +95,11 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
     plt.title(gal_ID)
     plt.xlabel('r [kpc]')
     plt.ylabel('12 + log(O/H) (dex)')
-    plt.axvline(0.4*5.571, color='r', label='$0.4\ R_{25}$')
+    plt.axvline(0.4*3.35, color='r', label='$0.4\ R_{25}$')
     plt.legend()
     plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.eps')
     plt.close()
-
+    '''
 
 
 def plot_broadband_image(IMAGE_DIR, gal_ID, im_map, band):
@@ -101,7 +114,7 @@ def plot_broadband_image(IMAGE_DIR, gal_ID, im_map, band):
     plt.close()
 
 
-def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_vals):
+def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_vals, r25_pc, L_25):
 
     '''
 
@@ -130,7 +143,8 @@ def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_v
 
     plt.scatter(r_bins/1000, ma.log10(sb_mean), marker='.', color='k')
     plt.plot(r/1000, ma.log10(sb_model))
-    plt.axvline(5.571, color='r', label='$R_{25} = 5.57\ kpc$')
+    plt.axvline(r25_pc/1000, color='r', label='$R_{25}$')
+    plt.axhline(ma.log10(L_25), color='b', label='$L_{25}$')
     plt.legend()
     plt.xlabel('radius [kpc]')
     plt.ylabel('$log\Sigma_L\ (L\odot/pc^2)$')

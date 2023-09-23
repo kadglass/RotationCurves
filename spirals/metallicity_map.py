@@ -13,6 +13,9 @@ from numpy import log10, pi
 
 import matplotlib.pyplot as plt
 
+import numdifftools as ndt
+
+
 from astropy.io import fits
 import astropy.constants as const
 
@@ -21,7 +24,7 @@ import math
 import pyneb as pn
 import os
 
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, minimize
 
 from DRP_vel_map_functions import deproject_spaxel
 from metallicity_map_plottingFunctions import plot_metallicity_map, plot_metallicity_gradient
@@ -191,7 +194,7 @@ def calc_metallicity(R2, R2_ivar, N2, N2_ivar, R3, R3_ivar):
     dydR3 = np.ones((len(N2),len(N2[0])))*np.nan
 
 
-
+    np.seterr(divide='ignore')
 
     for i in range(0, len(z)):
         for j in range(0, len(z[0])):
@@ -512,7 +515,7 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
 ################################################################################
 
 
-def find_global_metallicity(R25_pc, gradient, met_0):
+def find_global_metallicity(R25_pc, gradient, gradient_err, met_0, met_0_err):
 
     '''
 
@@ -541,13 +544,39 @@ def find_global_metallicity(R25_pc, gradient, met_0):
 
     met_glob = gradient * R25_pc / 1000 * 0.4 + met_0
 
-    return met_glob
+    met_glob_err2 = (R25_pc*0.4/1000)**2 * gradient_err**2 + met_0_err**2
+    met_glob_err = np.sqrt(met_glob_err2)
+
+
+
+    return met_glob, met_glob_err
 
 ################################################################################
 ################################################################################
 ################################################################################
 
-def calculate_metal_mass(met_glob, M_HI, M_H2, M_star):
+def calculate_gradient_chi2(params, r, m_med, m_sigma_asym):
+
+    met_model = linear_metallicity_gradient(r, params[0], params[1])
+    #m_sigma = np.ones(len(r))*np.nan
+    '''
+    for i in range(0, len(r)):
+        if met_model[i] <= m_med[i]:
+            m_sigma[i] = m_sigma_asym[i][0]
+
+        if met_model[i] > m_med[i]:
+            m_sigma[i] = m_sigma_asym[i][0]
+    '''
+
+    chi2 = np.sum((met_model-m_med)**2/m_sigma_asym**2)
+
+    return chi2
+
+
+################################################################################
+################################################################################
+################################################################################
+def calculate_metal_mass(met_glob, met_glob_err, M_HI, M_HI_err, M_H2, M_H2_err, M_star, M_star_err):
 
     '''
 
@@ -585,24 +614,58 @@ def calculate_metal_mass(met_glob, M_HI, M_H2, M_star):
     Mz = None
     Md = None
 
+    if M_HI_err == None:
+        M_HI_err = 0
+
     if met_glob > 8.2:
         print('global metallicity', met_glob)
 
         if M_H2 == None:
+
+            return 0,0
+
+            '''
             print(M_HI)
             M_H2 = M_HI * 10**(-0.72*np.log10(M_HI/M_star) - 0.78)
+            M_H2_err = np.sqrt(((0.28*M_HI**-0.72 * M_star**0.72*10**-0.78)**2 * M_HI_err**2 \
+            + 0.72*M_HI**0.28 * M_star**-0.28*10**-0.78)**2 * M_H2_err**2)
+
             print('MH2: ', np.log10(M_H2))
+            '''
         
         fz = 27.36 * 10**(met_glob - 12)
         xi = 1 / (1 - (fHep + fz * grad_Hep_z) - fz)
         Mg = xi * M_HI * (1 + M_H2/M_HI)
 
         Mz = fz*Mg
-        Md = Mz / (1/0.206 - 1)
+
+        ratio = np.random.normal(-0.69, 0.21, 1000)
+
+        #Md = Mz / (1/0.206 - 1)
+        Md = Mz / (1/10**ratio - 1)
+
+        Mz_tot = np.mean(Md + Mz)
+        Mz_std = np.std(Md+Mz)
+
+        sigma_fz2 = (fz*np.log(10))**2 * met_glob_err**2
+        sigma_xi2 = xi**2*(grad_Hep_z +1)**2*sigma_fz2
+
+        sigma_Mg2 = sigma_xi2*(M_HI + M_H2) + ((10**M_HI_err)**2+(10**M_H2_err)**2)*xi**2
+
+        sigma_Mz2 = Mg**2*sigma_fz2 + fz**2*sigma_Mg2
+
+        sigma_Mztot = np.sqrt(Mz_std**2 + sigma_Mz2)
 
 
-    return ma.log10(Mz), ma.log10(Md)
+    else:
+        print('global metallicity', met_glob)
 
+        return None, None
+
+
+    #return ma.log10(Mz), ma.log10(Md)
+
+    return ma.log10(Mz_tot), ma.log10(sigma_Mztot)
 
 
 
@@ -628,11 +691,9 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     # calculate scales for deprojection
     ################################################################################
 
-    # temp
-    #dist_to_galaxy_Mpc = 89.1
+
 
     dist_to_galaxy_Mpc = c*z/H_0
-    #print(dist_to_galaxy_Mpc)
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
     pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
 
@@ -655,6 +716,11 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     cosi2 = (ba**2 - q0**2)/(1 - q0**2)
     i_angle = np.arccos(np.sqrt(cosi2))
 
+    print('cosi2', cosi2)
+    print('i', i_angle)
+    print('center', center_coord)
+    print()
+
     r_kpc = np.zeros((len(metallicity_map), len(metallicity_map[0])))
 
     for i in range(len(metallicity_map)):
@@ -666,44 +732,19 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
 
     nan_mask = np.isnan(metallicity_map)
 
+    print('r_kpc', r_kpc)
+
     r_flat = ma.array(r_kpc, mask=nan_mask).compressed()
     m = ma.array(metallicity_map, mask=nan_mask).compressed()
     m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
 
-
-    ################################################################################
-    # bin metallicity by radius, use weighted average
-    ################################################################################
-
-    bin_edges = np.linspace(0, np.max(r_flat), 20)
-    step_size = (bin_edges[0] + bin_edges[1]) / 2
-    bin_centers = bin_edges[:-1] + step_size 
-
-    m_avg = np.zeros(len(bin_centers))
-    m_avg_sigma = np.zeros(len(bin_centers))
-
-    for i in range(0, len(bin_centers)):
-        if i == 0:
-            weights = 1 / m_sigma[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])]**2
-            m_avg[i] = ma.median(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
-            m_avg_sigma[i] = ma.sqrt(1/ma.sum(weights))
-
-        else:
-            weights = 1/m_sigma[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])]**2
-            m_avg[i] = ma.median(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
-            m_avg_sigma[i] = ma.sqrt(1/ma.sum(weights))
-    
-    print(m_avg)
-    print(m_avg_sigma)
-
-
-
+   
     '''
     ################################################################################
-    # bin metallicity by radius, using median
+    # bin metallicity by radius, use median uncertainty (kenney and keeping 1962)
     ################################################################################
 
-    bin_edges = np.linspace(0, np.max(r_flat), 20)
+    bin_edges = np.linspace(0, np.max(r_flat), 15)
     step_size = (bin_edges[0] + bin_edges[1]) / 2
     bin_centers = bin_edges[:-1] + step_size 
 
@@ -713,83 +754,206 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     for i in range(0, len(bin_centers)):
 
         if i == 0:
-            m_median[i] = ma.median(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])])
-            m_sigma_med[i] = ma.median(ma.abs(m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])] - m_median[i]))
+            vals = m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])]
+            sigmas = m_sigma[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])]
         
         else:
+            vals = m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])]
+            sigmas = m_sigma[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])]
 
-            m_median[i] = ma.median(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])])
-            m_sigma_med[i] = ma.median(ma.abs(m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])] - m_median[i]))
+
+        m_median[i] = ma.median(vals)
+        stddev = ma.std(vals)
+        N = len(vals)
+
+        if N != 1:
+            m_sigma_med[i] = stddev*ma.sqrt(2*np.pi*N/(N-1))
+
+        if N == 1:
+            m_sigma_med[i] = sigmas[0]
 
 
-    print(m_median)
+    print('m_med', m_median)
+    print('m_sigma_med', m_sigma_med)
+    '''
 
     ################################################################################
     # fit metallicity map to linear metallicity gradient
     ################################################################################
-    '''
-
-    '''
-    #all data pts
+    
+    print('r_flat', r_flat)
+    print('m', m)
+    print('m_sigma', m_sigma)
+    #median
     popt, pcov = curve_fit(linear_metallicity_gradient, 
                                     r_flat, 
                                     m,
                                     sigma=m_sigma
                                     )
-    '''
-    '''
-    #median
-    popt, pcov = curve_fit(linear_metallicity_gradient, 
-                                    bin_centers, 
-                                    m_median,
-                                    sigma=m_sigma_med
-                                    )
-    '''
-    #weighted avg
-    popt, pcov = curve_fit(linear_metallicity_gradient, 
-                                    bin_centers, 
-                                    m_avg,
-                                    sigma=m_avg_sigma
-                                    )
-
-
+    
+    
 
     ################################################################################
     # unpack and plot results
     ################################################################################
+
 
     cov_dir = MANGA_FOLDER + 'metallicity_cov/'
     np.save(cov_dir + 'metallicity_' + gal_ID + '_cov.npy', pcov) 
 
     perr = np.sqrt(np.diag(pcov))
 
+    
     best_fit_values = {'grad': popt[0], 
                         'grad_err': perr[0], 
                         '12logOH_0': popt[1], 
                         '12logOH_0_err': perr[1]}
+    
+    print(best_fit_values)
+                        
+    
 
 
     plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
-
-    '''
-
-    r = np.linspace(np.min(r_flat), np.max(r_flat), 1000)
-    
-    plt.scatter(bin_centers, m_median, color='k', marker='.')
-    plt.plot(r, linear_metallicity_gradient(r, popt[0], popt[1]))
-    plt.xlabel('r [kpc]')
-    plt.ylabel('12 + log(O/H)')
-    plt.savefig('metallicity_gradient.png')
-    '''
-
-    r = np.linspace(np.min(r_flat), np.max(r_flat), 1000)
-    
-    plt.scatter(bin_centers, m_avg, color='k', marker='.')
-    plt.plot(r, linear_metallicity_gradient(r, popt[0], popt[1]))
-    plt.xlabel('r [kpc]')
-    plt.ylabel('12 + log(O/H)')
-    plt.savefig('metallicity_gradient_avg.png')
     
 
 
     return best_fit_values, r_kpc, pix_scale_factor, dist_to_galaxy_kpc, super_mask
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+def calculate_global_metallicity(fluxes, corr_law='CCM89'):
+
+    '''
+    Metallicity method for global fluxes instead of map
+    
+    PARAMETERS
+    ==========
+
+    fluxes : dict
+        dictionary of fluxes and uncertainties
+        - Ha_flux, _ivar: H-alpha flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - Hb_flux, _ivar: H-beta flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - OII_flux, _ivar: [OII] 3727 flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - OII2_flux, _ivar: [OII] 3729 flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - OIII_flux, _ivar: [OIII] 4960 flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - OIII2_flux, _ivar: [OIII] 5008 flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - NII_flux, _ivar: [NII] 6549 flux [1e-17 erg/s/cm^2/ang/spaxel]
+        - NII2_flux, _ivar: [NII] 6585 flux [1e-17 erg/s/cm^2/ang/spaxel]
+
+
+    RETURNS
+    =======
+
+    Z : float
+        metallicity [dex]
+    Z_err : float
+        uncertainty on metallicity [dex]
+
+
+
+    '''
+
+
+    ################################################################################
+    # check that all lines have positive flux values
+    ################################################################################
+    
+    for key in fluxes:
+
+        if not fluxes[key] > 0:
+            print('Missing fluxes')
+            return 0, 0
+
+    ################################################################################
+    # dust correction using Balmer decrement
+    ################################################################################
+
+    rc = pn.RedCorr(law=corr_law)
+    H_ratio = fluxes['Ha'] / fluxes['Hb']
+    rc.setCorr(H_ratio/2.86, 6564, 4862)
+    wavelengths=np.array([3727, 3729, 4960, 5008, 6549, 6585, 6564, 4862])
+    corr = rc.getCorrHb(wavelengths)
+
+    OII = fluxes['OII'] * corr[0]
+    OII_err = fluxes['OII_err'] * corr[0]
+
+    OII2 = fluxes['OII2'] * corr[1]
+    OII2_err = fluxes['OII2_err'] * corr[1]
+
+    OIII = fluxes['OIII'] * corr[2]
+    OIII_err = fluxes['OIII_err'] * corr[2]
+
+    OIII2 = fluxes['OIII2'] * corr[3]
+    OIII2_err = fluxes['OIII2_err'] * corr[3]
+
+    NII = fluxes['NII'] * corr[4]
+    NII_err = fluxes['NII_err'] * corr[4]
+
+    NII2 = fluxes['NII2'] * corr[5]
+    NII2_err = fluxes['NII2_err'] * corr[5]
+
+    Ha = fluxes['Ha'] * corr[6]
+    Ha_err = fluxes['Ha_err'] * corr[6]
+
+    Hb = fluxes['Hb'] * corr[7]
+    Hb_err = fluxes['Hb_err'] * corr[7]
+
+    ################################################################################
+    # calculate metallicity ratios and uncertainties
+    ################################################################################
+
+    R2 = (OII + OII2)/Hb
+    R2_err = 1/Hb * np.sqrt(OII_err**2 + OII2_err**2 + Hb_err**2*R2**2)
+
+    N2 = (NII + NII2)/Hb
+    N2_err = 1/Hb * np.sqrt(NII_err**2 + NII2_err**2 + Hb_err**2*N2**2)
+
+    R3 = (OIII + OIII2)/Hb
+    R3_err = 1/Hb * np.sqrt(OIII_err**2 + OIII2_err**2 + Hb_err**2*R3**2)
+
+    ################################################################################
+    # calculate metallicity and uncertainty
+    ################################################################################
+
+    # upper branch
+
+    if np.log10(N2) >= -0.6:
+        a1 = 8.589
+        a2 = 0.022
+        a3 = 0.399
+        a4 = -0.137
+        a5 = 0.164
+        a6 = 0.589
+
+
+    # lower branch
+
+    elif np.log10(N2) < -0.6:
+        a1 = 7.932
+        a2 = 0.944
+        a3 = 0.695
+        a4 = 0.970
+        a5 = -0.291
+        a6 = -0.019
+
+
+    else:
+        return 0,0
+
+    Z = a1 + a2*np.log10(R3/R2) + a3*np.log10(N2) \
+        + (a4 + a5*np.log10(R3/R2) + a6*np.log10(N2))*np.log10(R2)
+
+    
+    dZdR3 = a2/ln10 * 1/R3 + a5/ln10**2* np.log(R2)/R3
+    dZdR2 = -a2/ln10 *(1/R2) - a5/ln10**2 *2*np.log(R2)/R2
+    dZdN2 = a3/ln10 *1/N2 + a6/ln10**2*np.log(R2)/N2
+
+    Z_err = np.sqrt(dZdR3**2*R3_err**2 + dZdR2**2*R2_err**2 + dZdN2**2*N2_err**2)
+
+
+    return Z, Z_err

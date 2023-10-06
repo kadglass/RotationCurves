@@ -365,16 +365,24 @@ def find_phi(center_coords, phi_angle, vel_map):
     while checkpoint_masked and not vel_map.mask.all():
         delta_x = int(center_coords[1]*f)
         delta_y = int(delta_x/np.tan(phi))
-        semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
+        #semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
+        semi_major_axis_spaxel = np.array([int(center_coords[0] + delta_y), 
+                                            int(center_coords[1] - delta_x)])
+
+        in_map = True # check if pt along semi major axis is in the vel map
 
         for i in range(len(semi_major_axis_spaxel)):
             if semi_major_axis_spaxel[i] < 0:
-                semi_major_axis_spaxel[i] = 0
+                #semi_major_axis_spaxel[i] = 0
+                in_map = False
             elif semi_major_axis_spaxel[i] >= vel_map.shape[i]:
-                semi_major_axis_spaxel[i] = vel_map.shape[i] - 1
+                #semi_major_axis_spaxel[i] = vel_map.shape[i] - 1
+                in_map = False
 
         # Check value along semi-major axis
-        if vel_map.mask[tuple(semi_major_axis_spaxel)] == 0:
+        if in_map == False:
+            f *= 0.9
+        elif vel_map.mask[tuple(semi_major_axis_spaxel)] == 0:
             checkpoint_masked = False
         else:
             f *= 0.9
@@ -710,17 +718,19 @@ def calculate_chi2_flat(params,
     # Calculate chi2 of current fit
     #---------------------------------------------------------------------------
 
-
+    
     if HI_vel is not None:
+        
+        i_angle = params[1]
         
         if fit_function == 'tail':
 
-            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
 
             chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
         
         else:
-            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
 
             chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
 
@@ -811,17 +821,17 @@ def calculate_residual_flat(params,
 
 
     if HI_vel is not None:
-
+        i_angle = params[1]
         if fit_function == 'tail':
 
-            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
             residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
             residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
 
 
         else:
 
-            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
             residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
             residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
 
@@ -1199,7 +1209,7 @@ def find_vel_map(gal_ID,
     
     v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
     if HI_vel is not None:
-        v_max_guess = HI_vel
+        v_max_guess = np.abs(HI_vel/np.sin(inclination_angle_guess))
     
     else:
         v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
@@ -1218,17 +1228,20 @@ def find_vel_map(gal_ID,
     sys_vel_bounds = (sys_vel_low, sys_vel_high)
 
     # Inclination angle
+    print('inc_guess', inclination_angle_guess)
+    #inclination_angle_low = np.max([0, inclination_angle_guess - np.radians(15)])
+    #inclination_angle_high = np.min([inclination_angle_guess + np.radians(15), 0.5*np.pi])
     inclination_angle_low = 0
     inclination_angle_high = 0.5*np.pi
     inclination_angle_bounds = (inclination_angle_low, inclination_angle_high)
 
     # Center coordinates
-    i_center_low = i_center_guess - 10
-    i_center_high = i_center_guess + 10
+    i_center_low = i_center_guess - 5
+    i_center_high = i_center_guess + 5
     i_center_bounds = (i_center_low, i_center_high)
 
-    j_center_low = j_center_guess - 10
-    j_center_high = j_center_guess + 10
+    j_center_low = j_center_guess - 5
+    j_center_high = j_center_guess + 5
     j_center_bounds = (j_center_low, j_center_high)
 
     # Orientation angle
@@ -1309,6 +1322,13 @@ def find_vel_map(gal_ID,
                       i_center_bounds, \
                       j_center_bounds, \
                       phi_bounds]
+
+
+        print('pos guesses:', pos_guesses)
+        print('pos bounds:', pos_bounds)
+        print('vel_guesses:', vel_guesses)
+        print('vel_bounds:', vel_bounds)
+
 
     elif fit_function == 'tanh':
 
@@ -1702,8 +1722,8 @@ def find_vel_map(gal_ID,
             # Save Hessian matrix (for uncertainty calculations)
             #np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
             #np.save('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
-            np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
-            #np.save(gal_ID + '_Hessian.npy', hess)
+            #np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
+            np.save(gal_ID + '_Hessian.npy', hess)
 
             #print('Hessian:', hess)
             try:

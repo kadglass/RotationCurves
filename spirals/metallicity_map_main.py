@@ -48,13 +48,14 @@ second_pass = [,,,]
 
 failed = [ ]
 
-FILE_IDS = []
 
 
 no_vel_fit_dont_care = ['7993-1902', '8146-1901','8311-3703','8727-3701','9036-9102','9509-3702','8982-9101']
 
 '''
 #need_to_refit = []
+
+FILE_IDS = ['8997-9102']
 
 DRP_table = Table.read(DRP_TABLE_FN, format='fits')
 

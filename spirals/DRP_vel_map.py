@@ -299,6 +299,14 @@ def fit_vel_map(vel,
         center_guess = (37,37)
     elif gal_ID in ['7958-12703']:
         center_guess = (39,39)
+    elif gal_ID in ['10845-6101']:
+        center_guess = (30,30)
+    elif gal_ID in ['8950-12705']:
+        center_guess = (40,40)
+    elif gal_ID in ['9037-9102']:
+        center_guess = (32,30)
+    elif gal_ID in ['11009-3703']:
+        center_guess = (20,21)
 
     #print(center_guess)
 
@@ -316,6 +324,7 @@ def fit_vel_map(vel,
     if (sys_vel_guess is ma.masked) or (gal_ID == '8940-12701'):
         sys_vel_guess = 0.
 
+
     #print(sys_vel_guess)
     ############################################################################
 
@@ -327,8 +336,9 @@ def fit_vel_map(vel,
     cosi2 = (axis_ratio**2 - q0**2)/(1 - q0**2)
 
     if cosi2 < 0:
-        cosi2 = 0
-
+        cosi2 = 0.001
+    #    inclination_angle_guess = np.arccos(np.sqrt(cosi2)) - 0.01
+    #else: 
     inclination_angle_guess = np.arccos(np.sqrt(cosi2))
     #inclination_angle_guess = np.arccos(axis_ratio)
     #print(axis_ratio, inclination_angle_guess)
@@ -354,7 +364,7 @@ def fit_vel_map(vel,
                     '9000-1901', '9037-3701', '8456-6101', '8727-12705']:
         phi_guess += 0.5*np.pi
 
-    elif gal_ID in ['9864-3702', '8601-1902']:
+    elif gal_ID in ['9864-3702', '8601-1902', '9877-3702']:
         phi_guess -= 0.5*np.pi
 
     elif gal_ID in ['9502-12702','9050-9101','7977-3702', '8084-12703',
@@ -681,8 +691,8 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     # Calculate velocity at given radius
     #---------------------------------------------------------------------------
     # hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
-    #hess = np.load(gal_ID + '_Hessian.npy')
+    #hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    hess = np.load(gal_ID + '_Hessian.npy')
 
     N_samples = 10000
 

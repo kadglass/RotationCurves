@@ -154,28 +154,32 @@ def plot_sMass_image(sMass,
     ###########################################################################
     sMass_max = ma.max(sMass)
     sMass_cbar_ticks = np.linspace(  0, sMass_max, 7)
-
+    print('ticks:', sMass_cbar_ticks)
+    '''
     for val, i in zip( sMass_cbar_ticks, range( len( sMass_cbar_ticks))):
         val = '%.3f' % val
         sMass_cbar_ticks[i] = val
+    '''
+
+    print('ticks:', sMass_cbar_ticks)
 
     if ax is None:
         fig, ax = plt.subplots()
 
-    ax.set_title( gal_ID + ' stellar mass density')
+    ax.set_title( gal_ID + ' stellar mass density', fontsize=14)
     sMass_im = ax.imshow( sMass, origin='lower')
 
     cbar = plt.colorbar( sMass_im, ax=ax, ticks = sMass_cbar_ticks)
-    cbar.ax.tick_params( direction='in', color='white')
-    cbar.set_label(r'stellar mass density [log($M/M_\odot$)]')
+    cbar.ax.tick_params( direction='in', color='white', labelsize=12)
+    cbar.set_label(r'stellar mass density [log($M/M_\odot$)]', fontsize=14)
 
     ax.set_xticks( np.arange( 0, array_width, 10))
     ax.set_yticks( np.arange( 0, array_length, 10))
-    ax.tick_params( axis='both', direction='in', color='white')
+    ax.tick_params( axis='both', direction='in', color='white', labelsize=12)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('spaxel')
-    ax.set_ylabel('spaxel')
+    ax.set_xlabel('spaxel', fontsize=14)
+    ax.set_ylabel('spaxel', fontsize=14)
     ###########################################################################
 
 
@@ -192,7 +196,7 @@ def plot_sMass_image(sMass,
 
 
         plt.savefig(IMAGE_DIR + '/sMass/' + gal_ID + '_sMass.' + IMAGE_FORMAT, 
-                    format=IMAGE_FORMAT)
+                    format=IMAGE_FORMAT, bbox_inches = 'tight', pad_inches = 0)
 
 
         #######################################################################

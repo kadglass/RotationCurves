@@ -173,8 +173,8 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
 
     [plate, IFU] = gal_ID.split('-')
     # for bluehive
-    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.SSP.fits.gz'
-    #pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
+    #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.SSP.fits.gz'
+    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
 
     # for sciserver
     #pipe3d_filename = PIPE3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
@@ -184,8 +184,8 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
         return None, None
 
     main_file = fits.open( pipe3d_filename)
-    #ssp = main_file[1].data # for full pipe3d file
-    ssp = main_file[0].data # for bluehive trimmed data
+    ssp = main_file[1].data # for full pipe3d file
+    #ssp = main_file[0].data # for bluehive trimmed data
     main_file.close()
 
     sMass_density = ssp[19] * u.dex( u.M_sun)

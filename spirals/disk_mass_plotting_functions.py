@@ -52,9 +52,9 @@ def plot_fitted_disk_rot_curve(gal_ID,
 
 
     #if ax is None:
-    fig = plt.figure(figsize=(8, 5))
-    ax = fig.add_axes([0.1, 0.1, 0.65, 0.8]) # [left, bottom, width, height]
-    legend_ax = fig.add_axes([0.8, 0.1, 0.2, 0.8])
+    fig = plt.figure(figsize=(6, 5))
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8]) # [left, bottom, width, height]
+    #legend_ax = fig.add_axes([0.8, 0.1, 0.2, 0.8])
 
 
     ############################################################################
@@ -81,8 +81,8 @@ def plot_fitted_disk_rot_curve(gal_ID,
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
     #cov = np.load('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy')
-    #cov = np.load(gal_ID + '_cov.npy') # for nitya's laptop
-    cov = np.load('/scratch/nravi3/cov/' + gal_ID + '_cov.npy')
+    cov = np.load(gal_ID + '_cov.npy') # for nitya's laptop
+    #cov = np.load('/scratch/nravi3/cov/' + gal_ID + '_cov.npy')
 
     N_samples = 10000
 
@@ -184,13 +184,15 @@ def plot_fitted_disk_rot_curve(gal_ID,
 
     ax.fill_between(r_depro, v - stdevs, v + stdevs, facecolor='aliceblue')
 
-    ax.tick_params( axis='both', direction='in')
+    ax.tick_params( axis='both', direction='in', labelsize=12)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
 
-    ax.set_title( gal_ID + ' Fitted Disk Rotation Curve')
-    ax.set_xlabel('$r$ [kpc/h]')
-    ax.set_ylabel('$v_{*}$ [km/s]')
+    ax.set_title( gal_ID + ' Fitted Disk Rotation Curve', fontsize=14)
+    #ax.set_xlabel('$r$ [kpc/h]')
+    ax.set_xlabel(r'$r_{depro}$ [kpc/h]', fontsize=14)
+    ax.set_ylabel('$v_{*}$ [km/s]', fontsize=14)
+    '''
 
     legend_ax.get_xaxis().set_visible(False)
     legend_ax.get_yaxis().set_visible(False)
@@ -218,6 +220,7 @@ def plot_fitted_disk_rot_curve(gal_ID,
                     verticalalignment='top', horizontalalignment='left',
                     transform=legend_ax.transAxes,
                     color='black', fontsize=8, bbox=props)
+    '''
     ###########################################################################
 
 

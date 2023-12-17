@@ -95,11 +95,11 @@ FILE_IDS =  ['10001-3702','7815-3702',  '7990-6104',
         '9493-6103', '9494-3701', '10219-1901', '8087-9102',
         '10514-3701', '8934-3701']'''
 
-FILE_IDS = ['8082-12702']
+FILE_IDS = ['8997-9102']
 
 
 RUN_ALL_GALAXIES = False
-TEXT_OUT = True
+TEXT_OUT = False
 
 
 
@@ -128,7 +128,8 @@ if RUN_ALL_GALAXIES:
     if not os.path.isdir( IMAGE_DIR):
         os.makedirs( IMAGE_DIR)
 else:
-    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/PAPER_PLOTS/'
+    #IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/Images/DiskMass/bulge_chi2_test/'
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP-Pipe3d/'
     #IMAGE_DIR = '/home/idies/workspace/Storage/nityaravi/OutputFiles/'
 
@@ -154,7 +155,7 @@ else:
 # for nitya's local machine
 MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
 NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
-MASS_MAP_FOLDER = MANGA_FOLDER + 'Pipe3D/'
+MASS_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 
 
@@ -171,7 +172,8 @@ MASS_CURVE_MASTER_FOLDER = MASS_MAP_FOLDER + 'Pipe3d-mass_curve_data_files/'
 if not os.path.isdir(MASS_CURVE_MASTER_FOLDER):
     os.makedirs(MASS_CURVE_MASTER_FOLDER)
 
-GALAXIES_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/output_files/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
+GALAXIES_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/H_alpha_HIvel_BB_extinction_H2_MxCG_R90_v3p5_Z_SFR_Portsmouthflux_Zglob.fits'
+
 #GALAXIES_FILENAME = '/home/idies/workspace/Storage/nityaravi/RotationCurves/DRP_HaVel_map_results_BB_smooth_lt_2.0_.fits'
 #DRP_FILENAME = '/home/idies/workspace/sdss_sas/dr17/manga/spectro/redux/v3_1_1/drpall-v3_1_1.fits'
 
@@ -438,13 +440,13 @@ for gal_ID in FILE_IDS:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES or TEXT_OUT:
+#if RUN_ALL_GALAXIES or TEXT_OUT:
 
     #galaxies_filename, extension = GALAXIES_FILENAME.split('.')
 
-    galaxies_table.write('/Users/nityaravi/Documents/Research/RotationCurves/disk_bulge_mass_test.fits', 
-                         format='fits', #'ascii.commented_header', 
-                         overwrite=True)
+    #galaxies_table.write('/Users/nityaravi/Documents/Research/RotationCurves/disk_bulge_mass_test.fits', 
+    #                     format='fits', #'ascii.commented_header', 
+    #                     overwrite=True)
 ################################################################################
 
 

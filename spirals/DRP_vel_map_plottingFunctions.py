@@ -297,8 +297,9 @@ def plot_rot_curve(mvel,
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
     #Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    Hessian = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
-    #Hessian = np.load(gal_ID + '_Hessian.npy')
+    #Hessian = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    #Hessian = np.load('/Users/nityaravi/Documents/GitHub/RotationCurves/spirals/' + gal_ID + '_Hessian.npy')
+    Hessian = np.load(gal_ID + '_Hessian.npy')
 
     try:
         hess_inv = 2*np.linalg.inv(Hessian)
@@ -381,7 +382,7 @@ def plot_rot_curve(mvel,
     ############################################################################
     # Plot rotation curve
     #---------------------------------------------------------------------------
-    ax.set_title(gal_ID + ' rotation curve')
+    ax.set_title(gal_ID + ' rotation curve', fontsize=18)
 
     ax.plot(rm_deproj, vm_deproj, 'k.', markersize=1)
 
@@ -390,11 +391,13 @@ def plot_rot_curve(mvel,
     ax.plot(r, v, 'c')
 
     ax.set_ylim([-1.25*best_fit_values['v_max'], 1.25*best_fit_values['v_max']])
-    ax.tick_params(axis='both', direction='in')
+    ax.tick_params(axis='both', direction='in', labelsize=16)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('$r$ [kpc/h]')
-    ax.set_ylabel('$v$ [km/s]')
+    #ax.set_xlabel('$r$ [kpc/h]')
+    ax.set_xlabel('Deprojected radius [kpc/h]', fontsize=18) # plot formatting for paper
+    #ax.set_ylabel('$v$ [km/s]')
+    ax.set_ylabel('Rotational velocity [km/s]', fontsize=18) # plot formatting for paper
     ############################################################################
 
 
@@ -410,7 +413,8 @@ def plot_rot_curve(mvel,
         # Save figure
         #-----------------------------------------------------------------------
         plt.savefig(IMAGE_DIR + '/vel_map_rot_curve_' + fit_function + '/' + gal_ID + '_rot_curve_' + fit_function + FILENAME_SUFFIX + '.' + IMAGE_FORMAT,
-                    format=IMAGE_FORMAT)
+                    format=IMAGE_FORMAT,bbox_inches = 'tight')
+        #plt.savefig('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/PAPER_PLOTS/' + gal_ID + '_rot_curve_BB.eps')
         ########################################################################
 
         ########################################################################
@@ -491,7 +495,7 @@ def plot_residual(model_map,
     rmin_bound = -rmax_bound
 
     cbar_ticks = np.linspace(rmin_bound, rmax_bound, 11, dtype='int')
-    ax.set_title(gal_ID + ' residual')
+    ax.set_title(gal_ID + ' residual', fontsize=18)
     residual_im = ax.imshow(residual_map,
                             cmap='PiYG_r',
                             origin='lower',
@@ -499,13 +503,13 @@ def plot_residual(model_map,
                             vmax=rmax_bound)
 
     cbar = plt.colorbar(residual_im, ax=ax, ticks=cbar_ticks)
-    cbar.ax.tick_params(direction='in')
-    cbar.set_label('residual (model - data)')
-    ax.tick_params(axis='both', direction='in')
+    cbar.ax.tick_params(direction='in', labelsize=16)
+    cbar.set_label('residual (model - data)', fontsize=18)
+    ax.tick_params(axis='both', direction='in', labelsize=16)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('spaxel')
-    ax.set_ylabel('spaxel')
+    ax.set_xlabel('spaxel', fontsize=18)
+    ax.set_ylabel('spaxel', fontsize=18)
     ############################################################################
 
 
@@ -522,7 +526,7 @@ def plot_residual(model_map,
         # Save figure
         #-----------------------------------------------------------------------
         plt.savefig(IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT,
-                    format=IMAGE_FORMAT)
+                    format=IMAGE_FORMAT,bbox_inches = 'tight', pad_inches = 0)
 
         ########################################################################
 

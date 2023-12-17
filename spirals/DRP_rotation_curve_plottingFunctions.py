@@ -175,7 +175,7 @@ def plot_vel(vel,
     else:
         vel_type = ' stellar'
 
-    ax.set_title(gal_ID + vel_type + ' velocity ' + map_type)
+    ax.set_title(gal_ID + vel_type + ' velocity ' + map_type, fontsize=18)
     ############################################################################
     
 
@@ -189,14 +189,16 @@ def plot_vel(vel,
                         vmax=vmax_bound)
 
     cbar = plt.colorbar( vel_im, ax=ax, ticks=cbar_ticks)
-    cbar.ax.tick_params( direction='in')
-    cbar.set_label('$v$ [km/s]')
+    cbar.ax.tick_params( direction='in', labelsize=16)
+    #cbar.set_label('$v$ [km/s]')
+    cbar.set_label(r'$v_{rot}$ [km/s]', fontsize=18) # formatting for paper
 
-    ax.tick_params( axis='both', direction='in')
+    ax.tick_params( axis='both', direction='in', labelsize=16)
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
-    ax.set_xlabel('spaxel')
-    ax.set_ylabel('spaxel')
+    ax.set_xlabel('spaxel', fontsize=18)
+    ax.set_ylabel('spaxel', fontsize=18)
+
     '''
     ax.set_xlabel('$\Delta \alpha$ [arcsec]')
     ax.set_ylabel('$\Delta \delta$ [arcsec]')
@@ -217,7 +219,7 @@ def plot_vel(vel,
         # Save figure
         #-----------------------------------------------------------------------
         plt.savefig( IMAGE_DIR + FOLDER_NAME + gal_ID + FILENAME_SUFFIX + IMAGE_FORMAT, 
-                     format=IMAGE_FORMAT)
+                     format=IMAGE_FORMAT, bbox_inches = 'tight', pad_inches = 0)
         ########################################################################
 
         ########################################################################

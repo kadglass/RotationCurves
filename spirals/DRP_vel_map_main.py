@@ -68,55 +68,42 @@ HI_vel_req = False
 #
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
+'''
+fixed = ['11949-12702',
+        '10845-6101',
+        '11009-1902',
+        '8950-12705',
+        '11009-3703',
+        '11939-3701',
+        '8949-12703',
+        '9037-9102',
+        ]
+'''
 
+'''
 
+FILE_IDS = ['10838-12705', # something isnt masked
+'11759-1902', # bad ba
+'11835-6104', # bad ba
+'11867-9101', # bad ba
+'12495-12704', # bad ba
+'12651-3701', #bad ba
+'8138-12702', # bad ba
+'8255-1901', # no map?? - FLOP
+'8565-12705', # bad ba
+'8626-12702', #bad ba
+'8719-9102', # bad ba (maybe phi)
+'8942-3704', # bad ba
+'8987-3704', # bad ba
+'9042-6102', # bad ba
+'9046-3704', # bad ba
+'9512-12701', # bad ba
+'11939-3701', # kelly's w HI
+'8949-12703', #kelly's w HI
+'11009-1902'] #kelly's w HI'''
 
-#FILE_IDS = ['7990-6104']
+FILE_IDS = ['8997-9102']
 
-
-
-
-'''FILE_IDS =  ['10001-3702','7815-3702',  '7990-6104',
-        '7992-6104', '8077-12704', '8077-6102', '8080-12702',
-        '8082-12702', '8082-9102',  '8146-1901',
-        '8150-9102', '8153-1901', '8155-12701', '8158-1901',
-        '8255-12704', '8257-9102',
-        '8262-3702', '8262-9102', '8311-3703', 
-        '8318-12702', '8318-9101', '8320-9101', '8322-1901',
-        '8322-3701', '8329-12701', '8330-12703', '8332-3702',
-        '8332-9102', '8335-12705', '8338-12701', '8440-6104',
-        '8450-6102', '8452-12705',
-        '8453-3704', '8455-3701', '8459-1901', '8462-9101',
-        '8465-9102', '8466-12702', '8483-6101', '8547-6102',
-        '8548-12704', '8551-12705', '8552-12701',
-        '8588-12705', '8588-6101', '8592-6101',
-        '8595-3703', '8595-6104', '8600-1901', '8600-3704',
-        '8601-12702', '8603-12704', '8603-6103', '8603-6104',
-        '8604-12702', '8604-9102', '8624-12702', '8624-12703',
-        '8626-12701', '8626-12702', '8626-3702', '8626-3703',
-        '8712-6101', '8713-6104',  '8727-3701',
-        '8932-9102', '8935-6104', '8945-12701', '8950-12705',
-        '8952-6104', '8978-3701', '8979-6102', '8987-3701',
-        '8989-9102', '8993-6104', '8996-3703', '8997-12704',
-        '9024-1902', '9027-12701', '9029-12702', '9029-6102',
-        '9036-9102', '9041-12701', '9042-12703',
-        '9044-6101', '9047-6104', '9049-6104', '9050-3704',
-        '9050-9101', '9085-12703', '9095-1901', '9095-9102',
-        '9196-6103', '9485-12705', '9485-3701', '9486-12701',
-        '9486-12702', '9500-1901', '9508-12705',
-        '9508-6101', '9508-6104', '9865-9102', '9871-6101',
-        '9881-12705', '9881-3702', '9888-12704', '9888-12705',
-        '8092-3701', '8095-1902',  '9513-3702',
-        '11744-6103', '11974-3701', '7977-3702', '7977-3704',
-        '7977-3703', '12085-6103', '12090-1901', '12085-9102',
-        '10218-12703', '9863-1902',
-        '8089-12701', '9495-6101', '9506-1901', '10844-3703', '12769-6104', 
-        '10513-1901', '12700-12702',
-        '9493-6103', '9494-3701', '10219-1901', '8087-9102',
-        '9863-3701', '10514-3701', '10214-6101', '8934-3701']'''
-
-
-FILE_IDS = ['10001-12701']
 
 RUN_ALL_GALAXIES = False
 
@@ -146,7 +133,7 @@ if RUN_ALL_GALAXIES:
 else:
     #IMAGE_DIR = None
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
-    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/HI_test/'
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/PAPER_PLOTS/'
 
 
 # for bluehive
@@ -165,7 +152,9 @@ MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
 NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 #DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
-DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/disk_masses_HIdr3_err_morph_v2.fits'
+#DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/disk_masses_HIdr3_err_morph_v2.fits'
+#DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/refit.fits'
+DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/H_alpha_HIvel_BB_extinction_H2_MxCG_R90_v3p5_Z_SFR_Portsmouthflux_Zglob.fits'
 
 
 # old
@@ -250,6 +239,7 @@ for gal_ID in FILE_IDS:
 
     i_DRP = DRP_index[gal_ID]
 
+    #if DRP_table['mngtarg1'][i_DRP] > 0 or DRP_table['mngtarg3'][i_DRP] > 0:
     if DRP_table['mngtarg1'][i_DRP] > 0:
 
         ########################################################################
@@ -323,9 +313,11 @@ for gal_ID in FILE_IDS:
             if HI_vel == None:
                 can_fit = False
                 print('Galaxy does not have HI velocity data.')
-        ########################################################################
+
         HI_vel = None
         HI_vel_err = None
+        ########################################################################
+
 
 
         if can_fit:
@@ -367,7 +359,7 @@ for gal_ID in FILE_IDS:
                 else:
                     vel_function = 'tail'
                 
-                #vel_function = 'tail'
+                vel_function = 'BB'
 
                 print('Fit function: ', vel_function)
 
@@ -549,9 +541,9 @@ for gal_ID in FILE_IDS:
 ################################################################################
 
 
-DRP_table.write('sn_test.fits', format='fits', overwrite=True)
+#DRP_table.write('sn_test.fits', format='fits', overwrite=True)
 
-'''
+
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
@@ -562,10 +554,10 @@ if RUN_ALL_GALAXIES or TEXT_OUT:
     else:
         out_filename = 'DRP_starVel_map_resutls_' + vel_function + '.txt'
 
-    DRP_table.write('out.fits', format = 'fits', overwrite=True)
-    DRP_table.write(out_filename,
-                    format='ascii.commented_header',
-                    overwrite=True)
+    #DRP_table.write(DRP_FILENAME, format = 'fits', overwrite=True)
+    #DRP_table.write(out_filename,
+    #                format='ascii.commented_header',
+    #                overwrite=True)
 ################################################################################'''
 
 

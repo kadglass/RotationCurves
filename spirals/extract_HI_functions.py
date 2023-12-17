@@ -409,3 +409,76 @@ def match_HI_dr3( master_table):
             print(i)
 
     return master_table
+
+def calculate_HI_R90(logMHI, R90):
+    '''
+    Calculate the HI mass within R90 using the method in Wang et al. 2020. First
+    calculate the HI radius r_HI. If R90 > 1.5 r_HI, thne the total HI mass is
+    returned. Else, the HI mass inside R90 is approximated by subtracting off
+    the HI mass between R90 and 1.5 r_HI assuming an exponential profile.
+
+    PARAMETERS
+    ==========
+    logMHI : float
+        HI mass in units of log(M_sun)
+    R90 : float
+        R90 in units of kpc
+
+    RETURNS
+    =======
+    logMHI_90 : float
+        HI mass within R90 in units of log(M_sun)
+    
+    logMHI_90_err : float
+        uncertainty on logMHI_90
+
+
+
+    '''
+
+    a = 0.506
+    a_err = 0.003
+    b = -3.293
+    b_err = 0.009
+    Sigma_0 = np.exp(5) # [M_sun / pc^2]
+
+    r_HI = 0.5 * 10**(a * logMHI + b)
+
+
+    if R90 >= 1.5* r_HI:
+        return logMHI, 0 
+
+    else:
+
+        MHI_out = -2 * np.pi * Sigma_0 * (np.exp(-1.5 / 0.2) * 0.2 * 1.7 * r_HI**2 \
+                                   - np.exp(-R90 / (0.2 * r_HI)) * 0.2 * r_HI * (R90 + 0.2 * r_HI))
+        
+        logMHI_in = np.log10(10**logMHI - MHI_out)
+
+        # full uncertainties
+
+        #r_HI_err2 = (np.log(10) * r_HI)**2 * \
+        #    (logMHI**2 * a_err**2 + a**2 * logMHI_err**2 + b_err**2)
+
+        #MHI_out_err2 = 4 * np.exp(-10*R90/r_HI) * np.pi**2 * Sigma_0**2 \
+        #    * (R90**2 * R90_err**2) \
+        #        + (R90**2 + 0.4*R90*r_HI +\
+        #            (0.08 - 0.28 * np.exp(-1.5/2) * np.exp(5*R90/R)) * r_HI**2 * r_HI_err2) \
+        #                / r_HI**2
+
+        #logMHI_in_err = 1/(10**logMHI - MHI_out) \
+        #    * np.sqrt((10**logMHI * logMHI_err)**2 + MHI_out_err2 / np.log(10)**2)
+
+        # since logMHI_err = 0 and R90_err = 0
+
+        r_HI_err2 = (np.log(10) * r_HI)**2 * (logMHI**2 * a_err**2  + b_err**2)
+        
+        MHI_out_err2 = 4 * np.exp(-10*R90/r_HI) * np.pi**2 * Sigma_0**2 \
+            * (R90**2 + 0.4*R90*r_HI +\
+                    (0.08 - 0.28 * np.exp(-1.5/2) * np.exp(5*R90/r_HI)) * r_HI**2)**2 * r_HI_err2 \
+                        / r_HI**2
+        
+        logMHI_in_err = 1/(10**logMHI - MHI_out) * np.sqrt(MHI_out_err2 / np.log(10)**2)
+
+
+        return logMHI_in, logMHI_in_err

@@ -3,6 +3,7 @@ import astropy.units as u
 from astropy.table import Table
 
 import numpy as np
+import scipy
 
 
 ################################################################################
@@ -410,6 +411,9 @@ def match_HI_dr3( master_table):
 
     return master_table
 
+################################################################################
+################################################################################
+
 def calculate_HI_R90(logMHI, R90):
     '''
     Calculate the HI mass within R90 using the method in Wang et al. 2020. First
@@ -428,57 +432,102 @@ def calculate_HI_R90(logMHI, R90):
     =======
     logMHI_90 : float
         HI mass within R90 in units of log(M_sun)
-    
-    logMHI_90_err : float
-        uncertainty on logMHI_90
-
 
 
     '''
+
+    MHI_outer = 0
+    MHI_inner = 0
 
     a = 0.506
     a_err = 0.003
     b = -3.293
     b_err = 0.009
-    Sigma_0 = np.exp(5) # [M_sun / pc^2]
 
-    r_HI = 0.5 * 10**(a * logMHI + b)
+    r_HI_pc = (0.5 * 10**(a * logMHI + b))*1000 # [pc]
+    R90_pc = R90*1000 # [pc]
 
-
-    if R90 >= 1.5* r_HI:
-        return logMHI, 0 
-
-    else:
-
-        MHI_out = -2 * np.pi * Sigma_0 * (np.exp(-1.5 / 0.2) * 0.2 * 1.7 * r_HI**2 \
-                                   - np.exp(-R90 / (0.2 * r_HI)) * 0.2 * r_HI * (R90 + 0.2 * r_HI))
+    ####################################################################
+    # if R90 > 1.5*RHI, "all" HI mass is in the optical disk
+    ####################################################################
+    if R90_pc >= 1.5*r_HI_pc:
+        return logMHI
+    
+    ####################################################################
+    # if R90 > RHI, use the outer disk profile to calculate how much mass to 
+    # remove
+    ####################################################################
+    elif R90_pc >= r_HI_pc:
+        MHI_outer = MHI_outer_disk(1.5*r_HI_pc, r_HI_pc) \
+                - MHI_outer_disk(R90_pc, r_HI_pc)
         
-        logMHI_in = np.log10(10**logMHI - MHI_out)
-
-        # full uncertainties
-
-        #r_HI_err2 = (np.log(10) * r_HI)**2 * \
-        #    (logMHI**2 * a_err**2 + a**2 * logMHI_err**2 + b_err**2)
-
-        #MHI_out_err2 = 4 * np.exp(-10*R90/r_HI) * np.pi**2 * Sigma_0**2 \
-        #    * (R90**2 * R90_err**2) \
-        #        + (R90**2 + 0.4*R90*r_HI +\
-        #            (0.08 - 0.28 * np.exp(-1.5/2) * np.exp(5*R90/R)) * r_HI**2 * r_HI_err2) \
-        #                / r_HI**2
-
-        #logMHI_in_err = 1/(10**logMHI - MHI_out) \
-        #    * np.sqrt((10**logMHI * logMHI_err)**2 + MHI_out_err2 / np.log(10)**2)
-
-        # since logMHI_err = 0 and R90_err = 0
-
-        r_HI_err2 = (np.log(10) * r_HI)**2 * (logMHI**2 * a_err**2  + b_err**2)
-        
-        MHI_out_err2 = 4 * np.exp(-10*R90/r_HI) * np.pi**2 * Sigma_0**2 \
-            * (R90**2 + 0.4*R90*r_HI +\
-                    (0.08 - 0.28 * np.exp(-1.5/2) * np.exp(5*R90/r_HI)) * r_HI**2)**2 * r_HI_err2 \
-                        / r_HI**2
-        
-        logMHI_in_err = 1/(10**logMHI - MHI_out) * np.sqrt(MHI_out_err2 / np.log(10)**2)
+    ####################################################################
+    # if R90 < RHI, use outer disk and inner disk profiles to calculate how much
+    # mass to remove
+    ####################################################################
+    elif R90_pc < r_HI_pc:
+        MHI_outer = MHI_outer_disk(1.5*r_HI_pc, r_HI_pc) \
+            - MHI_outer_disk(r_HI_pc, r_HI_pc)
+        MHI_inner = MHI_inner_disk(r_HI_pc, r_HI_pc)\
+            - MHI_inner_disk(R90_pc, r_HI_pc)
 
 
-        return logMHI_in, logMHI_in_err
+
+    MHI_in = np.log10(10**logMHI - (MHI_outer + MHI_inner))
+
+    return MHI_in
+    
+
+
+################################################################################
+################################################################################
+
+def MHI_inner_disk(r, RHI):
+    '''
+    Calculate the HI mass within radius r using the inner disk profile
+
+    PARAMETERS
+    ==========
+    r : float
+        radius within which MHI is calculated [pc]
+
+    RHI : float
+        scale radius of HI disk [pc]
+
+    RETURNS
+    =======
+    MHI: float
+        HI mass within r [M_sun]
+    
+    '''
+
+    MHI = RHI**2*(-4.81084 * 10**(r/RHI**2 * (-1.3*r+0.598*RHI))\
+                  -3.97533*scipy.special.erf(0.397931-1.73013*r/RHI))
+    
+    return MHI
+
+################################################################################
+################################################################################
+
+def MHI_outer_disk(r, RHI):
+    '''
+    Calculate the HI mass within radius r using the outer disk profile
+
+    PARAMETERS
+    ==========
+    r : float
+        radius within which MHI is calculated [pc]
+
+    RHI : float
+        scale radius of HI disk [pc]
+
+    RETURNS
+    =======
+    MHI : float
+        HI mass within r [M_sun]
+    
+    '''
+
+    MHI = 2*np.exp(5)*np.pi*np.exp(-5*r/RHI)*(-0.2*r*RHI - 0.04*RHI**2)
+
+    return MHI

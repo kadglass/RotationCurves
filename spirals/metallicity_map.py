@@ -863,11 +863,11 @@ def calculate_global_metallicity(fluxes, corr_law='CCM89'):
     # check that all lines have positive flux values
     ################################################################################
     
-    for key in fluxes:
+    #for key in fluxes:
 
-        if not fluxes[key] > 0:
-            print('Missing fluxes')
-            return 0, 0
+    #    if not fluxes[key] > 0:
+    #        print('Missing fluxes')
+    #        return 0, 0
 
     ################################################################################
     # dust correction using Balmer decrement

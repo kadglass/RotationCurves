@@ -492,7 +492,7 @@ def MHI_inner_disk(r, RHI):
         radius within which MHI is calculated [pc]
 
     RHI : float
-        scale radius of HI disk [pc]
+        scale radius of HI disk (where Sigma_HI = 1 [M_sun / pc^2]) [pc]
 
     RETURNS
     =======
@@ -519,7 +519,7 @@ def MHI_outer_disk(r, RHI):
         radius within which MHI is calculated [pc]
 
     RHI : float
-        scale radius of HI disk [pc]
+        scale radius of HI disk (where Sigma_HI = 1 [M_sun / pc^2]) [pc]
 
     RETURNS
     =======

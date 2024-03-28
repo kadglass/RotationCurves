@@ -263,3 +263,50 @@ def open_map(cube_filename, map_name):
     ############################################################################
 
     return masked_map
+
+def extract_data(MAP_FOLDER, gal_ID, which_maps):
+    '''
+    Import DAP maps
+
+    PARAMETERS
+    ==========
+    MAP_FOLDER : string
+        folder with DAP maps
+
+    gal_ID : string
+        galaxy plate-ifu
+
+    which_maps : list
+        list of maps to return
+        - photo : g-band weighted mean flux
+        - star_sigma : stellar velocity dispersion
+
+    RETURNS
+    =======
+    maps : dictionary
+        dictionary of specified maps for galaxy
+    
+    
+    '''
+
+    [plate, IFU] = gal_ID.split('-')
+
+    file_name = MAP_FOLDER + '/' + plate + '/' + IFU + '/manga-' + gal_ID \
+        + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    
+    cube = fits.open(file_name)
+
+    maps = {}
+    
+    if 'photo' in which_maps:
+        maps['mflux'] = cube['SPX_MFLUX'].data # this is actually g-band lol
+        maps['mflux_ivar'] = cube['SPX_MFLUX_IVAR'].data
+
+    if 'star_sigma' in which_maps:
+        maps['star_sigma'] = cube['STELLAR_SIGMA'].data
+        maps['star_sigma_ivar'] = cube['STELLAR_SIGMA_IVAR'].data
+        maps['star_sigma_mask'] = cube['STELLAR_SIGMA_MASK'].data
+        maps['star_sigma_corr'] = cube['STELLAR_SIGMACORR'].data[0]
+
+    return maps
+

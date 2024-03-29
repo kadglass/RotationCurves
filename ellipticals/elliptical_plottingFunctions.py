@@ -50,7 +50,7 @@ def plot_sigma_map(IMAGE_DIR, IMAGE_FORMAT, gal_ID, sigma_map, corr=False):
     cbar = plt.colorbar( vel_im, ax=ax, ticks=cbar_ticks)
     cbar.ax.tick_params( direction='in', labelsize=16)
     #cbar.set_label('$v$ [km/s]')
-    cbar.set_label(r'$v_{*}$ dispersion [km/s]', fontsize=18) # formatting for paper
+    cbar.set_label(r'$\sigma_{*}$ [km/s]', fontsize=18) # formatting for paper
 
     ax.tick_params( axis='both', direction='in', labelsize=16)
     ax.yaxis.set_ticks_position('both')

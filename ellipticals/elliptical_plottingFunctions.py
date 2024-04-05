@@ -42,7 +42,7 @@ def plot_sigma_map(IMAGE_DIR, IMAGE_FORMAT, gal_ID, sigma_map, corr=False):
     # Create plot
     #---------------------------------------------------------------------------
     vel_im = ax.imshow( sigma_map, 
-                        cmap='RdBu_r', 
+                        cmap='winter', # 4h 
                         origin='lower', 
                         vmin=vmin_bound, 
                         vmax=vmax_bound)

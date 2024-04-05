@@ -280,6 +280,7 @@ def extract_data(MAP_FOLDER, gal_ID, which_maps):
         list of maps to return
         - photo : g-band weighted mean flux
         - star_sigma : stellar velocity dispersion
+        - Halpha_vel : gas velocity maps
 
     RETURNS
     =======
@@ -310,3 +311,27 @@ def extract_data(MAP_FOLDER, gal_ID, which_maps):
 
     return maps
 
+def extract_Pipe3d_data(PIPE3D_FOLDER, gal_ID):
+    
+    
+    [plate, IFU] = gal_ID.split('-')
+
+    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+
+    # for sciserver
+    #pipe3d_filename = PIPE3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+
+    if not os.path.isfile(pipe3d_filename):
+        print(gal_ID, 'Pipe3d data file does not exist.')
+        return None, None
+
+    main_file = fits.open( pipe3d_filename)
+    ssp = main_file[1].data # for full pipe3d file
+    #ssp = main_file[0].data # for bluehive trimmed data
+    main_file.close()
+
+    sMass_density = ssp[19] * u.dex( u.M_sun)
+    #sMass_density = ssp *u.dex(u.M_sun)
+    sMass_density_err = ssp[20] * u.dex(u.M_sun) # error in stellar mass density
+
+    return sMass_density, sMass_density_err

@@ -309,6 +309,14 @@ def extract_data(MAP_FOLDER, gal_ID, which_maps):
         maps['star_sigma_mask'] = cube['STELLAR_SIGMA_MASK'].data
         maps['star_sigma_corr'] = cube['STELLAR_SIGMACORR'].data[0]
 
+    if 'Ha' in which_maps:
+        maps['Ha_flux'] = cube['EMLINE_GFLUX'].data[23] #channel 19 (index 18) for DR15
+        maps['Ha_flux_ivar'] = cube['EMLINE_GFLUX_IVAR'].data[23]
+        maps['Ha_flux_mask'] = cube['EMLINE_GFLUX_MASK'].data[23]
+        maps['Ha_vel'] = cube['EMLINE_GVEL'].data[23]
+        maps['Ha_vel_ivar'] = cube['EMLINE_GVEL_IVAR'].data[23]
+        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[23]
+
     return maps
 
 def extract_Pipe3d_data(PIPE3D_FOLDER, gal_ID):

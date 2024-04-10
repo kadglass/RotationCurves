@@ -2,6 +2,7 @@ import datetime
 START = datetime.datetime.now()
 
 import os.path, warnings
+import sys
 
 import numpy as np
 
@@ -11,8 +12,11 @@ import astropy.units as u
 from IO_data import extract_data
 from elliptical_virial_mass import calculate_virial_mass
 
+sys.path.insert(1, '/Users/nityaravi/Documents/GitHub/RotationCurves/')
+from mapSmoothness_functions import how_smooth
 
-FILE_IDS = ['11011-1901','10223-9101','9877-12704','11760-9101','11953-1902',
+
+'''FILE_IDS = ['11011-1901','10223-9101','9877-12704','11760-9101','11953-1902',
             '9490-9101','11830-9101','8319-6101','8592-1901','8325-3704',
             '9878-6103','8716-1902','8143-3704','12514-6101','10837-1901',
             '9487-12705','8133-6103','9887-1901','12067-3704','8274-6103',
@@ -31,7 +35,9 @@ FILE_IDS = ['11011-1901','10223-9101','9877-12704','11760-9101','11953-1902',
             '7959-6104','8456-6103','11828-6104','10220-1902','8725-1902',
             '9863-3704','8710-1901','8259-1901','9002-9101','11868-12702',
             '11748-6102','8454-12705','8310-3701','11017-1902','9502-6103',
-            '11948-12705','10495-3703','11836-12703','10498-3703','8262-6102']
+            '11948-12705','10495-3703','11836-12703','10498-3703','8262-6102']'''
+
+FILE_IDS = ['11011-1901']
 
 
 
@@ -72,6 +78,11 @@ for gal_ID in FILE_IDS:
 
     if DRP_table['mngtarg1'][i_DRP] > 0:
 
+
+        ########################################################################
+        # Check T-Type
+        #-----------------------------------------------------------------------
+
         if DRP_table['DL_ttype'][i_DRP] >= 0:
             print(gal_ID, ' not an ETG\n')
             continue
@@ -80,7 +91,7 @@ for gal_ID in FILE_IDS:
         # Extract the necessary data from the .fits files.
         #-----------------------------------------------------------------------
 
-        maps = extract_data(MAP_FOLDER, gal_ID, ['photo', 'star_sigma'])
+        maps = extract_data(MAP_FOLDER, gal_ID, ['flux', 'star_sigma', 'Ha'])
 
         if maps is None:
             print('\n')
@@ -88,36 +99,41 @@ for gal_ID in FILE_IDS:
 
         print( gal_ID, "extracted")
 
-        nsa_z = DRP_table['nsa_z'][i_DRP]
-        r50 = DRP_table['nsa_elpetro_th50_r'][i_DRP]  
-
-
+    
         ########################################################################
         # Calculate degree of smoothness of velocity map
         #-----------------------------------------------------------------------
 
-        # map_smoothness = how_smooth(maps['Ha_vel'], maps['Ha_vel_mask'])
-        # map_smoothness_5sigma = how_smooth(maps['Ha_vel'],
-        #                                        np.logical_or(maps['Ha_vel_mask'] > 0,
-        #                                                      np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar'])) < 5))
-        # if (map_smoothness < map_smoothness_min) and (map_smoothness_5sigma < map_smoothness_min):
-        #     print('map is not smooth\n')
+        map_smoothness = how_smooth(maps['Ha_vel'], maps['Ha_vel_mask'])
+        map_smoothness_5sigma = how_smooth(maps['Ha_vel'],
+                                            np.logical_or(
+                                                maps['Ha_vel_mask'] > 0,
+                                                np.abs(maps['Ha_flux']*np.sqrt(maps['Ha_flux_ivar'])) < 5
+                                                )
+                                                )
+        if (map_smoothness < map_smoothness_min) and (map_smoothness_5sigma < map_smoothness_min):
+            print('map is too smooth\n')
 
-        # print('smoothness score: ', map_smoothness, '\n')
-        # ########################################################################
+        print('smoothness score: ', map_smoothness, '\n')
+        ########################################################################
+
+        nsa_z = DRP_table['nsa_z'][i_DRP]
+        r50 = DRP_table['nsa_elpetro_th50_r'][i_DRP]  
 
         start = datetime.datetime.now()
 
-        Mvir, Mvir_err, star_sigma, star_sigma_err = calculate_virial_mass(IMAGE_DIR,
-                                                                           IMAGE_FORMAT,
-                                                                           gal_ID,
+        Mvir, Mvir_err, star_sigma, star_sigma_err = calculate_virial_mass(gal_ID,
                                                                            maps['star_sigma'],
                                                                            maps['star_sigma_ivar'],
                                                                            maps['star_sigma_corr'],
                                                                            maps['star_sigma_mask'],
                                                                            maps['mflux'],
+                                                                           maps['Ha_vel'],
+                                                                           maps['Ha_vel_mask'],
                                                                            r50,
-                                                                           nsa_z)
+                                                                           nsa_z,
+                                                                           IMAGE_DIR,
+                                                                           IMAGE_FORMAT)
         
 
         ########################################################################

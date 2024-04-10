@@ -278,7 +278,7 @@ def extract_data(MAP_FOLDER, gal_ID, which_maps):
 
     which_maps : list
         list of maps to return
-        - photo : g-band weighted mean flux
+        - flux : g-band weighted mean flux
         - star_sigma : stellar velocity dispersion
         - Halpha_vel : gas velocity maps
 
@@ -299,7 +299,7 @@ def extract_data(MAP_FOLDER, gal_ID, which_maps):
 
     maps = {}
     
-    if 'photo' in which_maps:
+    if 'flux' in which_maps:
         maps['mflux'] = cube['SPX_MFLUX'].data # this is actually g-band lol
         maps['mflux_ivar'] = cube['SPX_MFLUX_IVAR'].data
 

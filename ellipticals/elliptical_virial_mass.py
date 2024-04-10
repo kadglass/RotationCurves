@@ -1,8 +1,7 @@
 import numpy as np
 import numpy.ma as ma
 
-from elliptical_plottingFunctions import plot_sigma_map, plot_photo_map
-
+from elliptical_plottingFunctions import *
 
 ################################################################################
 # CONSTANTS
@@ -17,8 +16,8 @@ c = 299792.458 # Speed of light in units of km/s
 
 
 
-def median_star_sigma(IMAGE_DIR, IMAGE_FORMAT, gal_ID, star_sigma, star_sigma_ivar, 
-                      star_sigma_corr, star_sigma_mask):
+def median_star_sigma(gal_ID, star_sigma, star_sigma_ivar, 
+                      star_sigma_corr, star_sigma_mask, IMAGE_DIR=None, IMAGE_FORMAT='png'):
     '''
 
     Apply correction and mask to stellar velocity dispersion map and find 
@@ -40,8 +39,9 @@ def median_star_sigma(IMAGE_DIR, IMAGE_FORMAT, gal_ID, star_sigma, star_sigma_iv
     ############################################################################
 
     mstar_sigma_corrected = np.sqrt(mstar_sigma**2 - mstar_sigma_corr**2)
-    plot_sigma_map(IMAGE_DIR, IMAGE_FORMAT, gal_ID, mstar_sigma)
-    plot_sigma_map(IMAGE_DIR, IMAGE_FORMAT, gal_ID, mstar_sigma_corr, corr=True)
+    plot_sigma_map(gal_ID, mstar_sigma, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+    plot_sigma_map(gal_ID, mstar_sigma_corr, corr=True, IMAGE_DIR=IMAGE_DIR, 
+                   IMAGE_FORMAT=IMAGE_FORMAT)
 
     ############################################################################
     # find the median velocity dispersion and uncertainty
@@ -54,12 +54,14 @@ def median_star_sigma(IMAGE_DIR, IMAGE_FORMAT, gal_ID, star_sigma, star_sigma_iv
     star_sigma_med_err = ma.std(mstar_sigma_corrected) * \
         np.sqrt(np.pi * (2*n+1)/(4*n))
     
-    return star_sigma_med, star_sigma_med_err
+    return star_sigma_med, star_sigma_med_err, mstar_sigma, mstar_sigma_corr
 
 
 
-def calculate_virial_mass(IMAGE_DIR, IMAGE_FORMAT, gal_ID, star_sigma, star_sigma_ivar, 
-                          star_sigma_corr, star_sigma_mask, photo, r50, z):
+def calculate_virial_mass(gal_ID, star_sigma, star_sigma_ivar, 
+                          star_sigma_corr, star_sigma_mask, flux_map,
+                           Ha_vel, Ha_vel_mask, r50, z, 
+                          IMAGE_DIR=None, IMAGE_FORMAT='png' ):
     '''
     calculate virial mass 
 
@@ -72,19 +74,29 @@ def calculate_virial_mass(IMAGE_DIR, IMAGE_FORMAT, gal_ID, star_sigma, star_sigm
     # get median velocity dispersion and uncertainty
     ############################################################################
 
-    star_sigma_med, star_sigma_med_err = median_star_sigma(IMAGE_DIR,
-                                                           IMAGE_FORMAT, 
-                                                           gal_ID,
+    star_sigma_med, star_sigma_med_err, mstar_sigma, mstar_sigma_corr = median_star_sigma(gal_ID,
                                                            star_sigma, 
                                                            star_sigma_ivar, 
                                                            star_sigma_corr, 
-                                                           star_sigma_mask)
+                                                           star_sigma_mask,
+                                                           IMAGE_DIR,
+                                                           IMAGE_FORMAT)
     
     ############################################################################
     # plot photometric image
     ############################################################################
 
-    plot_photo_map(IMAGE_DIR, IMAGE_FORMAT, gal_ID, photo)
+    plot_flux_map( gal_ID, flux_map, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+
+    ############################################################################
+    # plot photometric image
+    ############################################################################
+    mvel = ma.array(Ha_vel, mask=Ha_vel_mask)
+
+    plot_vel(mvel, gal_ID, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+
+    plot_diagnostic_panel(flux_map, mstar_sigma, mstar_sigma_corr, mvel, gal_ID, 
+                          IMAGE_DIR, IMAGE_FORMAT )
 
 
     ############################################################################

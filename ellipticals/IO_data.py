@@ -11,6 +11,7 @@ from astropy.table import Table, QTable
 
 import numpy as np
 import numpy.ma as ma
+import os
 ################################################################################
 
 
@@ -319,27 +320,86 @@ def extract_data(MAP_FOLDER, gal_ID, which_maps):
 
     return maps
 
-def extract_Pipe3d_data(PIPE3D_FOLDER, gal_ID):
+def extract_Pipe3d_data(PIPE3D_FOLDER, gal_ID, which_maps):
+
+    '''
+    Import Pipe3d maps
+
+    PARAMETERS
+    ==========
+    PIPE3D_FOLDER : string
+        folder with Pipe 3d maps
+
+    gal_ID : string
+        galaxy plate-ifu
+
+    which_maps : list
+        list of maps to return
+        - sMass : stellar mass density
+        - star_sigma : stellar velocity dispersion
+
+    RETURNS
+    =======
+    maps : dictionary
+        dictionary of specified maps for galaxy
     
+    
+    '''
+    
+
+    maps = {}
     
     [plate, IFU] = gal_ID.split('-')
 
-    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+    #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+    #pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
     # for sciserver
     #pipe3d_filename = PIPE3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
+
+    # for bluehive
+    pipe3d_filename = PIPE3D_FOLDER +'/' + plate + '/manga' + gal_ID + '.Pipe3D.SSP.fits.gz'
 
     if not os.path.isfile(pipe3d_filename):
         print(gal_ID, 'Pipe3d data file does not exist.')
         return None, None
 
     main_file = fits.open( pipe3d_filename)
-    ssp = main_file[1].data # for full pipe3d file
-    #ssp = main_file[0].data # for bluehive trimmed data
+    #ssp = main_file[1].data # for full pipe3d file
+    ssp = main_file[0].data # for bluehive trimmed data
     main_file.close()
 
-    sMass_density = ssp[19] * u.dex( u.M_sun)
-    #sMass_density = ssp *u.dex(u.M_sun)
-    sMass_density_err = ssp[20] * u.dex(u.M_sun) # error in stellar mass density
+    if 'sMass' in which_maps:
+        maps['sMass_density'] = ssp[19]
+        maps['sMass_density_err'] = ssp[20]
 
-    return sMass_density, sMass_density_err
+    if 'star_sigma' in which_maps:
+        maps['star_sigma'] = ssp[15]
+        maps['star_sigma_err'] = ssp[16]
+
+
+    return maps
+
+def add_cols(DRP_table, col_names):
+
+    '''
+    Adds columns of zeros to table. overwrites columns if they exist
+
+    PARAMETERS
+    ==========
+    DRP_table : FITS table
+        table to edit
+
+    col_names : list
+        list of columns to add
+
+    RETURNS
+    =======
+    DRP_table : FITS table
+        table with new (or cleared) columns
+    '''
+
+    for col in col_names:
+        DRP_table[col] = 0.
+
+    return DRP_table

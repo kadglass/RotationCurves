@@ -348,3 +348,57 @@ def calculate_virial_mass(gal_ID, star_sigma, star_sigma_ivar,
 
 
     return logMvir, logMvir_err, x, x_err
+
+
+def calculate_dipole_moment(Ha_vel, Ha_vel_mask, Ha_flux, Ha_flux_ivar, flux):
+    '''
+    calculate the dipole moment of H-alpha velocity map: p = sum_i(v_i*(r_i-r))
+    where r is a reference point chosen as a center guess (brightest point in 
+    flux map)
+
+    PARAMETERS
+    ==========
+    Ha_vel : array
+        H-alpha velocity map
+
+    Ha_vel_mask : array
+        H-alpha velocity map mask
+
+    Ha_flux : array
+        H-alpha flux map
+
+    Ha_flux_ivar : array
+        H-alpha flux inverse variance
+    
+    flux : array
+        g-band weighted mean flux map
+
+    RETURNS
+    =======
+    p_mag : float
+        magnitude of dipole moment
+    
+    '''
+    
+    # mask all maps
+    
+    mask = np.logical_or(Ha_vel_mask, Ha_flux*np.sqrt(Ha_flux_ivar) < 5)
+    mHa_vel = ma.array(Ha_vel, mask=mask)
+    mflux = ma.array(flux, mask=mask)
+    
+    # guess the center by brightest spaxel
+    
+    x0, y0 = np.unravel_index(ma.argmax(mflux), mflux.shape)
+    
+    # caculate dipole moment
+    p = [0,0]
+    shape = mHa_vel.shape
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            
+            if not ma.is_masked(mHa_vel[i][j]):
+                p += mHa_vel[i][j] * np.array([i-x0, j-y0])
+
+    p_mag = np.hypot(p[0], p[1])
+                
+    return p_mag

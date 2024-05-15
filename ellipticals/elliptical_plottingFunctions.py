@@ -44,17 +44,8 @@ def plot_sigma_map(gal_ID, sigma_map, corr=False, ax=None, IMAGE_DIR=None,
     ############################################################################
     # Determine limits of color scale
     #---------------------------------------------------------------------------
-    minimum = ma.min(sigma_map)
-    maximum = ma.max(sigma_map)
-
-    if minimum > 0:
-        vmax_bound = maximum
-        vmin_bound = 0
-    else:
-        vmax_bound = np.max( [np.abs(minimum), np.abs(maximum)])
-        vmin_bound = -vmax_bound
-
-    cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
+    vmax = ma.max(sigma_map)
+    cbar_ticks = np.linspace( 0, vmax, 11, dtype='int')
     ############################################################################
 
 
@@ -76,8 +67,8 @@ def plot_sigma_map(gal_ID, sigma_map, corr=False, ax=None, IMAGE_DIR=None,
     vel_im = ax.imshow( sigma_map, 
                         cmap='winter', # 4h 
                         origin='lower', 
-                        vmin=vmin_bound, 
-                        vmax=vmax_bound)
+                        vmin=0, 
+                        vmax=vmax)
 
     cbar = plt.colorbar( vel_im, ax=ax, ticks=cbar_ticks)
     cbar.ax.tick_params( direction='in', labelsize=10)

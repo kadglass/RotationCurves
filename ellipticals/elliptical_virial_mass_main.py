@@ -71,8 +71,10 @@ NSA_FILENAME = '/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0
 ################################################################################
 ################################################################################
 
-map_smoothness_min = 2.0
+
 CLEAR_COLS = True  # zeros out columns in table
+RUN_ALL = True # if true, run an all galaxies
+map_smoothness_min = 2.0
 
 START = datetime.datetime.now()
 
@@ -89,6 +91,8 @@ for i in range(len(DRP_table)):
 
     DRP_index[gal_ID] = i
 ################################################################################
+if RUN_ALL:
+    FILE_IDS = DRP_table['plateifu']
 
 if CLEAR_COLS:
     DRP_table = add_cols(DRP_table, ['smoothness_score', 

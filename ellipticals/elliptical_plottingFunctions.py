@@ -4,6 +4,8 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib
 
+from elliptical_stellar_mass_functions import exponential_sphere
+
 matplotlib.rcParams['figure.dpi'] = 100
 matplotlib.rcParams['savefig.dpi'] = 300
 
@@ -366,3 +368,60 @@ def plot_diagnostic_panel(flux_map,
         del panel_fig, flux_panel, mvel_panel, sigma_panel, sigma_corr_panel
         gc.collect()
         ########################################################################
+
+
+
+def plot_stellar_mass(gal_ID,
+                              data_table,
+                              best_fit_values,
+                              COV_DIR,
+                              IMAGE_DIR,
+                              IMAGE_FORMAT):
+    '''
+    
+    
+    
+    
+    
+    '''
+    
+    plt.errorbar(data_table['radius'], 10**data_table['M_star'], yerr=10**data_table['M_star_err'], 
+             color='k', fmt='.')
+    r = np.linspace(data_table['radius'][0] , data_table['radius'][-1], 100)
+
+    cov = np.load(COV_DIR + gal_ID + '_cov.npy')
+    random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
+                                                best_fit_values['R_scale']],
+                                                cov=cov,
+                                                size =1000)
+
+    is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) 
+    good_randoms = random_sample[is_good_random, :]
+
+    for i in range(len(r)):
+        y_sample = exponential_sphere(r[i], good_randoms[:,0], good_randoms[:,1])
+
+            
+    stdevs = np.nanstd(y_sample, axis=0)
+
+
+    y = exponential_sphere(r, best_fit_values['rho_c'],best_fit_values['R_scale'])
+
+    plt.plot(r, y, color='orange')
+    plt.fill_between(r, y-stdevs, y+stdevs, facecolor='orange',alpha=0.2)
+    plt.xlabel('r [kpc]')
+    plt.ylabel(r'Stellar Mass [log(M$_\odot$)]')
+    plt.yscale('log')
+
+    params_str ='\n'.join((r'$\chi^{2}_{\nu}$: $%.3E$' % (best_fit_values['chi2_M_star'], ), 
+                            r'$\rho_{c}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (best_fit_values['rho_c'], ), 
+                            r'a: $%.3f$ kpc' % (best_fit_values['R_scale'], )
+                            ))
+
+
+
+
+    plt.text(7, 10**9.8, params_str  , fontsize = 8, 
+            bbox = dict(facecolor = 'orange', alpha = 0.5))
+    
+    plt.savefig(IMAGE_DIR + '/stellar_mass/' + gal_ID + '_stellar_mass.' + IMAGE_FORMAT)

@@ -392,13 +392,17 @@ def calculate_dipole_moment(Ha_vel, Ha_vel_mask, Ha_flux, Ha_flux_ivar, flux):
     
     # caculate dipole moment
     p = [0,0]
+    spax_count = 0
     shape = mHa_vel.shape
     for i in range(shape[0]):
         for j in range(shape[1]):
             
             if not ma.is_masked(mHa_vel[i][j]):
+                spax_count += 1
                 p += mHa_vel[i][j] * np.array([i-x0, j-y0])
 
     p_mag = np.hypot(p[0], p[1])
+    if spax_count > 0 :
+        p_mag_norm = p_mag / spax_count
                 
-    return p_mag
+    return p_mag_norm

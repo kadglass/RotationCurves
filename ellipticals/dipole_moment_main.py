@@ -22,7 +22,7 @@ MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
 IMAGE_DIR = '/scratch/nravi3/ellipticals/'
 MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 PIPE3D_FOLDER = MANGA_FOLDER + 'pipe3d/'
-DRP_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2.fits'
+DRP_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole.fits'
 NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
 SAVE_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole.fits'
 

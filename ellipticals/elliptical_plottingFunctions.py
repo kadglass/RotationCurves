@@ -413,15 +413,21 @@ def plot_stellar_mass(gal_ID,
     plt.ylabel(r'Stellar Mass [log(M$_\odot$)]')
     plt.yscale('log')
 
-    params_str ='\n'.join((r'$\chi^{2}_{\nu}$: $%.3E$' % (best_fit_values['chi2_M_star'], ), 
-                            r'$\rho_{c}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (best_fit_values['rho_c'], ), 
-                            r'a: $%.3f$ kpc' % (best_fit_values['R_scale'], )
-                            ))
+    # params_str ='\n'.join((r'$\chi^{2}_{\nu}$: $%.3E$' % (best_fit_values['chi2_M_star'], ), 
+    #                         r'$\rho_{c}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (best_fit_values['rho_c'], ), 
+    #                         r'a: $%.3f$ kpc' % (best_fit_values['R_scale'], )
+    #                         ))
 
 
 
 
-    plt.text(7, 10**9.8, params_str  , fontsize = 8, 
-            bbox = dict(facecolor = 'orange', alpha = 0.5))
+    # plt.text(data_table['radius'][-5], 
+    #          10**((data_table['M_star'][0] + data_table['M_star'][1])/2), 
+    #          params_str  , fontsize = 8, 
+    #         bbox = dict(facecolor = 'orange', alpha = 0.5))
     
     plt.savefig(IMAGE_DIR + '/stellar_mass/' + gal_ID + '_stellar_mass.' + IMAGE_FORMAT)
+
+    plt.cla()
+    plt.clf()
+    plt.close()

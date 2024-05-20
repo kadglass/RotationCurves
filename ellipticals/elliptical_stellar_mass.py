@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+import numpy.ma as ma
 
 from scipy.optimize import curve_fit
 from astropy.table import Table
@@ -10,6 +11,7 @@ from elliptical_stellar_mass_functions import *
 
 import sys
 sys.path.insert(1, '/Users/nityaravi/Documents/Github/RotationCurves/spirals/')
+#sys.path.insert(1, '/home/nravi3/Documents/RotationCurves/spirals/')
 from DRP_rotation_curve_functions import calc_stellar_mass
 
 
@@ -83,17 +85,12 @@ def calc_mass_curve(sMass_density,
 
 
     ############################################################################
-    # If all of the data is masked, return null values for everything
+    # If all of the data is masked, return None
     #---------------------------------------------------------------------------
     if np.sum(sMass_mask == 0) == 0:
 
-        mass_vel_table = Table()
-
-        mass_vel_table['radius'] = [np.NaN]
-        mass_vel_table['M_star'] = [np.NaN]
-        mass_vel_table['M_star_err'] = [np.NaN]
-
         print('ALL DATA POINTS FOR THE GALAXY ARE MASKED!')
+        return None
     ############################################################################
 
 
@@ -108,9 +105,9 @@ def calc_mass_curve(sMass_density,
                                      optical_center, 
                                      phi, 
                                      ba)
+        return mass_table
     ############################################################################
 
-    return mass_table
 
 
 
@@ -402,7 +399,6 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
         plot_stellar_mass(gal_ID,
                               data_table,
                               best_fit_values,
-                              chi2,
                               COV_DIR,
                               IMAGE_DIR,
                               IMAGE_FORMAT)

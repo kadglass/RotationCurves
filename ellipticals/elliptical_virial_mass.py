@@ -404,5 +404,7 @@ def calculate_dipole_moment(Ha_vel, Ha_vel_mask, Ha_flux, Ha_flux_ivar, flux):
     p_mag = np.hypot(p[0], p[1])
     if spax_count > 0 :
         p_mag_norm = p_mag / spax_count
-                
-    return p_mag_norm
+        return p_mag_norm
+    
+    else:
+        return 0

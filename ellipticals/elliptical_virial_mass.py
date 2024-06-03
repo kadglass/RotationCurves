@@ -14,6 +14,119 @@ c = 299792.458 # Speed of light in units of km/s
 ################################################################################
 
 
+def Pipe3D_sMass_weighted_star_sigma(star_sigma, star_sigma_ivar, star_sigma_mask, Pipe3D_star_sigma, 
+                              Pipe3D_star_sigma_err, sMass_density,
+                              sMass_density_err):
+    
+    '''
+
+    Apply correction and mask to stellar velocity dispersion map and 
+    calculate stellar mass weighted mean, uncertainty
+
+    PARAMETERS
+    ==========
+
+    star_sigma : array
+        stellar velocity dispersion map [km/s]
+    
+    star_sigma_ivar : array
+        stellar velocity dispersion inverse variance map
+
+    star_sigma_mask : array
+        stellar velocity dispersion default mask
+    
+    Pipe3D_star_sigma : array
+        stellar velocity dispersion map from Pipe3D
+    
+    Pipe3D_star_sigma_err : array
+        uncertainty on Pipe3D stellar velocity dispersion
+
+    sMass_density : array
+        stellar mass density map [log(M_sun/spax^2)]
+
+    sMass_density_err : array
+        stellar mass density uncertainty map
+
+    RETURNS
+    =======
+    x2 : float
+        stellar mass weighted mean square velocity dispersion [(km/s)^2]
+
+    x2_err2 : float
+        square of the uncertainty on x2
+
+    mstar_sigma : array
+        masked stellar velocity dispersion map
+
+    mstar_sigma_corrected : array
+        masked and corrected stellar velocity dispersion map
+
+
+
+    '''
+
+    ############################################################################
+    # mask Pipe3D map using DAP S/N 10 mask
+    ############################################################################
+
+    
+    sn10_mask = np.logical_or(star_sigma * 
+                               np.sqrt(star_sigma_ivar) < 10, 
+                               star_sigma_mask)
+    
+    mstar_sigma = ma.array(Pipe3D_star_sigma, mask=sn10_mask)
+    mstar_sigma_err = ma.array(Pipe3D_star_sigma_err, mask=sn10_mask)
+
+    # mstar_sigma = ma.array(star_sigma, mask=sn10_mask)
+    # mstar_sigma_ivar = ma.array(star_sigma_ivar, mask=sn10_mask)
+    # mstar_sigma_corr = ma.array(star_sigma_corr, mask=sn10_mask)
+
+    msMass_density = ma.array(sMass_density, mask=sn10_mask)
+    msMass_density_err = ma.array(sMass_density_err, mask=sn10_mask)
+
+    ############################################################################
+    # apply correction to stellar velocity dispersion map and plot
+    ############################################################################
+
+    # mstar_sigma_corrected = np.sqrt(mstar_sigma**2 - mstar_sigma_corr**2)
+    # plot_sigma_map(gal_ID, mstar_sigma, IMAGE_DIR=IMAGE_DIR, IMAGE_FORMAT=IMAGE_FORMAT)
+    # plot_sigma_map(gal_ID, mstar_sigma_corrected, corr=True, IMAGE_DIR=IMAGE_DIR, 
+    #                IMAGE_FORMAT=IMAGE_FORMAT)
+    
+    ############################################################################
+    # calculate stellar mass weighted mean velocity dispersion
+    ############################################################################
+
+    # sMass = np.ma.power(10,msMass_density) # stellar mass map in linear units
+    # sMass_tot = ma.sum 
+    # sigma2 = ma.sum(sMass*mstar_sigma_corrected**2)/ma.sum(sMass)
+    # sigma = np.sqrt(sigma2)
+    # return sigma, 0, mstar_sigma, mstar_sigma_corrected
+
+
+    lin_sMass = np.ma.power(10, msMass_density) # stellar mass map in linear units
+    lin_sMass_err = np.ma.power(10, msMass_density_err) # stellar mass error in linear units
+
+
+    M = ma.sum(lin_sMass) # total stellar mass, normalization factor
+    # S = ma.sum(lin_sMass*mstar_sigma_corrected**2) # weighted sum of vel disp squared
+    S = ma.sum(lin_sMass*mstar_sigma**2) # weighted sum of vel disp squared
+
+    # mass weighted mean velocity disp squared and square of uncertainty on this quantity
+    x2 = S / M 
+    # x2_err2 = (4 / M**2) * \
+    #     ma.sum((lin_sMass*mstar_sigma_corrected)**2/mstar_sigma_ivar) +\
+    #     (1 / M**4) * ma.sum(((M*mstar_sigma_corrected**2-S)*lin_sMass_err)**2)
+    x2_err2 = (4 / M**2) * \
+        ma.sum((lin_sMass*mstar_sigma)**2*mstar_sigma_err**2) +\
+        (1 / M**4) * ma.sum(((M*mstar_sigma**2-S)*lin_sMass_err)**2)
+    
+    x = np.sqrt(x2)
+    x_err = np.sqrt(x2_err2/(4*x2))
+    
+    return x, x_err
+
+
 def sMass_weighted_star_sigma(gal_ID, star_sigma, star_sigma_ivar, 
                               star_sigma_corr, star_sigma_mask, sMass_density,
                               sMass_density_err, IMAGE_DIR=None, 

@@ -431,3 +431,172 @@ def plot_stellar_mass(gal_ID,
     plt.cla()
     plt.clf()
     plt.close()
+
+def med_err(vals, logscale=True, return_logscale=True):
+    '''
+    Takes a a list of values in bins, calculates the log median and uncertainty (RMS/sqrt(N)) and returns log median and log err bars
+
+    vals : array
+        2D array of dimension (N,M) corresponding to N bins in histogram
+    
+    '''
+
+    p = np.ones((len(vals),3))*np.nan
+    
+    # for each bin calculate the median and rms
+    for i in range(len(vals)):
+
+        if len(vals[i]) >= 10:
+    
+            sqrtN = np.sqrt(len(vals[i]))
+            
+            if logscale:
+                median = ma.median(10**vals[i])
+                rms = ma.sqrt(ma.mean((10**vals[i])**2))
+                
+            else:
+                
+                median = ma.median(vals[i])
+                rms = ma.sqrt(ma.mean(vals[i]**2))
+    
+
+    
+            if return_logscale:
+                
+                p[i][0] = ma.log10(median)
+                p[i][2] = ma.log10(rms/sqrtN + median) - ma.log10(median)
+                
+                if rms/sqrtN >= median:
+                    p[i][1] = np.inf
+    
+                else:
+                    p[i][1] = np.log10(median) - np.log10(median-rms/sqrtN)
+                
+    
+            else:
+    
+                p[i][0] = median
+                p[i][1] = rms/sqrtN
+                p[i][2] = rms/sqrtN
+
+    return p
+        
+
+def med_percentile(vals, logscale=True, return_logscale=True):
+    '''
+    take array of vals in bins and calculate median, 16th, 84th percentiles in logscale
+
+    PARAMETERS
+    ==========
+    val : array
+        2d array (N,M) - N is number of bins
+
+    logscale : boolean
+        True if vals is in log units
+
+    return_logscale : boolean
+        True if percentiles are in log units
+
+    RETURNS
+    =======
+
+    p : array
+        array of medians, lower and upper bound of error bar (16th/84th percentile)
+    
+    '''
+
+    p = np.ones((len(vals),3))*np.nan
+    
+    for i in range(len(vals)):
+        if len(vals[i]) == 0:
+            continue
+        
+        if len(vals[i]) >= 3:
+            if logscale:
+                a, b, c = np.percentile(10**vals[i],[50,16,84])
+            else:
+                a, b, c = np.percentile(vals[i],[50,16,84])
+        else:
+            if logscale:
+                a = np.median(10**vals[i])
+                b = a
+                c = a
+            else:
+                a = np.median(vals[i])
+                b = a
+                c = a
+
+        low = (a - b)
+        high = (c - a)
+        
+        if return_logscale:
+            p[i][0] = np.log10(a)
+            p[i][1] = np.log10(a) - np.log10(b)
+            p[i][2] = np.log10(c) - np.log10(a)
+        
+        else:
+            p[i][0] = a
+            p[i][1] = a - b
+            p[i][2] = c - a
+    
+    return p
+
+    
+def med_percentile_scaled(vals, logscale=True, return_logscale=True):
+    '''
+    take array of vals in bins and calculate median, 16th, 84th percentiles in logscale
+    if bin has < 10 data points, return nans
+
+    PARAMETERS
+    ==========
+    val : array
+        2d array (N,M) - N is number of bins
+
+    logscale : boolean
+        True if vals is in log units
+
+    return_logscale : boolean
+        True if percentiles are in log units
+
+    RETURNS
+    =======
+
+    p : array
+        median, lower error bar length, upper error bar length, in lin or log units
+    '''
+
+    p = np.ones((len(vals),3))*np.nan
+    
+    for i in range(len(vals)):
+        if len(vals[i]) < 10:
+            continue
+        
+        else:
+            if logscale:
+                a, b, c = np.percentile(10**vals[i],[50,16,84])
+            else:
+                a, b, c = np.percentile(vals[i],[50,16,84])
+        # else:
+        #     if logscale:
+        #         a = np.median(10**vals[i])
+        #         b = a
+        #         c = a
+        #     else:
+        #         a = np.median(vals[i])
+        #         b = a
+        #         c = a
+
+        low = (a - b) / np.sqrt(len(vals[i])) #lower error bar length (linear)
+        high = (c - a) / np.sqrt(len(vals[i])) # upper error bar length (linear)
+        
+        if return_logscale:
+            p[i][0] = np.log10(a)
+            p[i][1] = np.log10(a) - np.log10(a-low)
+            p[i][2] = np.log10(high+a) - np.log10(a)
+        
+        else:
+            p[i][0] = a
+            p[i][1] = low
+            p[i][2] = high
+    
+    return p

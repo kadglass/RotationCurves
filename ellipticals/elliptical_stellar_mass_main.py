@@ -47,8 +47,8 @@ MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
 IMAGE_DIR = MANGA_FOLDER + 'Ellipticals_Images/'
 MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 PIPE3D_FOLDER = MANGA_FOLDER +'Pipe3D/'
-DRP_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole.fits'
-OUT_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_Mstar.fits'
+DRP_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio.fits'
+OUT_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_sphdisk.fits'
 COV_DIR = MANGA_FOLDER + 'elliptical_stellar_mass_cov/'
 
 ################################################################################
@@ -65,8 +65,12 @@ COV_DIR = MANGA_FOLDER + 'elliptical_stellar_mass_cov/'
 ################################################################################
 ################################################################################
 
+
 CLEAR_COLS = True  # zeros out columns in table
 TEXT_OUT = True # print info
+WRITE_TABLE = True # saves table
+
+stellar_profile = 'hernquist' # sphere, sphere_disk, or hernquist
 
 START = datetime.datetime.now()
 
@@ -84,11 +88,27 @@ for i in range(len(DRP_table)):
 ################################################################################
 
 if CLEAR_COLS:
-    DRP_table = add_cols(DRP_table, ['rho_c','rho_c_err',
-                                     'R_scale', 'R_scale_err',
-                                     'M_star_esph', 'M_star_esph_err',
-                                     'chi2_M_star_esph'])
+
+    if stellar_profile == 'sphere':
+
+        DRP_table = add_cols(DRP_table, ['rho_c','rho_c_err',
+                                        'R_scale', 'R_scale_err',
+                                        'M_star_esph', 'M_star_esph_err',
+                                        'chi2_M_star_esph'])
     
+    elif stellar_profile == 'sphere_disk':
+        DRP_table = add_cols(DRP_table, ['rho_c','rho_c_err',
+                                        'R_scale', 'R_scale_err',
+                                        'Sigma_d', 'Sigma_d_err',
+                                        'R_d', 'R_d_err',
+                                        'M_star_sphdisk', 'M_star_sphdisk_err',
+                                        'chi2_M_star_sphdisk'])
+        
+    elif stellar_profile == 'hernquist':
+        DRP_table = add_cols(DRP_table, 
+                                        ['R_scale', 'R_scale_err',
+                                        'M_star_hq', 'M_star_hq_err',
+                                        'chi2_M_star_hq'])
 
 for gal_ID in FILE_IDS:
 
@@ -138,6 +158,7 @@ for gal_ID in FILE_IDS:
         
             best_fit_params = fit_mass_curve(data_table, 
                                          gal_ID, 
+                                         stellar_profile,
                                          COV_DIR=COV_DIR, 
                                          IMAGE_DIR=IMAGE_DIR, 
                                          IMAGE_FORMAT='png')
@@ -152,32 +173,66 @@ for gal_ID in FILE_IDS:
             # calculate stellar mass
             #-------------------------------------------------------------------
 
-            M, M_err = calc_tot_stellar_mass(gal_ID, 
-                                            best_fit_params['rho_c'], 
-                                            best_fit_params['R_scale'], 
-                                            COV_DIR=COV_DIR)
-            if TEXT_OUT:
-                print('M_star: ', M)
-                print('M_star_err: ', M_err)
-            
+            if stellar_profile == 'sphere' or stellar_profile == 'sphere_disk':
+                M, M_err = calc_tot_stellar_mass(best_fit_params,
+                                                    stellar_profile)
+
+                if TEXT_OUT:
+                    print('M_star: ', M)
+                    print('M_star_err: ', M_err)
+            else:
+                if TEXT_OUT:
+
+                    print('M_star: ', best_fit_params['M'])
+                    print('M_star_err: ', best_fit_params['M_err'])
             ####################################################################
             # populate data table
             #-------------------------------------------------------------------
+            if WRITE_TABLE:
+                
+                if stellar_profile == 'hernquist':
+                    DRP_table['M_star_hq'][i_DRP] = best_fit_params['M']
+                    DRP_table['M_star_hq_err'][i_DRP] = best_fit_params['M_err']
+                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
+                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
+                    DRP_table['chi2_M_star_hq'][i_DRP] = best_fit_params['chi2_M_star']
 
-            DRP_table['rho_c'][i_DRP] = best_fit_params['rho_c']
-            DRP_table['rho_c_err'][i_DRP] = best_fit_params['rho_c_err']
-            DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
-            DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
-            DRP_table['chi2_M_star_esph'][i_DRP] = best_fit_params['chi2_M_star']
+                elif stellar_profile == 'sphere_disk':
+                    DRP_table['rho_c'][i_DRP] = best_fit_params['rho_c']
+                    DRP_table['rho_c_err'][i_DRP] = best_fit_params['rho_c_err']
+                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
+                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
+                    DRP_table['chi2_M_star_sphdisk'][i_DRP] = best_fit_params['chi2_M_star']
 
+                    DRP_table['Sigma_d'][i_DRP] = best_fit_params['Sigma_d']
+                    DRP_table['Sigma_d_err'][i_DRP] = best_fit_params['Sigma_d_err']
+                    DRP_table['R_d'][i_DRP] = best_fit_params['R_d']
+                    DRP_table['R_d_err'][i_DRP] = best_fit_params['R_d_err']
 
-            DRP_table['M_star_esph'][i_DRP] = M
-            DRP_table['M_star_esph_err'][i_DRP] = M_err
+                    DRP_table['M_star_sphdisk'][i_DRP] = M
+                    DRP_table['M_star_sphdisk_err'][i_DRP] = M_err
 
-            DRP_table.write(OUT_FILENAME, format='fits', overwrite=True)
+                elif stellar_profile == 'sphere':
+                    DRP_table['rho_c'][i_DRP] = best_fit_params['rho_c']
+                    DRP_table['rho_c_err'][i_DRP] = best_fit_params['rho_c_err']
+                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
+                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
+                    DRP_table['chi2_M_star_esph'][i_DRP] = best_fit_params['chi2_M_star']
+
+                    DRP_table['Sigma_d'][i_DRP] = best_fit_params['Sigma_d']
+                    DRP_table['Sigma_d_err'][i_DRP] = best_fit_params['Sigma_d_err']
+                    DRP_table['R_d'][i_DRP] = best_fit_params['R_d']
+                    DRP_table['R_d_err'][i_DRP] = best_fit_params['R_d_err']
+
+                    DRP_table['M_star_esph'][i_DRP] = M
+                    DRP_table['M_star_esph_err'][i_DRP] = M_err
+
+                DRP_table.write(OUT_FILENAME, format='fits', overwrite=True)
 
     else:
         print(gal_ID, ' not in sample')
 
 print('Runtime: ', datetime.datetime.now() - START)
-DRP_table.write(OUT_FILENAME, format='fits', overwrite=True)
+
+if WRITE_TABLE:
+    DRP_table.write(OUT_FILENAME, format='fits', overwrite=True)

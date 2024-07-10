@@ -4,7 +4,7 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib
 
-from elliptical_stellar_mass_functions import exponential_sphere
+from elliptical_stellar_mass_functions import exponential_sphere, exponential_sphere_disk, hernquist_profile
 
 matplotlib.rcParams['figure.dpi'] = 100
 matplotlib.rcParams['savefig.dpi'] = 300
@@ -373,6 +373,7 @@ def plot_diagnostic_panel(flux_map,
 
 def plot_stellar_mass(gal_ID,
                               data_table,
+                              stellar_profile,
                               best_fit_values,
                               COV_DIR,
                               IMAGE_DIR,
@@ -390,22 +391,70 @@ def plot_stellar_mass(gal_ID,
     r = np.linspace(data_table['radius'][0] , data_table['radius'][-1], 100)
 
     cov = np.load(COV_DIR + gal_ID + '_cov.npy')
-    random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
-                                                best_fit_values['R_scale']],
-                                                cov=cov,
-                                                size =1000)
 
-    is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) 
-    good_randoms = random_sample[is_good_random, :]
+    if stellar_profile == 'sphere':
+        random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
+                                                    best_fit_values['R_scale']],
+                                                    cov=cov,
+                                                    size =1000)
 
-    for i in range(len(r)):
-        y_sample = exponential_sphere(r[i], good_randoms[:,0], good_randoms[:,1])
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) 
+        good_randoms = random_sample[is_good_random, :]
 
-            
-    stdevs = np.nanstd(y_sample, axis=0)
+        for i in range(len(r)):
+            y_sample = exponential_sphere(r[i], good_randoms[:,0], good_randoms[:,1])
+
+                
+        stdevs = np.nanstd(y_sample, axis=0)
 
 
-    y = exponential_sphere(r, best_fit_values['rho_c'],best_fit_values['R_scale'])
+        y = exponential_sphere(r, best_fit_values['rho_c'],best_fit_values['R_scale'])
+    
+    elif stellar_profile == 'sphere_disk':
+        random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
+                                                    best_fit_values['R_scale'],
+                                                    best_fit_values['Sigma_d'],
+                                                    best_fit_values['R_d']],
+                                                    cov=cov,
+                                                    size =1000)
+
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & \
+                            (random_sample[:,2] > 0) & (random_sample[:,3] > 0) 
+        good_randoms = random_sample[is_good_random, :]
+
+        for i in range(len(r)):
+            y_sample = exponential_sphere_disk(r[i], good_randoms[:,0], good_randoms[:,1],
+                                               good_randoms[:,2], good_randoms[:,3])
+
+                
+        stdevs = np.nanstd(y_sample, axis=0)
+
+
+        y = exponential_sphere_disk(r, best_fit_values['rho_c'],best_fit_values['R_scale'], 
+                                    best_fit_values['Sigma_d'],
+                                                    best_fit_values['R_d'])
+        
+    elif stellar_profile == 'hernquist':
+        random_sample = np.random.multivariate_normal(mean=[
+                                                    best_fit_values['R_scale'],
+                                                    best_fit_values['M'],
+                                                    ],
+                                                    cov=cov,
+                                                    size =1000)
+
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0)  
+        good_randoms = random_sample[is_good_random, :]
+
+        for i in range(len(r)):
+            y_sample = hernquist_profile(r[i], good_randoms[:,0], good_randoms[:,1])
+
+                
+        stdevs = np.nanstd(y_sample, axis=0)
+
+
+        y = hernquist_profile(r, best_fit_values['R_scale'], 
+                                    best_fit_values['M'],
+                                                   )
 
     plt.plot(r, y, color='orange')
     plt.fill_between(r, y-stdevs, y+stdevs, facecolor='orange',alpha=0.2)
@@ -426,7 +475,7 @@ def plot_stellar_mass(gal_ID,
     #          params_str  , fontsize = 8, 
     #         bbox = dict(facecolor = 'orange', alpha = 0.5))
     
-    plt.savefig(IMAGE_DIR + '/stellar_mass/' + gal_ID + '_stellar_mass.' + IMAGE_FORMAT)
+    plt.savefig(IMAGE_DIR + '/stellar_mass/' + stellar_profile + '/' + gal_ID + '_stellar_mass.' + IMAGE_FORMAT)
 
     plt.cla()
     plt.clf()

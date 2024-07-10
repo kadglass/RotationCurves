@@ -285,7 +285,8 @@ def find_mass_curve(z,
     return data_table
 
 
-def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT='png'):
+def fit_mass_curve(data_table, gal_ID, stellar_profile,
+                   COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT='png'):
     '''
     Fit the stellar mass distribution to the exponential sphere model.
 
@@ -299,6 +300,9 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
     gal_ID : string
         [PLATE]-[IFU]
     
+    stellar_profile : string
+        which stellar p[rofile to fit. 'sphere', 'sphere_disk', or 'hernquist'
+
     COV_DIR : string
         path to directory for covariance matrices. default is none so covariance
         matrix will save in current directory
@@ -323,11 +327,34 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
     # Set up initial guesses for the best-fit parameters
     #---------------------------------------------------------------------------
     
-    rho_c_guess =  10**9.
+    
 
     R_scale_guess = 1.
+
+    if stellar_profile == 'sphere':
+
+        rho_c_guess =  10**9.
         
-    param_guesses = [rho_c_guess, R_scale_guess]
+        param_guesses = [rho_c_guess, R_scale_guess]
+
+    elif stellar_profile == 'sphere_disk':
+
+        rho_c_guess =  10**9.
+
+        Sigd_guess = 10**9
+
+        Rd_guess = 1.
+
+
+        param_guesses = [rho_c_guess, R_scale_guess, Sigd_guess, Rd_guess]
+
+    elif stellar_profile == 'hernquist':
+
+        M_guess = 10**10
+
+        param_guesses = [R_scale_guess, M_guess]
+
+    
 
     ############################################################################
 
@@ -335,17 +362,45 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
     ############################################################################
     # Set up bounds for the best-fit parameters
     #---------------------------------------------------------------------------
-    # Bulge central density [M_sol/kpc^3] 
-    rho_c_min = 0.
-    rho_c_max = 1e14
-
+    
     # Bulge scale radius [kpc]
     R_scale_min = 0.
-    R_scale_max = 100.
+    R_scale_max = 1000.
+
+    if stellar_profile == 'sphere':
+        # Bulge central density [M_sol/kpc^3] 
+        rho_c_min = 0.
+        rho_c_max = 1e16
 
 
-    param_bounds = ([rho_c_min, R_scale_min], 
+        param_bounds = ([rho_c_min, R_scale_min], 
                         [rho_c_max, R_scale_max])
+        
+    elif stellar_profile == 'sphere_disk':
+
+        # Bulge central density [M_sol/kpc^3] 
+        rho_c_min = 0.
+        rho_c_max = 1e16
+    
+        # disk central density [M_sun/kpc^2]
+        Sigd_min = 0.
+        Sigd_max = 1e14
+
+        # disk scale radius [kpc]
+        Rd_min = 0.
+        Rd_max = 10000
+
+        param_bounds = ([rho_c_min, R_scale_min, Sigd_min, Rd_min], 
+                        [rho_c_max, R_scale_max, Sigd_max, Rd_max])
+        
+    elif stellar_profile == 'hernquist':
+
+        # Total mass [M_sun]
+        M_min = 10**7
+        M_max = 10**12
+
+        param_bounds = ([R_scale_min, M_min], [R_scale_max, M_max])
+
     ############################################################################
 
 
@@ -353,14 +408,31 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
     # Find the best-fit parameters
     #---------------------------------------------------------------------------
     try:
-        popt, pcov = curve_fit(exponential_sphere, 
-                                    data_table['radius'], 
-                                    10**data_table['M_star'], 
-                                    p0=param_guesses,
-                                    bounds=param_bounds,
-                                    sigma=10**data_table['M_star_err']
-                                    )
 
+        if stellar_profile == 'sphere':
+            popt, pcov = curve_fit(exponential_sphere, 
+                                        data_table['radius'], 
+                                        10**data_table['M_star'], 
+                                        p0=param_guesses,
+                                        bounds=param_bounds,
+                                        sigma=10**data_table['M_star_err']
+                                        )
+        elif stellar_profile == 'sphere_disk':
+            popt, pcov = curve_fit(exponential_sphere_disk, 
+                                        data_table['radius'], 
+                                        10**data_table['M_star'], 
+                                        p0=param_guesses,
+                                        bounds=param_bounds,
+                                        sigma=10**data_table['M_star_err']
+                                        )
+            
+        elif stellar_profile == 'hernquist':
+            popt, pcov = curve_fit(hernquist_profile,
+                                   data_table['radius'],
+                                   10**data_table['M_star'],
+                                   p0 = param_guesses,
+                                   bounds=param_bounds,
+                                   sigma=10**data_table['M_star_err'])
 
         #-----------------------------------------------------------------------
         # Determine uncertainties in the fitted parameters
@@ -377,16 +449,35 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
         chi2 = chi2_mass(popt, 
                      data_table['radius'], 
                      data_table['M_star'], 
-                     data_table['M_star_err'])
+                     data_table['M_star_err'],
+                     stellar_profile)
 
 
 
-
-        best_fit_values = {'rho_c' : popt[0],
-                        'rho_c_err' : perr[0],
-                        'R_scale' : popt[1],
-                        'R_scale_err' : perr[1], 
-                        'chi2_M_star': chi2}
+        if stellar_profile == 'sphere':
+            best_fit_values = {'rho_c' : popt[0],
+                            'rho_c_err' : perr[0],
+                            'R_scale' : popt[1],
+                            'R_scale_err' : perr[1], 
+                            'chi2_M_star': chi2}
+        
+        elif stellar_profile == 'sphere_disk':
+            best_fit_values = {'rho_c' : popt[0],
+                            'rho_c_err' : perr[0],
+                            'R_scale' : popt[1],
+                            'R_scale_err' : perr[1], 
+                            'Sigma_d' : popt[2], 
+                            'Sigma_d_err' : perr[2],
+                            'R_d' : popt[3], 
+                            'R_d_err' : perr[3],
+                            'chi2_M_star': chi2}
+            
+        if stellar_profile == 'hernquist':
+            best_fit_values = {'R_scale' : popt[0],
+                               'R_scale_err' : perr[0], 
+                                'M' : popt[1],
+                                'M_err' : perr[1],
+                                'chi2_M_star': chi2}
 
 
         #-----------------------------------------------------------------------
@@ -398,6 +489,7 @@ def fit_mass_curve(data_table, gal_ID, COV_DIR='', IMAGE_DIR=None, IMAGE_FORMAT=
         
         plot_stellar_mass(gal_ID,
                               data_table,
+                              stellar_profile,
                               best_fit_values,
                               COV_DIR,
                               IMAGE_DIR,

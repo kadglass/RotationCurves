@@ -341,7 +341,7 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
 
         rho_c_guess =  10**9.
 
-        Sigd_guess = 10**9
+        Sigd_guess = 10**7
 
         Rd_guess = 1.
 

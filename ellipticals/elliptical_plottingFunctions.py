@@ -4,7 +4,10 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib
 
-from elliptical_stellar_mass_functions import exponential_sphere, exponential_sphere_disk, hernquist_profile
+from elliptical_stellar_mass_functions import exponential_sphere,\
+                                             exponential_sphere_disk,\
+                                             hernquist_profile, \
+                                             exponential_disk
 
 matplotlib.rcParams['figure.dpi'] = 100
 matplotlib.rcParams['savefig.dpi'] = 300
@@ -434,6 +437,13 @@ def plot_stellar_mass(gal_ID,
                                     best_fit_values['Sigma_d'],
                                                     best_fit_values['R_d'])
         
+        plt.plot(r, exponential_sphere(r, best_fit_values['rho_c'], 
+                                       best_fit_values['R_scale']),
+                 linestyle = '--', color = 'dodgerblue', label='sphere')
+        plt.plot(r, exponential_disk(r, best_fit_values['Sigma_d'], 
+                                     best_fit_values['R_d']),
+                 linestyle='--', color='crimson', label='disk')
+        
     elif stellar_profile == 'hernquist':
         random_sample = np.random.multivariate_normal(mean=[
                                                     best_fit_values['R_scale'],
@@ -461,6 +471,7 @@ def plot_stellar_mass(gal_ID,
     plt.xlabel('r [kpc]')
     plt.ylabel(r'Stellar Mass [log(M$_\odot$)]')
     plt.yscale('log')
+    plt.legend()
 
     # params_str ='\n'.join((r'$\chi^{2}_{\nu}$: $%.3E$' % (best_fit_values['chi2_M_star'], ), 
     #                         r'$\rho_{c}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (best_fit_values['rho_c'], ), 

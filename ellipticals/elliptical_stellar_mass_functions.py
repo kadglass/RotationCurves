@@ -30,6 +30,31 @@ def exponential_sphere(r, rho_c, a):
     
     return M
 
+def exponential_disk(r, Sigd, Rd):
+    '''
+    mass distribution for exponential sphere and disk
+
+    PARAMETERS
+    ==========
+    r : float
+        radius [kpc]
+
+    Sigd : float
+        disk central surface density [M_sun/kpc^2]
+
+    Rd : float
+        disk scale radius [kpc]
+    
+    RETURNS
+    =======
+    M : float
+        mass within radius r [M_sun]
+    '''
+
+
+    M = 2 * np.pi * Sigd * Rd *(Rd - np.exp(-r/Rd)*(r+Rd))
+    return M
+
 def exponential_sphere_disk(r, rho_c, a, Sigd, Rd):
 
     '''
@@ -60,7 +85,7 @@ def exponential_sphere_disk(r, rho_c, a, Sigd, Rd):
 
 
     sph = exponential_sphere(r, rho_c, a)
-    disk = 2 * np.pi * Sigd * Rd *(Rd - np.exp(-r/Rd)*(r+Rd))
+    disk = exponential_disk(r, Sigd, Rd)
 
     M = sph + disk
     return M

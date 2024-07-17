@@ -226,10 +226,10 @@ def fit_vel_map(vel,
     #---------------------------------------------------------------------------
     # Plot r-band image
     #---------------------------------------------------------------------------
-    plot_rband_image(r_band,
-                     gal_ID,
-                     IMAGE_DIR=IMAGE_DIR,
-                     IMAGE_FORMAT=IMAGE_FORMAT)
+    # plot_rband_image(r_band,
+    #                  gal_ID,
+    #                  IMAGE_DIR=IMAGE_DIR,
+    #                  IMAGE_FORMAT=IMAGE_FORMAT)
     '''
     if IMAGE_DIR is None:
         plt.show()
@@ -253,12 +253,12 @@ def fit_vel_map(vel,
     #---------------------------------------------------------------------------
     # Plot H-alpha line width
     #---------------------------------------------------------------------------
-    plot_Ha_sigma(mHa_sigma,
-                  gal_ID,
-                  IMAGE_DIR=IMAGE_DIR,
-                  FOLDER_NAME='/Ha_sigma/',
-                  IMAGE_FORMAT=IMAGE_FORMAT,
-                  FILENAME_SUFFIX='_Ha_sigma.')
+    # plot_Ha_sigma(mHa_sigma,
+    #               gal_ID,
+    #               IMAGE_DIR=IMAGE_DIR,
+    #               FOLDER_NAME='/Ha_sigma/',
+    #               IMAGE_FORMAT=IMAGE_FORMAT,
+    #               FILENAME_SUFFIX='_Ha_sigma.')
     ############################################################################
 
 
@@ -611,20 +611,20 @@ def fit_vel_map(vel,
             #   - the best-fit velocity array,
             #   - the best-fit rotation curve
             #-------------------------------------------------------------------
-            plot_diagnostic_panel(r_band,
-                                  ma.array(mvel, mask=best_mask),
-                                  ma.array(mvel_ivar, mask=best_mask),
-                                  mbest_fit_map,
-                                  param_outputs,
-                                  scale,
-                                  gal_ID,
-                                  fit_function,
-                                  V_type=V_type,
-                                  IMAGE_DIR=IMAGE_DIR,
-                                  IMAGE_FORMAT=IMAGE_FORMAT)
+            # plot_diagnostic_panel(r_band,
+            #                       ma.array(mvel, mask=best_mask),
+            #                       ma.array(mvel_ivar, mask=best_mask),
+            #                       mbest_fit_map,
+            #                       param_outputs,
+            #                       scale,
+            #                       gal_ID,
+            #                       fit_function,
+            #                       V_type=V_type,
+            #                       IMAGE_DIR=IMAGE_DIR,
+            #                       IMAGE_FORMAT=IMAGE_FORMAT)
 
-            if IMAGE_DIR is None:
-                plt.show()
+            # if IMAGE_DIR is None:
+            #     plt.show()
             ####################################################################
     ############################################################################
 
@@ -691,8 +691,8 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     # Calculate velocity at given radius
     #---------------------------------------------------------------------------
     # hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    #hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
-    hess = np.load(gal_ID + '_Hessian.npy')
+    hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    #hess = np.load(gal_ID + '_Hessian.npy')
 
     N_samples = 10000
 

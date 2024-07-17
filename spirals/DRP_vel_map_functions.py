@@ -720,19 +720,17 @@ def calculate_chi2_flat(params,
 
     
     if HI_vel is not None:
-        
-        i_angle = params[1]
-        
+                
         if fit_function == 'tail':
 
-            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())
 
-            chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
+            chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + 2*(((vel_model_HI - HI_vel)/HI_vel_err)**2)
         
         else:
-            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())
 
-            chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + ((vel_model_HI - HI_vel)/HI_vel_err)**2
+            chi2 = np.sum(flat_vel_map_ivar*(flat_vel_map_model - flat_vel_map)**2) + 2*(((vel_model_HI - HI_vel)/HI_vel_err)**2)
 
     
     else:
@@ -821,19 +819,19 @@ def calculate_residual_flat(params,
 
 
     if HI_vel is not None:
-        i_angle = params[1]
+
         if fit_function == 'tail':
 
-            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
+            vel_model_HI = rot_fit_tail(3.5*R90_kpc, params[5:].tolist())
             residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
-            residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
+            residual_norm = residual / (len(flat_vel_map) - len(params) + 2)
 
 
         else:
 
-            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())*np.sin(i_angle)
+            vel_model_HI = rot_fit_BB(3.5*R90_kpc, params[5:].tolist())
             residual = np.sum((flat_vel_map_model - flat_vel_map)**2) + (vel_model_HI - HI_vel)**2
-            residual_norm = residual / (len(flat_vel_map) - len(params) + 1)
+            residual_norm = residual / (len(flat_vel_map) - len(params) + 2)
 
     
     else:
@@ -1209,7 +1207,7 @@ def find_vel_map(gal_ID,
     
     v_max_index = np.unravel_index(ma.argmax(ma.abs(mHa_vel)), mHa_vel.shape)
     if HI_vel is not None:
-        v_max_guess = np.abs(HI_vel/np.sin(inclination_angle_guess))
+        v_max_guess = np.abs(HI_vel)
     
     else:
         v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
@@ -1229,10 +1227,10 @@ def find_vel_map(gal_ID,
 
     # Inclination angle
     print('inc_guess', inclination_angle_guess)
-    #inclination_angle_low = np.max([0, inclination_angle_guess - np.radians(15)])
-    #inclination_angle_high = np.min([inclination_angle_guess + np.radians(15), 0.5*np.pi])
-    inclination_angle_low = 0
-    inclination_angle_high = 0.5*np.pi
+    inclination_angle_low = np.max([0, inclination_angle_guess - np.radians(15)])
+    inclination_angle_high = np.min([inclination_angle_guess + np.radians(15), 0.5*np.pi])
+    #inclination_angle_low = 0
+    #inclination_angle_high = 0.5*np.pi
     inclination_angle_bounds = (inclination_angle_low, inclination_angle_high)
 
     # Center coordinates
@@ -1428,7 +1426,7 @@ def find_vel_map(gal_ID,
         if HI_vel == None:
             result_all.fun /= (len(mHa_vel_flat) - len(result_all.x))
         else:
-            result_all.fun /= (len(mHa_vel_flat) - len(result_all.x) + 1)
+            result_all.fun /= (len(mHa_vel_flat) - len(result_all.x) + 2)
         ########################################################################
 
 
@@ -1480,7 +1478,7 @@ def find_vel_map(gal_ID,
             if HI_vel == None:
                 result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x))
             else:
-                result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x) + 1)
+                result_continuous.fun /= (len(modified_mHa_vel_flat) - len(result_continuous.x) + 2)
 
         ########################################################################
 
@@ -1512,7 +1510,7 @@ def find_vel_map(gal_ID,
         if HI_vel == None:
             result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x))
         else:
-            result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x) + 1)
+            result_residual.fun /= (len(mHa_vel_flat) - len(result_residual.x) + 2)
         ########################################################################
 
         '''
@@ -1612,7 +1610,7 @@ def find_vel_map(gal_ID,
             if HI_vel == None:
                 result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x))
             else:
-                result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x) + 1)
+                result_nonAGN.fun /= (len(modified_mHa_vel_flat) - len(result_nonAGN.x) + 2)
         ########################################################################
 
 
@@ -1722,8 +1720,8 @@ def find_vel_map(gal_ID,
             # Save Hessian matrix (for uncertainty calculations)
             #np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
             #np.save('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
-            #np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
-            np.save(gal_ID + '_Hessian.npy', hess)
+            np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
+            #np.save(gal_ID + '_Hessian.npy', hess)
 
             #print('Hessian:', hess)
             try:

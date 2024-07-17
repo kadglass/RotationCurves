@@ -154,7 +154,7 @@ VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 #DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
 #DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/disk_masses_HIdr3_err_morph_v2.fits'
 #DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/refit.fits'
-DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/H_alpha_HIvel_BB_extinction_H2_MxCG_R90_v3p5_Z_SFR_Portsmouthflux_Zglob.fits'
+DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/test.fits'
 
 
 # old
@@ -301,8 +301,8 @@ for gal_ID in FILE_IDS:
         ########################################################################
         # Check if galaxy has HI velocity
         #-----------------------------------------------------------------------
-        HI_vel = DRP_table['WF50'][i_DRP]
-        HI_vel_err = DRP_table['WF50_err'][i_DRP]
+        HI_vel = DRP_table['WF50'][i_DRP]/2
+        HI_vel_err = DRP_table['WF50_err'][i_DRP]/2
 
         if HI_vel < 0:
             HI_vel = None
@@ -314,8 +314,8 @@ for gal_ID in FILE_IDS:
                 can_fit = False
                 print('Galaxy does not have HI velocity data.')
 
-        HI_vel = None
-        HI_vel_err = None
+        # HI_vel = None
+        # HI_vel_err = None
         ########################################################################
 
 
@@ -547,12 +547,12 @@ for gal_ID in FILE_IDS:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-if RUN_ALL_GALAXIES or TEXT_OUT:
+# if RUN_ALL_GALAXIES or TEXT_OUT:
 
-    if V_type == 'Ha':
-        out_filename = 'DRP_HaVel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt'
-    else:
-        out_filename = 'DRP_starVel_map_resutls_' + vel_function + '.txt'
+#     if V_type == 'Ha':
+#         out_filename = 'DRP_HaVel_map_results_' + vel_function + '_smooth_lt_' + str(map_smoothness_max) + '.txt'
+#     else:
+#         out_filename = 'DRP_starVel_map_resutls_' + vel_function + '.txt'
 
     #DRP_table.write(DRP_FILENAME, format = 'fits', overwrite=True)
     #DRP_table.write(out_filename,

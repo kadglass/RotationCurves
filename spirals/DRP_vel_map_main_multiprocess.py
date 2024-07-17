@@ -122,8 +122,8 @@ def process_1_galaxy(job_queue, i,
         ########################################################################
         # Check if galaxy has HI velocity
         #-----------------------------------------------------------------------
-        HI_vel = DRP_table['WF50'][i_DRP]
-        HI_vel_err = DRP_table['WF50_err'][i_DRP]
+        HI_vel = DRP_table['WF50'][i_DRP] / 2
+        HI_vel_err = DRP_table['WF50_err'][i_DRP] / 2
 
         if HI_vel < 0:
             HI_vel = None
@@ -463,7 +463,7 @@ map_smoothness_max = 2.0
 q0 = 0.2
 
 # require HI_vel
-HI_vel_req = True
+HI_vel_req = False
 
 ################################################################################
 # 'LOCAL_PATH' should be updated depending on the file structure (e.g. if
@@ -492,9 +492,10 @@ VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 
 #DRP_FILENAME = MANGA_FOLDER + 'redux/v2_4_3/drpall-v2_4_3.fits'
 #DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_errs.fits'
-DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_err_morph_v2.fits'
+#DRP_FILENAME = '/scratch/nravi3/disk_masses_HIdr3_err_morph_v2.fits'
 #DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel.fits'
 #DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel_5sigma_v2.fits'
+DRP_FILENAME = '/scratch/nravi3/H_alpha_HIvel_BB_extinction_H2_MxCG_R90_v3p5_Z_SFR_Portsmouthflux_Zglob_HIR90.fits'
 
 #NSA_FILENAME = '/home/kelly/Documents/Data/NSA/nsa_v1_0_1.fits'
 NSA_FILENAME = '/scratch/kdougla7/data/NSA/nsa_v1_0_1.fits'
@@ -689,7 +690,7 @@ while num_processed < num_tasks:
     num_processed += 1
 
     if num_processed % 5 == 0:
-        DRP_table.write('/scratch/nravi3/H_alpha_HIvel_BB' + '.fits', 
+        DRP_table.write('/scratch/nravi3/H_alpha_HIvel_BB_refit_ba' + '.fits', 
                 format='fits', overwrite=True)
         print('Table written ', num_processed, flush=True)
     
@@ -712,7 +713,7 @@ for p in processes:
 ################################################################################
 # Save the output_table
 #-------------------------------------------------------------------------------
-DRP_table.write('/scratch/nravi3/H_alpha_HIvel_BB' + '.fits', 
+DRP_table.write('/scratch/nravi3/H_alpha_HIvel_BB_refit_ba' + '.fits', 
                 format='fits', overwrite=True)
 ################################################################################
 

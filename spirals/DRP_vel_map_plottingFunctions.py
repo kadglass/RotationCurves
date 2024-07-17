@@ -297,9 +297,9 @@ def plot_rot_curve(mvel,
     # Generate the uncertainty range of the best-fit
     #---------------------------------------------------------------------------
     #Hessian = np.load(HESSIAN_DIR + 'DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    #Hessian = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    Hessian = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
     #Hessian = np.load('/Users/nityaravi/Documents/GitHub/RotationCurves/spirals/' + gal_ID + '_Hessian.npy')
-    Hessian = np.load(gal_ID + '_Hessian.npy')
+    #Hessian = np.load(gal_ID + '_Hessian.npy')
 
     try:
         hess_inv = 2*np.linalg.inv(Hessian)

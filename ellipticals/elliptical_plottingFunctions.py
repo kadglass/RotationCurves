@@ -7,7 +7,8 @@ import matplotlib
 from elliptical_stellar_mass_functions import exponential_sphere,\
                                              exponential_sphere_disk,\
                                              hernquist_profile, \
-                                             exponential_disk
+                                             exponential_disk, \
+                                             modified_hernquist_profile
 
 matplotlib.rcParams['figure.dpi'] = 100
 matplotlib.rcParams['savefig.dpi'] = 300
@@ -388,9 +389,13 @@ def plot_stellar_mass(gal_ID,
     
     
     '''
+
+    fig, ax = plt.subplots(2,1, sharex=True, height_ratios=[3,1], figsize=(5,5))
     
-    plt.errorbar(data_table['radius'], 10**data_table['M_star'], yerr=10**data_table['M_star_err'], 
-             color='k', fmt='.')
+    # plt.errorbar(data_table['radius'], 10**data_table['M_star'], yerr=10**data_table['M_star_err'], 
+    #          color='k', fmt='.', label='data')
+    ax[0].scatter(data_table['radius'], data_table['M_star'], 
+             color='k', marker='.', label='data')
     r = np.linspace(data_table['radius'][0] , data_table['radius'][-1], 100)
 
     cov = np.load(COV_DIR + gal_ID + '_cov.npy')
@@ -412,6 +417,8 @@ def plot_stellar_mass(gal_ID,
 
 
         y = exponential_sphere(r, best_fit_values['rho_c'],best_fit_values['R_scale'])
+        res = np.log10(exponential_sphere(data_table['radius'], best_fit_values['rho_c'],
+                                          best_fit_values['R_scale'])) - data_table['M_star']
     
     elif stellar_profile == 'sphere_disk':
         random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
@@ -436,11 +443,16 @@ def plot_stellar_mass(gal_ID,
         y = exponential_sphere_disk(r, best_fit_values['rho_c'],best_fit_values['R_scale'], 
                                     best_fit_values['Sigma_d'],
                                                     best_fit_values['R_d'])
+        res = np.log10(exponential_sphere_disk(data_table['radius'], 
+                                               best_fit_values['rho_c'],
+                                          best_fit_values['R_scale'],
+                                          best_fit_values['Sigma_d'],
+                                          best_fit_values['R_d'])) - data_table['M_star']
         
-        plt.plot(r, exponential_sphere(r, best_fit_values['rho_c'], 
+        ax[0].plot(r, exponential_sphere(r, best_fit_values['rho_c'], 
                                        best_fit_values['R_scale']),
                  linestyle = '--', color = 'dodgerblue', label='sphere')
-        plt.plot(r, exponential_disk(r, best_fit_values['Sigma_d'], 
+        ax[0].plot(r, exponential_disk(r, best_fit_values['Sigma_d'], 
                                      best_fit_values['R_d']),
                  linestyle='--', color='crimson', label='disk')
         
@@ -465,13 +477,53 @@ def plot_stellar_mass(gal_ID,
         y = hernquist_profile(r, best_fit_values['R_scale'], 
                                     best_fit_values['M'],
                                                    )
+        
+        res = np.log10(hernquist_profile(data_table['radius'], 
+                                         best_fit_values['R_scale'],
+                                          best_fit_values['M'])) - data_table['M_star']
+        
+    elif stellar_profile == 'mod_hernquist':
+        random_sample = np.random.multivariate_normal(mean=[
+                                                    best_fit_values['R_scale'],
+                                                    best_fit_values['M'],
+                                                    best_fit_values['gamma']
+                                                    ],
+                                                    cov=cov,
+                                                    size =1000)
 
-    plt.plot(r, y, color='orange')
-    plt.fill_between(r, y-stdevs, y+stdevs, facecolor='orange',alpha=0.2)
-    plt.xlabel('r [kpc]')
-    plt.ylabel(r'Stellar Mass [log(M$_\odot$)]')
-    plt.yscale('log')
-    plt.legend()
+        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0) 
+        good_randoms = random_sample[is_good_random, :]
+
+        # for i in range(len(r)):
+            # y_sample = modified_hernquist_profile(r[i], good_randoms[:,0], 
+                                        #  good_randoms[:,1], good_randoms[:,2])
+
+                
+        # stdevs = np.nanstd(y_sample, axis=0)
+
+
+        y = np.log10(modified_hernquist_profile(r, best_fit_values['R_scale'], 
+                                    best_fit_values['M'],best_fit_values['gamma']
+                                                   ))
+        
+        res = np.log10(modified_hernquist_profile(data_table['radius'], 
+                                                  best_fit_values['R_scale'],
+                                          best_fit_values['M'],
+                                          best_fit_values['gamma'])) - data_table['M_star']
+
+    ax[0].plot(r, y, color='orange', label='model')
+    ax[1].axhline(color='k', alpha=0.2)
+    ax[1].plot(data_table['radius'], res, color='r')
+    ax[1].set_ylim(-np.max(np.abs(res)), np.max(np.abs(res)))
+
+    # ax[0].fill_between(r, np.log10(y-stdevs), np.log10(y+stdevs), facecolor='orange',alpha=0.2)
+    ax[1].set_xlabel('r [kpc/h]')
+    ax[0].set_ylabel(r'Stellar Mass [log(M$_\odot$)]')
+    ax[1].set_ylabel(r'Residual $[\log(M_\odot)]$')
+    ax[0].tick_params(direction='in')
+    ax[1].tick_params(direction='in')   
+    # plt.yscale('log')
+    # plt.legend()
 
     # params_str ='\n'.join((r'$\chi^{2}_{\nu}$: $%.3E$' % (best_fit_values['chi2_M_star'], ), 
     #                         r'$\rho_{c}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (best_fit_values['rho_c'], ), 
@@ -486,7 +538,9 @@ def plot_stellar_mass(gal_ID,
     #          params_str  , fontsize = 8, 
     #         bbox = dict(facecolor = 'orange', alpha = 0.5))
     
-    plt.savefig(IMAGE_DIR + '/stellar_mass/' + stellar_profile + '/' + gal_ID + '_stellar_mass.' + IMAGE_FORMAT)
+    fig.tight_layout()
+    fig.savefig(IMAGE_DIR + '/stellar_mass/' + stellar_profile + '/' + gal_ID + '_stellar_mass.' + IMAGE_FORMAT)
+
 
     plt.cla()
     plt.clf()

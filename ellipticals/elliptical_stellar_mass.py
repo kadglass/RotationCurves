@@ -350,9 +350,19 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
 
     elif stellar_profile == 'hernquist':
 
-        M_guess = 10**10
+        #M_guess = 10**10
+        M_guess = np.max(data_table['M_star'])
 
         param_guesses = [R_scale_guess, M_guess]
+
+    elif stellar_profile == 'mod_hernquist':
+
+        # M_guess = 10**10
+        #M_guess = np.max(data_table['M_star'])
+        M_guess = 10
+        gamma_guess = 4
+
+        param_guesses = [R_scale_guess, M_guess, gamma_guess]
 
     
 
@@ -396,10 +406,27 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
     elif stellar_profile == 'hernquist':
 
         # Total mass [M_sun]
-        M_min = 10**7
-        M_max = 10**12
+        # M_min = 10**7
+        # M_max = 10**12
+        M_min = M_guess - 4
+        M_max = M_guess + 4
 
         param_bounds = ([R_scale_min, M_min], [R_scale_max, M_max])
+
+    elif stellar_profile == 'mod_hernquist':
+
+        # # Total mass [M_sun]
+        # M_min = 10**7
+        # M_max = 10**15
+
+        M_min = M_guess - 4
+        M_max = M_guess + 4
+
+        gamma_min = 0
+        gamma_max = 100
+
+        param_bounds = ([R_scale_min, M_min, gamma_min], 
+                        [R_scale_max, M_max, gamma_max])
 
     ############################################################################
 
@@ -433,6 +460,16 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
                                    p0 = param_guesses,
                                    bounds=param_bounds,
                                    sigma=10**data_table['M_star_err'])
+            
+
+        elif stellar_profile == 'mod_hernquist':
+            popt, pcov = curve_fit(modified_hernquist_profile,
+                                   data_table['radius'],
+                                   10**data_table['M_star'],
+                                   p0 = param_guesses,
+                                   bounds=param_bounds,
+                                   sigma=10**data_table['M_star_err']
+                                   )
 
         #-----------------------------------------------------------------------
         # Determine uncertainties in the fitted parameters
@@ -472,11 +509,20 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
                             'R_d_err' : perr[3],
                             'chi2_M_star': chi2}
             
-        if stellar_profile == 'hernquist':
+        elif stellar_profile == 'hernquist':
             best_fit_values = {'R_scale' : popt[0],
                                'R_scale_err' : perr[0], 
                                 'M' : popt[1],
                                 'M_err' : perr[1],
+                                'chi2_M_star': chi2}
+            
+        elif stellar_profile == 'mod_hernquist':
+            best_fit_values = {'R_scale' : popt[0],
+                               'R_scale_err' : perr[0], 
+                                'M' : popt[1],
+                                'M_err' : perr[1],
+                                'gamma' : popt[2],
+                                'gamma_err' : popt[2],
                                 'chi2_M_star': chi2}
 
 

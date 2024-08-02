@@ -116,6 +116,33 @@ def hernquist_profile(r, R_scale, Mtot):
     M = Mtot * r**2 / (r + R_scale)**2
     return M
 
+
+def modified_hernquist_profile(r, R_scale, Mtot, gamma):
+
+    '''
+    mass distribution according to hernquist profile (Hernquist, L. 1990)
+
+    PARAMETERS
+    ==========
+    r : float
+        radius [kpc]
+    
+    R_scale : float
+        scale radius [kpc]
+        
+    Mtot : float
+        total stellar mass [M_sun]
+    
+    RETURNS
+    =======
+    M : float
+        mass within radius r [M_sun]
+    '''
+
+    M = 10**Mtot * r**(gamma) / (r + R_scale)**(gamma)
+    return M
+    # M = Mtot + np.log10(r**gamma) - np.log10((r+R_scale)**gamma)
+    # return M
     
 
 def calc_tot_stellar_mass(params, stellar_profile):
@@ -196,16 +223,22 @@ def chi2_mass(params, r, m_star, m_star_err, stellar_profile):
         chi2 = np.sum((model - m_star)**2/m_star_err**2)
         n_chi2 = chi2 / (len(r) - 2)
 
-    if stellar_profile == 'sphere_disk':
+    elif stellar_profile == 'sphere_disk':
         model = exponential_sphere_disk(r, params[0], params[1], params[2], params[3])
     
         chi2 = np.sum((model - m_star)**2/m_star_err**2)
         n_chi2 = chi2 / (len(r) - 4)
 
-    if stellar_profile == 'hernquist':
+    elif stellar_profile == 'hernquist':
         model = hernquist_profile(r, params[0], params[1])
     
         chi2 = np.sum((model - m_star)**2/m_star_err**2)
         n_chi2 = chi2 / (len(r) - 2)
+
+    elif stellar_profile == 'mod_hernquist':
+        model = modified_hernquist_profile(r, params[0], params[1], params[2])
+    
+        chi2 = np.sum((model - m_star)**2/m_star_err**2)
+        n_chi2 = chi2 / (len(r) - 3)
     
     return n_chi2

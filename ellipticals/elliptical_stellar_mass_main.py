@@ -35,7 +35,7 @@ FILE_IDS = ['11011-1901','10223-9101','9877-12704','11760-9101','11953-1902',
             '11748-6102','8454-12705','8310-3701','11017-1902','9502-6103',
             '11948-12705','10495-3703','11836-12703','10498-3703','8262-6102']
 
-#FILE_IDS = ['8319-1902']
+# FILE_IDS = ['11969-9101']
 
 IMAGE_FORMAT = 'png'
 
@@ -43,37 +43,37 @@ IMAGE_FORMAT = 'png'
 # Paths for Nitya Macbook
 ################################################################################
 
-MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-IMAGE_DIR = MANGA_FOLDER + 'Ellipticals_Images/'
-MAP_FOLDER = MANGA_FOLDER + 'DR17/'
-PIPE3D_FOLDER = MANGA_FOLDER +'Pipe3D/'
-DRP_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio.fits'
-OUT_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_modhernquist.fits'
-COV_DIR = MANGA_FOLDER + 'elliptical_stellar_mass_cov/'
+# MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
+# IMAGE_DIR = MANGA_FOLDER + 'Ellipticals_Images/'
+# MAP_FOLDER = MANGA_FOLDER + 'DR17/'
+# PIPE3D_FOLDER = MANGA_FOLDER +'Pipe3D/'
+# DRP_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio.fits'
+# OUT_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_modhernquist.fits'
+# COV_DIR = MANGA_FOLDER + 'elliptical_stellar_mass_cov/'
 
 ################################################################################
 # Paths for Bluehive
 ################################################################################
 
-# MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
-# IMAGE_DIR = '/scratch/nravi3/ellipticals/'
-# MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
-# PIPE3D_FOLDER = MANGA_FOLDER + 'pipe3d/'
-# #update
-# DRP_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_sphdisk_refitspirals.fits'
-# OUT_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_refitspirals_modhernquist.fits'
-# COV_DIR = '/scratch/nravi3/ellipticals/elliptical_stellar_mass_cov/'
+MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
+IMAGE_DIR = '/scratch/nravi3/ellipticals/'
+MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
+PIPE3D_FOLDER = MANGA_FOLDER + 'pipe3d/'
+#update
+DRP_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_refitspirals.fits'
+OUT_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_refitspirals.fits'
+COV_DIR = '/scratch/nravi3/ellipticals/elliptical_stellar_mass_cov/'
 
 ################################################################################
 ################################################################################
 
 
-CLEAR_COLS = False  # zeros out columns in table
+CLEAR_COLS = True  # zeros out columns in table
 TEXT_OUT = True # print info
-WRITE_TABLE = False # saves table
-RUN_ALL_GALAXIES = False
+WRITE_TABLE = True # saves table
+RUN_ALL_GALAXIES = True
 
-stellar_profile = 'mod_hernquist' # sphere, sphere_disk, hernquist, or mod_hernquist
+stellar_profile = 'sphere_disk' # sphere, sphere_disk, hernquist, or mod_hernquist
 
 START = datetime.datetime.now()
 
@@ -97,31 +97,31 @@ if CLEAR_COLS:
 
     if stellar_profile == 'sphere':
 
-        DRP_table = add_cols(DRP_table, ['rho_c','rho_c_err',
-                                        'R_scale', 'R_scale_err',
-                                        'M_star_esph', 'M_star_esph_err',
-                                        'chi2_M_star_esph'])
+        DRP_table = add_cols(DRP_table, ['sph_rho_c','sph_rho_c_err',
+                                        'sph_R_scale', 'sph_R_scale_err',
+                                        'sph_M_star', 'sph_M_star_err',
+                                        'sph_chi2'])
 
     
     elif stellar_profile == 'sphere_disk':
-        DRP_table = add_cols(DRP_table, ['rho_c','rho_c_err',
-                                        'R_scale', 'R_scale_err',
-                                        'Sigma_d', 'Sigma_d_err',
-                                        'R_d', 'R_d_err',
-                                        'M_star_sphdisk', 'M_star_sphdisk_err',
-                                        'chi2_M_star_sphdisk'])
+        DRP_table = add_cols(DRP_table, ['sphd_rho_c','sphd_rho_c_err',
+                                        'sphd_R_scale', 'sphd_R_scale_err',
+                                        'sphd_Sigma_d', 'sphd_Sigma_d_err',
+                                        'sphd_R_d', 'sphd_R_d_err',
+                                        'sphd_M_star', 'sphd_M_star_err',
+                                        'sphd_chi2'])
         
     elif stellar_profile == 'hernquist':
         DRP_table = add_cols(DRP_table, 
-                                        ['R_scale', 'R_scale_err',
-                                        'M_star_hq', 'M_star_hq_err',
-                                        'chi2_M_star_hq'])
+                                        ['hq_R_scale', 'hq_R_scale_err',
+                                        'hq_M_star', 'hq_M_star_err',
+                                        'hq_chi2'])
     elif stellar_profile == 'mod_hernquist':
         DRP_table = add_cols(DRP_table, 
-                                        ['R_scale', 'R_scale_err',
-                                        'M_star_hq', 'M_star_hq_err',
-                                        'gamma','gamma_err',
-                                        'chi2_M_star_hq'])
+                                        ['mhq_R_scale', 'mhq_R_scale_err',
+                                        'mhq_M_star', 'mhq_M_star_err',
+                                        'mhq_gamma','mhq_gamma_err',
+                                        'mhq_chi2'])
 
 for gal_ID in FILE_IDS:
 
@@ -194,11 +194,17 @@ for gal_ID in FILE_IDS:
                     print(gal_ID)
                     print('M_star: ', np.log10(M))
                     print('M_star_err: ', np.log10(M_err))
-            else:
+            elif stellar_profile == 'hernquist':
                 if TEXT_OUT:
                     print(gal_ID)
-                    print('M_star: ', np.log10(best_fit_params['M']))
-                    print('M_star_err: ', np.log10(best_fit_params['M_err']))
+                    print('M_star: ', np.log10(best_fit_params['hq_M']))
+                    print('M_star_err: ', np.log10(best_fit_params['hq_M_err']))
+            
+            elif stellar_profile == 'mod_hernquist':
+                if TEXT_OUT:
+                    print(gal_ID)
+                    print('M_star: ', np.log10(best_fit_params['mhq_M']))
+                    print('M_star_err: ', np.log10(best_fit_params['mhq_M_err']))
 
                     # print('M_star: ', best_fit_params['M'])
                     # print('M_star_err: ', best_fit_params['M_err'])
@@ -208,50 +214,50 @@ for gal_ID in FILE_IDS:
             if WRITE_TABLE:
                 
                 if stellar_profile == 'hernquist':
-                    DRP_table['M_star_hq'][i_DRP] = np.log10(best_fit_params['M'])
-                    DRP_table['M_star_hq_err'][i_DRP] = np.log10(best_fit_params['M_err'])
-                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
-                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
-                    DRP_table['chi2_M_star_hq'][i_DRP] = best_fit_params['chi2_M_star']
+                    DRP_table['hq_M_star'][i_DRP] = np.log10(best_fit_params['hq_M'])
+                    DRP_table['hq_M_star_err'][i_DRP] = np.log10(best_fit_params['hq_M_err'])
+                    DRP_table['hq_R_scale'][i_DRP] = best_fit_params['hq_R_scale']
+                    DRP_table['hq_R_scale_err'][i_DRP] = best_fit_params['hq_R_scale_err']
+                    DRP_table['hq_chi2'][i_DRP] = best_fit_params['hq_chi2']
 
                 elif stellar_profile == 'mod_hernquist':
-                    DRP_table['M_star_hq'][i_DRP] = np.log10(best_fit_params['M'])
-                    DRP_table['M_star_hq_err'][i_DRP] = np.log10(best_fit_params['M_err'])
-                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
-                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
-                    DRP_table['gamma'][i_DRP] = best_fit_params['gamma']
-                    DRP_table['gamma_err'][i_DRP] = best_fit_params['gamma_err']
-                    DRP_table['chi2_M_star_hq'][i_DRP] = best_fit_params['chi2_M_star']
+                    DRP_table['mhq_M_star'][i_DRP] = np.log10(best_fit_params['mhq_M'])
+                    DRP_table['mhq_M_star_err'][i_DRP] = np.log10(best_fit_params['mhq_M_err'])
+                    DRP_table['mhq_R_scale'][i_DRP] = best_fit_params['mhq_R_scale']
+                    DRP_table['mhq_R_scale_err'][i_DRP] = best_fit_params['mhq_R_scale_err']
+                    DRP_table['mhq_gamma'][i_DRP] = best_fit_params['mhq_gamma']
+                    DRP_table['mhq_gamma_err'][i_DRP] = best_fit_params['mhq_gamma_err']
+                    DRP_table['mhq_chi2'][i_DRP] = best_fit_params['mhq_chi2']
 
                 elif stellar_profile == 'sphere_disk':
-                    DRP_table['rho_c'][i_DRP] = best_fit_params['rho_c']
-                    DRP_table['rho_c_err'][i_DRP] = best_fit_params['rho_c_err']
-                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
-                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
-                    DRP_table['chi2_M_star_sphdisk'][i_DRP] = best_fit_params['chi2_M_star']
+                    DRP_table['sphd_rho_c'][i_DRP] = best_fit_params['sphd_rho_c']
+                    DRP_table['sphd_rho_c_err'][i_DRP] = best_fit_params['sphd_rho_c_err']
+                    DRP_table['sphd_R_scale'][i_DRP] = best_fit_params['sphd_R_scale']
+                    DRP_table['sphd_R_scale_err'][i_DRP] = best_fit_params['sphd_R_scale_err']
+                    DRP_table['sphd_chi2'][i_DRP] = best_fit_params['sphd_chi2']
 
-                    DRP_table['Sigma_d'][i_DRP] = best_fit_params['Sigma_d']
-                    DRP_table['Sigma_d_err'][i_DRP] = best_fit_params['Sigma_d_err']
-                    DRP_table['R_d'][i_DRP] = best_fit_params['R_d']
-                    DRP_table['R_d_err'][i_DRP] = best_fit_params['R_d_err']
+                    DRP_table['sphd_Sigma_d'][i_DRP] = best_fit_params['sphd_Sigma_d']
+                    DRP_table['sphd_Sigma_d_err'][i_DRP] = best_fit_params['sphd_Sigma_d_err']
+                    DRP_table['sphd_R_d'][i_DRP] = best_fit_params['sphd_R_d']
+                    DRP_table['sphd_R_d_err'][i_DRP] = best_fit_params['sphd_R_d_err']
 
-                    DRP_table['M_star_sphdisk'][i_DRP] = np.log10(M)
-                    DRP_table['M_star_sphdisk_err'][i_DRP] = np.log10(M_err)
+                    DRP_table['sphd_M_star'][i_DRP] = np.log10(M)
+                    DRP_table['sphd_M_star_err'][i_DRP] = np.log10(M_err)
 
                 elif stellar_profile == 'sphere':
-                    DRP_table['rho_c'][i_DRP] = best_fit_params['rho_c']
-                    DRP_table['rho_c_err'][i_DRP] = best_fit_params['rho_c_err']
-                    DRP_table['R_scale'][i_DRP] = best_fit_params['R_scale']
-                    DRP_table['R_scale_err'][i_DRP] = best_fit_params['R_scale_err']
-                    DRP_table['chi2_M_star_esph'][i_DRP] = best_fit_params['chi2_M_star']
+                    DRP_table['sph_rho_c'][i_DRP] = best_fit_params['sph_rho_c']
+                    DRP_table['sph_rho_c_err'][i_DRP] = best_fit_params['sph_rho_c_err']
+                    DRP_table['sph_R_scale'][i_DRP] = best_fit_params['sph_R_scale']
+                    DRP_table['sph_R_scale_err'][i_DRP] = best_fit_params['sph_R_scale_err']
+                    DRP_table['sph_chi2'][i_DRP] = best_fit_params['sph_chi2']
 
-                    DRP_table['Sigma_d'][i_DRP] = best_fit_params['Sigma_d']
-                    DRP_table['Sigma_d_err'][i_DRP] = best_fit_params['Sigma_d_err']
-                    DRP_table['R_d'][i_DRP] = best_fit_params['R_d']
-                    DRP_table['R_d_err'][i_DRP] = best_fit_params['R_d_err']
+                    DRP_table['sph_Sigma_d'][i_DRP] = best_fit_params['sph_Sigma_d']
+                    DRP_table['sph_Sigma_d_err'][i_DRP] = best_fit_params['sph_Sigma_d_err']
+                    DRP_table['sph_R_d'][i_DRP] = best_fit_params['sph_R_d']
+                    DRP_table['sph_R_d_err'][i_DRP] = best_fit_params['sph_R_d_err']
 
-                    DRP_table['M_star_esph'][i_DRP] = np.log10(M)
-                    DRP_table['M_star_esph_err'][i_DRP] = np.log10(M_err)
+                    DRP_table['sph_M_star'][i_DRP] = np.log10(M)
+                    DRP_table['sph_M_star_err'][i_DRP] = np.log10(M_err)
 
                 DRP_table.write(OUT_FILENAME, format='fits', overwrite=True)
 

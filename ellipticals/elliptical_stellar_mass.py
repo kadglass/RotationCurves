@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy.ma as ma
+import numdifftools as ndt
 
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, minimize
 from astropy.table import Table
 
 from elliptical_plottingFunctions import plot_stellar_mass
@@ -329,7 +330,7 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
     
     
 
-    R_scale_guess = 1.
+    R_scale_guess = 10
 
     if stellar_profile == 'sphere':
 
@@ -351,20 +352,20 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
     elif stellar_profile == 'hernquist':
 
         #M_guess = 10**10
-        M_guess = np.max(data_table['M_star'])
+        M_guess = 10**np.max(data_table['M_star'])
 
         param_guesses = [R_scale_guess, M_guess]
 
     elif stellar_profile == 'mod_hernquist':
 
         # M_guess = 10**10
-        #M_guess = np.max(data_table['M_star'])
-        M_guess = 10
+        M_guess = 10**np.max(data_table['M_star'])
+        # M_guess = 10
         gamma_guess = 4
 
         param_guesses = [R_scale_guess, M_guess, gamma_guess]
 
-    
+
 
     ############################################################################
 
@@ -383,9 +384,11 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
         rho_c_max = 1e16
 
 
-        param_bounds = ([rho_c_min, R_scale_min], 
-                        [rho_c_max, R_scale_max])
+        # param_bounds = ([rho_c_min, R_scale_min], 
+                        # [rho_c_max, R_scale_max])
         
+        param_bounds = [(rho_c_min, rho_c_max),(R_scale_min, R_scale_max)]
+
     elif stellar_profile == 'sphere_disk':
 
         # Bulge central density [M_sol/kpc^3] 
@@ -400,146 +403,225 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
         Rd_min = 0.
         Rd_max = 10000
 
-        param_bounds = ([rho_c_min, R_scale_min, Sigd_min, Rd_min], 
-                        [rho_c_max, R_scale_max, Sigd_max, Rd_max])
+        # param_bounds = ([rho_c_min, R_scale_min, Sigd_min, Rd_min], 
+        #                 [rho_c_max, R_scale_max, Sigd_max, Rd_max])
         
+        param_bounds = [(rho_c_min, rho_c_max), (R_scale_min, R_scale_max), 
+                        (Sigd_min, Sigd_max), (Rd_min, Rd_max)]
+
     elif stellar_profile == 'hernquist':
 
         # Total mass [M_sun]
         # M_min = 10**7
         # M_max = 10**12
-        M_min = M_guess - 4
-        M_max = M_guess + 4
+        M_min = M_guess / 10**4
+        M_max = M_guess * 10**4
 
-        param_bounds = ([R_scale_min, M_min], [R_scale_max, M_max])
+        # param_bounds = ([R_scale_min, M_min], [R_scale_max, M_max])
+
+        param_bounds = [(R_scale_min, R_scale_max), (M_min, M_max)]
 
     elif stellar_profile == 'mod_hernquist':
 
         # # Total mass [M_sun]
         # M_min = 10**7
         # M_max = 10**15
-
-        M_min = M_guess - 4
-        M_max = M_guess + 4
-
+        M_min = M_guess / 10**4
+        M_max = M_guess * 10**4
+        
         gamma_min = 0
         gamma_max = 100
 
-        param_bounds = ([R_scale_min, M_min, gamma_min], 
-                        [R_scale_max, M_max, gamma_max])
+        # param_bounds = ([R_scale_min, M_min, gamma_min], 
+        #                 [R_scale_max, M_max, gamma_max])
 
+        param_bounds  = [(R_scale_min, R_scale_max), (M_min, M_max),
+                         (gamma_min, gamma_max)]
     ############################################################################
 
 
     ############################################################################
     # Find the best-fit parameters
     #---------------------------------------------------------------------------
+    # try:
+
+    #     if stellar_profile == 'sphere':
+    #         popt, pcov = curve_fit(exponential_sphere, 
+    #                                     data_table['radius'], 
+    #                                     10**data_table['M_star'], 
+    #                                     p0=param_guesses,
+    #                                     bounds=param_bounds,
+    #                                     sigma=10**data_table['M_star_err']
+    #                                     )
+    #     elif stellar_profile == 'sphere_disk':
+    #         popt, pcov = curve_fit(exponential_sphere_disk, 
+    #                                     data_table['radius'], 
+    #                                     10**data_table['M_star'], 
+    #                                     p0=param_guesses,
+    #                                     bounds=param_bounds,
+    #                                     sigma=10**data_table['M_star_err']
+    #                                     )
+            
+    #     elif stellar_profile == 'hernquist':
+    #         popt, pcov = curve_fit(hernquist_profile,
+    #                                data_table['radius'],
+    #                                10**data_table['M_star'],
+    #                                p0 = param_guesses,
+    #                                bounds=param_bounds,
+    #                                sigma=10**data_table['M_star_err'])
+            
+
+    #     elif stellar_profile == 'mod_hernquist':
+    #         popt, pcov = curve_fit(modified_hernquist_profile,
+    #                                data_table['radius'],
+    #                                10**data_table['M_star'],
+    #                                p0 = param_guesses,
+    #                                bounds=param_bounds,
+    #                                sigma=10**data_table['M_star_err']
+    #                                )
+
+    
     try:
-
-        if stellar_profile == 'sphere':
-            popt, pcov = curve_fit(exponential_sphere, 
-                                        data_table['radius'], 
-                                        10**data_table['M_star'], 
-                                        p0=param_guesses,
-                                        bounds=param_bounds,
-                                        sigma=10**data_table['M_star_err']
-                                        )
-        elif stellar_profile == 'sphere_disk':
-            popt, pcov = curve_fit(exponential_sphere_disk, 
-                                        data_table['radius'], 
-                                        10**data_table['M_star'], 
-                                        p0=param_guesses,
-                                        bounds=param_bounds,
-                                        sigma=10**data_table['M_star_err']
-                                        )
-            
-        elif stellar_profile == 'hernquist':
-            popt, pcov = curve_fit(hernquist_profile,
-                                   data_table['radius'],
-                                   10**data_table['M_star'],
-                                   p0 = param_guesses,
-                                   bounds=param_bounds,
-                                   sigma=10**data_table['M_star_err'])
-            
-
-        elif stellar_profile == 'mod_hernquist':
-            popt, pcov = curve_fit(modified_hernquist_profile,
-                                   data_table['radius'],
-                                   10**data_table['M_star'],
-                                   p0 = param_guesses,
-                                   bounds=param_bounds,
-                                   sigma=10**data_table['M_star_err']
-                                   )
-
-        #-----------------------------------------------------------------------
-        # Determine uncertainties in the fitted parameters
-        #-----------------------------------------------------------------------
-        np.save(COV_DIR + gal_ID + '_cov.npy', pcov) 
-
-        perr = np.sqrt(np.diag(pcov))
-        #-----------------------------------------------------------------------
-
-
-        #-----------------------------------------------------------------------
-        # Unpack results
-        #-----------------------------------------------------------------------
-        chi2 = chi2_mass(popt, 
-                     data_table['radius'], 
-                     data_table['M_star'], 
-                     data_table['M_star_err'],
-                     stellar_profile)
-
-
-
-        if stellar_profile == 'sphere':
-            best_fit_values = {'rho_c' : popt[0],
-                            'rho_c_err' : perr[0],
-                            'R_scale' : popt[1],
-                            'R_scale_err' : perr[1], 
-                            'chi2_M_star': chi2}
+        result = minimize(chi2_mass,
+                          param_guesses,
+                          method='Powell',
+                          args=(data_table['radius'],
+                                10**data_table['M_star'],
+                                10**data_table['M_star_err'],
+                                stellar_profile),
+                                bounds=param_bounds)
         
-        elif stellar_profile == 'sphere_disk':
-            best_fit_values = {'rho_c' : popt[0],
-                            'rho_c_err' : perr[0],
-                            'R_scale' : popt[1],
-                            'R_scale_err' : perr[1], 
-                            'Sigma_d' : popt[2], 
-                            'Sigma_d_err' : perr[2],
-                            'R_d' : popt[3], 
-                            'R_d_err' : perr[3],
-                            'chi2_M_star': chi2}
-            
-        elif stellar_profile == 'hernquist':
-            best_fit_values = {'R_scale' : popt[0],
-                               'R_scale_err' : perr[0], 
-                                'M' : popt[1],
-                                'M_err' : perr[1],
-                                'chi2_M_star': chi2}
-            
-        elif stellar_profile == 'mod_hernquist':
-            best_fit_values = {'R_scale' : popt[0],
-                               'R_scale_err' : perr[0], 
-                                'M' : popt[1],
-                                'M_err' : perr[1],
-                                'gamma' : popt[2],
-                                'gamma_err' : popt[2],
-                                'chi2_M_star': chi2}
-
-
-        #-----------------------------------------------------------------------
-
-
-        #-----------------------------------------------------------------------
-        # Plot data and best-fit curve
-        #-----------------------------------------------------------------------
+        # calculate normalize chi2
+        chi2_nu = result.fun / (len(data_table['M_star']) - len(param_guesses))
         
-        plot_stellar_mass(gal_ID,
-                              data_table,
-                              stellar_profile,
-                              best_fit_values,
-                              COV_DIR,
-                              IMAGE_DIR,
-                              IMAGE_FORMAT)
+        if result.success:
+
+            # save hessian
+
+            hessian = ndt.Hessian(chi2_mass)
+            hess = hessian(result.x, data_table['radius'], 10**data_table['M_star'],
+                        10**data_table['M_star_err'], stellar_profile)
+            
+
+            #-----------------------------------------------------------------------
+            # Determine uncertainties in the fitted parameters
+            #-----------------------------------------------------------------------
+            # np.save(COV_DIR + gal_ID + '_cov.npy', pcov) 
+            np.save(COV_DIR + gal_ID + '_hess.npy', hess)
+            # perr = np.sqrt(np.diag(pcov))
+            #-----------------------------------------------------------------------
+            try:
+                hess_inv = 2*np.linalg.inv(hess)
+                fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+
+
+            except np.linalg.LinAlgError:
+                fit_params_err = np.nan*np.ones(len(result.x))
+
+            #-----------------------------------------------------------------------
+            # Unpack results
+            #-----------------------------------------------------------------------
+
+            if stellar_profile == 'sphere':
+                best_fit_values = {'sph_rho_c' : result.x[0],
+                                'sph_rho_c_err' : fit_params_err[0],
+                                'sph_R_scale' : result.x[1],
+                                'sph_R_scale_err' : fit_params_err[1], 
+                                'sph_chi2': chi2_nu}
+
+            elif stellar_profile == 'sphere_disk':
+                best_fit_values = {'sphd_rho_c' : result.x[0],
+                                'sphd_rho_c_err' : fit_params_err[0],
+                                'sphd_R_scale' : result.x[1],
+                                'sphd_R_scale_err' : fit_params_err[1], 
+                                'sphd_Sigma_d' : result.x[2], 
+                                'sphd_Sigma_d_err' : fit_params_err[2],
+                                'sphd_R_d' : result.x[3], 
+                                'sphd_R_d_err' : fit_params_err[3],
+                                'sphd_chi2': chi2_nu}
+                
+            elif stellar_profile == 'hernquist':
+                best_fit_values = {'hq_R_scale' : result.x[0],
+                                'hq_R_scale_err' : fit_params_err[0], 
+                                    'hq_M' : result.x[1],
+                                    'hq_M_err' : fit_params_err[1],
+                                    'hq_chi2': chi2_nu}
+                
+            elif stellar_profile == 'mod_hernquist':
+                best_fit_values = {'mhq_R_scale' : result.x[0],
+                                'mhq_R_scale_err' : fit_params_err[0], 
+                                    'mhq_M' : result.x[1],
+                                    'mhq_M_err' : fit_params_err[1],
+                                    'mhq_gamma' : result.x[2],
+                                    'mhq_gamma_err' : fit_params_err[2],
+                                    'mhq_chi2': chi2_nu}
+                
+            plot_stellar_mass(gal_ID,
+                            data_table,
+                            stellar_profile,
+                            best_fit_values,
+                            COV_DIR,
+                            IMAGE_DIR,
+                            IMAGE_FORMAT)
+
+        else:
+            print('Fit did not converge.', flush=True)
+            best_fit_values = None
+
+        
+
+            
+            # chi2 = chi2_mass(popt, 
+            #              data_table['radius'], 
+            #              data_table['M_star'], 
+            #              data_table['M_star_err'],
+            #              stellar_profile)
+
+
+
+            # if stellar_profile == 'sphere':
+            #     best_fit_values = {'rho_c' : popt[0],
+            #                     'rho_c_err' : perr[0],
+            #                     'R_scale' : popt[1],
+            #                     'R_scale_err' : perr[1], 
+            #                     'chi2_M_star': chi2}
+            
+            # elif stellar_profile == 'sphere_disk':
+            #     best_fit_values = {'rho_c' : popt[0],
+            #                     'rho_c_err' : perr[0],
+            #                     'R_scale' : popt[1],
+            #                     'R_scale_err' : perr[1], 
+            #                     'Sigma_d' : popt[2], 
+            #                     'Sigma_d_err' : perr[2],
+            #                     'R_d' : popt[3], 
+            #                     'R_d_err' : perr[3],
+            #                     'chi2_M_star': chi2}
+                
+            # elif stellar_profile == 'hernquist':
+            #     best_fit_values = {'R_scale' : popt[0],
+            #                        'R_scale_err' : perr[0], 
+            #                         'M' : popt[1],
+            #                         'M_err' : perr[1],
+            #                         'chi2_M_star': chi2}
+                
+            # elif stellar_profile == 'mod_hernquist':
+            #     best_fit_values = {'R_scale' : popt[0],
+            #                        'R_scale_err' : perr[0], 
+            #                         'M' : popt[1],
+            #                         'M_err' : perr[1],
+            #                         'gamma' : popt[2],
+            #                         'gamma_err' : popt[2],
+            #                         'chi2_M_star': chi2}
+
+
+            #-----------------------------------------------------------------------
+
+
+            #-----------------------------------------------------------------------
+            # Plot data and best-fit curve
+            #-----------------------------------------------------------------------
+            
+            
         
     #-----------------------------------------------------------------------
         

@@ -395,135 +395,164 @@ def plot_stellar_mass(gal_ID,
     # plt.errorbar(data_table['radius'], 10**data_table['M_star'], yerr=10**data_table['M_star_err'], 
     #          color='k', fmt='.', label='data')
     ax[0].scatter(data_table['radius'], data_table['M_star'], 
-             color='k', marker='.', label='data')
+             color='k', marker='.',)
     r = np.linspace(data_table['radius'][0] , data_table['radius'][-1], 100)
 
-    cov = np.load(COV_DIR + gal_ID + '_cov.npy')
+
+    # Hessian = np.load(COV_DIR + gal_ID + '_hess.npy')
+ 
+
+    # try:
+    #     hess_inv = 2*np.linalg.inv(Hessian)
+    
+    # except:
+    #     print('Could not invert hessian\n', flush=True)
+
 
     if stellar_profile == 'sphere':
-        random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
-                                                    best_fit_values['R_scale']],
-                                                    cov=cov,
-                                                    size =1000)
+        # try:
+        #     random_sample = np.random.multivariate_normal(mean=[best_fit_values['sph_rho_c'],
+        #                                                 best_fit_values['sph_R_scale']],
+        #                                                 cov=hess_inv[:-2][:-2],
+        #                                                 size =1000)
 
-        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) 
-        good_randoms = random_sample[is_good_random, :]
+        #     is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) 
+        #     good_randoms = random_sample[is_good_random, :]
 
-        for i in range(len(r)):
-            y_sample = exponential_sphere(r[i], good_randoms[:,0], good_randoms[:,1])
+        #     for i in range(len(r)):
+        #         y_sample = exponential_sphere(r[i], good_randoms[:,0], good_randoms[:,1])
 
-                
-        stdevs = np.nanstd(y_sample, axis=0)
+                    
+        #     stdevs = np.nanstd(y_sample, axis=0)
+        # except:
+        #     print('could not produce samples for plot')
+        #     stdevs = None
 
 
-        y = exponential_sphere(r, best_fit_values['rho_c'],best_fit_values['R_scale'])
-        res = np.log10(exponential_sphere(data_table['radius'], best_fit_values['rho_c'],
-                                          best_fit_values['R_scale'])) - data_table['M_star']
+        y = np.log10(exponential_sphere(r, best_fit_values['sph_rho_c'],best_fit_values['sph_R_scale']))
+        res = np.log10(exponential_sphere(data_table['radius'], best_fit_values['sph_rho_c'],
+                                          best_fit_values['sph_R_scale'])) - data_table['M_star']
     
     elif stellar_profile == 'sphere_disk':
-        random_sample = np.random.multivariate_normal(mean=[best_fit_values['rho_c'],
-                                                    best_fit_values['R_scale'],
-                                                    best_fit_values['Sigma_d'],
-                                                    best_fit_values['R_d']],
-                                                    cov=cov,
-                                                    size =1000)
+        # try: 
+        #     random_sample = np.random.multivariate_normal(mean=[best_fit_values['sphd_rho_c'],
+        #                                                 best_fit_values['sphd_R_scale'],
+        #                                                 best_fit_values['sphd_Sigma_d'],
+        #                                                 best_fit_values['sphd_R_d']],
+        #                                                 cov=hess_inv[:-4][:-4],
+        #                                                 size =1000)
 
-        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & \
-                            (random_sample[:,2] > 0) & (random_sample[:,3] > 0) 
-        good_randoms = random_sample[is_good_random, :]
+        #     is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & \
+        #                         (random_sample[:,2] > 0) & (random_sample[:,3] > 0) 
+        #     good_randoms = random_sample[is_good_random, :]
 
-        for i in range(len(r)):
-            y_sample = exponential_sphere_disk(r[i], good_randoms[:,0], good_randoms[:,1],
-                                               good_randoms[:,2], good_randoms[:,3])
+        #     for i in range(len(r)):
+        #         y_sample = exponential_sphere_disk(r[i], good_randoms[:,0], good_randoms[:,1],
+        #                                         good_randoms[:,2], good_randoms[:,3])
 
-                
-        stdevs = np.nanstd(y_sample, axis=0)
+                    
+        #     stdevs = np.nanstd(y_sample, axis=0)
+
+        # except:
+        #     print('could not produce samples for plot')
+        #     stdevs = None
 
 
-        y = exponential_sphere_disk(r, best_fit_values['rho_c'],best_fit_values['R_scale'], 
-                                    best_fit_values['Sigma_d'],
-                                                    best_fit_values['R_d'])
+        y = np.log10(exponential_sphere_disk(r, best_fit_values['sphd_rho_c'],best_fit_values['sphd_R_scale'], 
+                                    best_fit_values['sphd_Sigma_d'],
+                                                    best_fit_values['sphd_R_d']))
         res = np.log10(exponential_sphere_disk(data_table['radius'], 
-                                               best_fit_values['rho_c'],
-                                          best_fit_values['R_scale'],
-                                          best_fit_values['Sigma_d'],
-                                          best_fit_values['R_d'])) - data_table['M_star']
+                                               best_fit_values['sphd_rho_c'],
+                                          best_fit_values['sphd_R_scale'],
+                                          best_fit_values['sphd_Sigma_d'],
+                                          best_fit_values['sphd_R_d'])) - data_table['M_star']
         
-        ax[0].plot(r, exponential_sphere(r, best_fit_values['rho_c'], 
-                                       best_fit_values['R_scale']),
+        ax[0].plot(r, np.log10(exponential_sphere(r, best_fit_values['sphd_rho_c'], 
+                                       best_fit_values['sphd_R_scale'])),
                  linestyle = '--', color = 'dodgerblue', label='sphere')
-        ax[0].plot(r, exponential_disk(r, best_fit_values['Sigma_d'], 
-                                     best_fit_values['R_d']),
+        ax[0].plot(r, np.log10(exponential_disk(r, best_fit_values['sphd_Sigma_d'], 
+                                     best_fit_values['sphd_R_d'])),
                  linestyle='--', color='crimson', label='disk')
         
     elif stellar_profile == 'hernquist':
-        random_sample = np.random.multivariate_normal(mean=[
-                                                    best_fit_values['R_scale'],
-                                                    best_fit_values['M'],
-                                                    ],
-                                                    cov=cov,
-                                                    size =1000)
+        # try:
+        #     random_sample = np.random.multivariate_normal(mean=[
+        #                                                 best_fit_values['hq_R_scale'],
+        #                                                 best_fit_values['hq_M'],
+        #                                                 ],
+        #                                                 cov=hess_inv[:-2][:-2],
+        #                                                 size =1000)
 
-        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0)  
-        good_randoms = random_sample[is_good_random, :]
+        #     is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0)  
+        #     good_randoms = random_sample[is_good_random, :]
 
-        for i in range(len(r)):
-            y_sample = hernquist_profile(r[i], good_randoms[:,0], good_randoms[:,1])
+        #     for i in range(len(r)):
+        #         y_sample = hernquist_profile(r[i], good_randoms[:,0], good_randoms[:,1])
 
-                
-        stdevs = np.nanstd(y_sample, axis=0)
+                    
+        #     stdevs = np.nanstd(y_sample, axis=0) 
+        # except:
+        #     print('could not produce samples for plot')
+        #     stdevs = None
 
 
-        y = hernquist_profile(r, best_fit_values['R_scale'], 
-                                    best_fit_values['M'],
-                                                   )
+        y = np.log10(hernquist_profile(r, best_fit_values['hq_R_scale'], 
+                                    best_fit_values['hq_M'],
+                                                   ))
         
         res = np.log10(hernquist_profile(data_table['radius'], 
-                                         best_fit_values['R_scale'],
-                                          best_fit_values['M'])) - data_table['M_star']
+                                         best_fit_values['hq_R_scale'],
+                                          best_fit_values['hq_M'])) - data_table['M_star']
         
     elif stellar_profile == 'mod_hernquist':
-        random_sample = np.random.multivariate_normal(mean=[
-                                                    best_fit_values['R_scale'],
-                                                    best_fit_values['M'],
-                                                    best_fit_values['gamma']
-                                                    ],
-                                                    cov=cov,
-                                                    size =1000)
+        # try:
+        #     random_sample = np.random.multivariate_normal(mean=[
+        #                                                 best_fit_values['mhq_R_scale'],
+        #                                                 best_fit_values['mhq_M'],
+        #                                                 best_fit_values['mhq_gamma']
+        #                                                 ],
+        #                                                 cov=hess_inv[:-3][:-3],
+        #                                                 size =1000)
 
-        is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0) 
-        good_randoms = random_sample[is_good_random, :]
+        #     is_good_random = (random_sample[:,0] > 0) & (random_sample[:,1] > 0) & (random_sample[:,2] > 0) 
+        #     good_randoms = random_sample[is_good_random, :]
 
-        # for i in range(len(r)):
-            # y_sample = modified_hernquist_profile(r[i], good_randoms[:,0], 
-                                        #  good_randoms[:,1], good_randoms[:,2])
+        #     for i in range(len(r)):
+        #         y_sample = modified_hernquist_profile(r[i], good_randoms[:,0], 
+        #                                      good_randoms[:,1], good_randoms[:,2])
 
-                
-        # stdevs = np.nanstd(y_sample, axis=0)
+                    
+        #     stdevs = np.nanstd(y_sample, axis=0)
+        # except:
+        #     print('could not produce samples for plot')
+        #     stdevs = None
 
 
-        y = np.log10(modified_hernquist_profile(r, best_fit_values['R_scale'], 
-                                    best_fit_values['M'],best_fit_values['gamma']
+        y = np.log10(modified_hernquist_profile(r, best_fit_values['mhq_R_scale'], 
+                                    best_fit_values['mhq_M'],best_fit_values['mhq_gamma']
                                                    ))
         
         res = np.log10(modified_hernquist_profile(data_table['radius'], 
-                                                  best_fit_values['R_scale'],
-                                          best_fit_values['M'],
-                                          best_fit_values['gamma'])) - data_table['M_star']
+                                                  best_fit_values['mhq_R_scale'],
+                                          best_fit_values['mhq_M'],
+                                          best_fit_values['mhq_gamma'])) - data_table['M_star']
 
-    ax[0].plot(r, y, color='orange', label='model')
+    ax[0].plot(r, y, color='orange',)
     ax[1].axhline(color='k', alpha=0.2)
     ax[1].plot(data_table['radius'], res, color='r')
-    ax[1].set_ylim(-np.max(np.abs(res)), np.max(np.abs(res)))
-
-    # ax[0].fill_between(r, np.log10(y-stdevs), np.log10(y+stdevs), facecolor='orange',alpha=0.2)
+    # ax[1].set_ylim(-np.max(np.abs(res)), np.max(np.abs(res)))
+    # if stdevs is not None:
+    #     ax[0].fill_between(r, np.log10(y-stdevs), np.log10(y+stdevs), facecolor='orange',alpha=0.2)
+    
     ax[1].set_xlabel('r [kpc/h]')
     ax[0].set_ylabel(r'Stellar Mass [log(M$_\odot$)]')
     ax[1].set_ylabel(r'Residual $[\log(M_\odot)]$')
     ax[0].tick_params(direction='in')
     ax[1].tick_params(direction='in')   
     # plt.yscale('log')
-    # plt.legend()
+
+    if stellar_profile == 'sphere_disk':
+        ax[0].legend()
 
     # params_str ='\n'.join((r'$\chi^{2}_{\nu}$: $%.3E$' % (best_fit_values['chi2_M_star'], ), 
     #                         r'$\rho_{c}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (best_fit_values['rho_c'], ), 

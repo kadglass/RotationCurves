@@ -243,3 +243,36 @@ def chi2_mass(params, r, m_star, m_star_err, stellar_profile):
         # n_chi2 = chi2 / (len(r) - 3)
     
     return chi2
+
+def sum_Pipe3D_mass(sMass_density):
+
+    '''
+    calculate the total stellar mass and uncertainty from Pipe3D map
+
+    PARAMETERS
+    ==========
+    sMass_density : array
+        stellar mass density map [log Msun/spax^2]
+
+    RETURNS
+    =======
+    M_star : float
+        total stellar mass in map [log M_sun]
+
+    M_star_err : float
+        RMS / sqrt(N) uncertainty on M_star [log M_sun]
+
+    
+    '''
+
+    msMass = np.ma.array(sMass_density, mask=np.isnan(sMass_density))
+    msMass_flat = np.ma.MaskedArray.compressed(msMass)
+    N = len(msMass_flat)
+
+    sMass = 10**msMass_flat
+
+    M_star = np.log10(np.sum(sMass))
+
+    M_star_err = np.log10(np.sqrt(np.mean(sMass**2)) / np.sqrt(N))
+
+    return M_star, M_star_err

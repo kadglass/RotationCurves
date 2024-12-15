@@ -37,32 +37,33 @@ FILE_IDS = ['11011-1901','10223-9101','9877-12704','11760-9101','11953-1902',
 
 # FILE_IDS = ['11969-9101']
 
+
 IMAGE_FORMAT = 'png'
 
 ################################################################################
 # Paths for Nitya Macbook
 ################################################################################
 
-# MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-# IMAGE_DIR = MANGA_FOLDER + 'Ellipticals_Images/'
-# MAP_FOLDER = MANGA_FOLDER + 'DR17/'
-# PIPE3D_FOLDER = MANGA_FOLDER +'Pipe3D/'
-# DRP_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio.fits'
-# OUT_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_modhernquist.fits'
-# COV_DIR = MANGA_FOLDER + 'elliptical_stellar_mass_cov/'
+MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
+IMAGE_DIR = MANGA_FOLDER + 'Ellipticals_Images/'
+MAP_FOLDER = MANGA_FOLDER + 'DR17/'
+PIPE3D_FOLDER = MANGA_FOLDER +'Pipe3D/'
+DRP_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_sphdisk_refitspirals_v2.fits'
+OUT_FILENAME = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_modhernquist.fits'
+COV_DIR = MANGA_FOLDER + 'elliptical_stellar_mass_cov/'
 
 ################################################################################
 # Paths for Bluehive
 ################################################################################
 
-MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
-IMAGE_DIR = '/scratch/nravi3/ellipticals/'
-MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
-PIPE3D_FOLDER = MANGA_FOLDER + 'pipe3d/'
-#update
-DRP_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_refitspirals.fits'
-OUT_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_refitspirals.fits'
-COV_DIR = '/scratch/nravi3/ellipticals/elliptical_stellar_mass_cov/'
+# MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
+# IMAGE_DIR = '/scratch/nravi3/ellipticals/'
+# MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
+# PIPE3D_FOLDER = MANGA_FOLDER + 'pipe3d/'
+# #update
+# DRP_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_refitspirals.fits'
+# OUT_FILENAME = '/scratch/nravi3/ellipticals/Elliptical_StelVelDispDAPMeanSigma_Mvir_smoothness_lt_2_dipole_vflag_comoving_mratio_refitspirals.fits'
+# COV_DIR = '/scratch/nravi3/ellipticals/elliptical_stellar_mass_cov/'
 
 ################################################################################
 ################################################################################
@@ -70,8 +71,8 @@ COV_DIR = '/scratch/nravi3/ellipticals/elliptical_stellar_mass_cov/'
 
 CLEAR_COLS = True  # zeros out columns in table
 TEXT_OUT = True # print info
-WRITE_TABLE = True # saves table
-RUN_ALL_GALAXIES = True
+WRITE_TABLE = False # saves table
+RUN_ALL_GALAXIES = False
 
 stellar_profile = 'sphere_disk' # sphere, sphere_disk, hernquist, or mod_hernquist
 
@@ -122,14 +123,20 @@ if CLEAR_COLS:
                                         'mhq_M_star', 'mhq_M_star_err',
                                         'mhq_gamma','mhq_gamma_err',
                                         'mhq_chi2'])
-
+        
 for gal_ID in FILE_IDS:
 
     i_DRP = DRP_index[gal_ID]
 
-    # running only on galaxies that virial masses
+    # running only on galaxies that have virial masses
 
     if DRP_table['Mvir'][i_DRP] > 0:
+        xp = [-24.5,-15.5]
+        fp = [13.5,10]
+
+        # for refitting, if the galaxy stellar mass is overestimated, then refit
+        if DRP_table['sphd_M_star'][i_DRP] <= np.interp(DRP_table['rabsmag'][i_DRP],xp,fp):
+            continue
 
         ########################################################################
         # Extract necessary fits files
@@ -148,6 +155,8 @@ for gal_ID in FILE_IDS:
         ########################################################################
         # get parameters from data table
         #-----------------------------------------------------------------------
+
+        print('Fitting ', gal_ID)
 
         ba = DRP_table['nsa_elpetro_ba'][i_DRP]
         phi = DRP_table['nsa_elpetro_phi'][i_DRP]

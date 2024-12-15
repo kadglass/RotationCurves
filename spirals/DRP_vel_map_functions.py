@@ -8,8 +8,8 @@ from skimage.filters import gaussian
 
 from scipy.optimize import minimize
 
-#from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
-from dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
+from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
+# from dark_matter_mass.dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
 
 import matplotlib.pyplot as plt
 

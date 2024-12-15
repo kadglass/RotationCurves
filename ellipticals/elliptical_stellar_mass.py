@@ -334,15 +334,18 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
 
     if stellar_profile == 'sphere':
 
-        rho_c_guess =  10**9.
+        rho_c_guess =  10**9
         
         param_guesses = [rho_c_guess, R_scale_guess]
 
     elif stellar_profile == 'sphere_disk':
 
-        rho_c_guess =  10**9.
+        # rho_c_guess =  10**9
+        
+        rho_c_guess = 8
 
-        Sigd_guess = 10**7
+        # Sigd_guess = 10**7
+        Sigd_guess = 8
 
         Rd_guess = 1.
 
@@ -383,7 +386,6 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
         rho_c_min = 0.
         rho_c_max = 1e16
 
-
         # param_bounds = ([rho_c_min, R_scale_min], 
                         # [rho_c_max, R_scale_max])
         
@@ -393,11 +395,14 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
 
         # Bulge central density [M_sol/kpc^3] 
         rho_c_min = 0.
-        rho_c_max = 1e16
-    
+        # rho_c_max = 1e16
+        rho_c_max = 16
+
         # disk central density [M_sun/kpc^2]
         Sigd_min = 0.
-        Sigd_max = 1e14
+        # Sigd_max = 1e14
+
+        Sigd_max = 16
 
         # disk scale radius [kpc]
         Rd_min = 0.
@@ -481,6 +486,13 @@ def fit_mass_curve(data_table, gal_ID, stellar_profile,
     #                                )
 
     
+
+    ############################################################################
+    # Artificially inflate the stellar mass uncertainties
+    #---------------------------------------------------------------------------
+
+    data_table['M_star_err'] = data_table['M_star_err'] + np.max(data_table['M_star'])-2.5
+
     try:
         result = minimize(chi2_mass,
                           param_guesses,

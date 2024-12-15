@@ -219,6 +219,8 @@ def sMass_weighted_star_sigma(gal_ID, star_sigma, star_sigma_ivar,
     # sigma = np.sqrt(sigma2)
     # return sigma, 0, mstar_sigma, mstar_sigma_corrected
 
+    # scale up stellar mass error
+    msMass_density_err = msMass_density_err + np.ma.max(msMass_density) - 2.5
 
     lin_sMass = np.ma.power(10, msMass_density) # stellar mass map in linear units
     lin_sMass_err = np.ma.power(10, msMass_density_err) # stellar mass error in linear units

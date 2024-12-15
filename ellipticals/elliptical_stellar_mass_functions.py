@@ -84,8 +84,8 @@ def exponential_sphere_disk(r, rho_c, a, Sigd, Rd):
     '''
 
 
-    sph = exponential_sphere(r, rho_c, a)
-    disk = exponential_disk(r, Sigd, Rd)
+    sph = exponential_sphere(r, 10**rho_c, a)
+    disk = exponential_disk(r, 10**Sigd, Rd)
 
     M = sph + disk
     return M
@@ -190,9 +190,9 @@ def calc_tot_stellar_mass(params, stellar_profile):
 
     elif stellar_profile == 'sphere_disk':
 
-        rho_c = params['sphd_rho_c']
+        rho_c = 10**params['sphd_rho_c']
         a = params['sphd_R_scale']
-        sigd = params['sphd_Sigma_d']
+        sigd = 10**params['sphd_Sigma_d']
         rd = params['sphd_R_d']
         rho_c_err = params['sphd_rho_c_err']
         a_err = params['sphd_R_scale_err']
@@ -204,9 +204,16 @@ def calc_tot_stellar_mass(params, stellar_profile):
 
         M_0 = Mb + Md
 
-        M_0_err = np.sqrt(Mb**2 * (9 / a**2 * a_err**2 + rho_c_err**2 / rho_c**2) +\
-                          Md**2 * (sigd_err**2 / sigd**2 + 4 * rd_err**2 / rd**2))
+        # M_0_err = np.sqrt(Mb**2 * (9 / a**2 * a_err**2 + rho_c_err**2 / rho_c**2) +\
+        #                   Md**2 * (sigd_err**2 / sigd**2 + 4 * rd_err**2 / rd**2))
     
+        Mb_err2 = Mb**2 * (np.log(10)**2 * rho_c_err**2 + (3/a)**2 * a_err**2)
+        Md_err2 = Md**2 * (np.log(10)**2 * sigd_err**2 + (2/rd)**2 * rd_err**2)
+
+        M_0_err = np.sqrt(Mb_err2 + Md_err2)
+
+
+
     return M_0, M_0_err
     
 

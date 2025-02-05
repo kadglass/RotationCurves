@@ -53,6 +53,7 @@ if RUN_ALL_GALAXIES:
 ################################################################################
 
 DRP_table['sum_M_star_0p1_R90'] = 0.
+DRP_table['count_M_star_0p1_R90'] = 0.
 
 for gal_ID in FILE_IDS:
 
@@ -118,7 +119,10 @@ for gal_ID in FILE_IDS:
         center_msMass = ma.array(msMass_density, mask=np.logical_or(sMass_mask, ellipse_mask))
         cent_mass = np.log10(np.sum(10**center_msMass)) 
 
+        spax_count = len(center_msMass[~center_msMass.mask])
+
         DRP_table['sum_M_star_0p1_R90'][i_DRP] = cent_mass
+        DRP_table['count_M_star_0p1_R90'][i_DRP] = spax_count
 
 
 

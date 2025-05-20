@@ -4,6 +4,8 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib
 
+from scipy.optimize import curve_fit
+
 from elliptical_stellar_mass_functions import exponential_sphere,\
                                              exponential_sphere_disk,\
                                              hernquist_profile, \
@@ -733,3 +735,97 @@ def med_percentile_scaled(vals, logscale=True, return_logscale=True):
             p[i][2] = high
     
     return p
+
+
+def gaussian(x, A, x0, sigma):
+    '''
+    normal dist
+
+    PARAMETERS
+    ==========
+
+    x : array
+        data
+    A : float
+        coefficient
+    x0 : float
+        mean
+    sigma : float
+        width
+    
+    RETURNS
+    =======
+    gaussian w parameters
+    '''
+
+    return A * np.exp(-(x-x0)**2/(2*sigma**2))
+
+def fit_to_gaussian(binned_data, plot_dir='', plot_name='', xlab='', 
+                    use_custom_bins=False, custom_bins=[]):
+    '''
+    fit gaussian dist to data and plot data, fit. bins must have at least 10
+    data pts
+
+    PARAMETERS
+    ==========
+    binned_data : array
+        data in bins
+
+    plot_dir : string
+        file path for plots
+
+    plot_name : string
+        plot titles
+
+    xlab : string
+        x-axis label for plots
+
+    RETURNS
+    =======
+    avgs : array
+        gaussian mean in each bin
+    sigmas : array
+        width of gaussian for each bin
+    
+    '''
+
+    avgs = np.ones(len(binned_data)) * np.nan
+    sigmas = np.ones(len(binned_data)) * np.nan
+
+    for i in range(len(binned_data)):
+
+        data = binned_data[i]
+        
+        if use_custom_bins:
+            counts, bins = np.histogram(data, bins=custom_bins[i])
+        else:
+            counts, bins = np.histogram(data, bins=int(np.sqrt(len(data))+1))
+        bin_ctrs = (bins[1:] + bins[:-1])/2
+
+        p0 = [np.max(counts), np.mean(data), np.std(data)]
+
+        if len(data) >= 10:
+
+
+            try:
+    
+                popt, pcov = curve_fit(gaussian, bin_ctrs, counts, p0=p0)
+    
+            except:
+    
+                print(f'failed on bin {i}')
+                continue
+    
+            avgs[i] = popt[1]
+            sigmas[i] = popt[2]/np.sqrt(len(data))
+    
+            plt.scatter(bin_ctrs, counts)
+            xs = np.linspace(bins[0], bins[:-1], 100)
+            plt.plot(xs, gaussian(xs, popt[0], popt[1], popt[2]), color='r', label=fr'$\mu$ = {popt[1]:.2}, $\sigma$ = {popt[2]:.2}')
+            plt.xlabel(xlab)
+    
+            plt.title(plot_name + f'_bin_{i}')
+            plt.savefig(plot_dir + plot_name + f'_bin_{i}' + '.png')
+            plt.close()
+
+    return avgs, sigmas

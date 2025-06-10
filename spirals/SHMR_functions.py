@@ -43,7 +43,7 @@ def shmr_RP11(logMstar, color='all'):
         a = np.array([0, 0.093])
 
     
-    less_ms = np.multiply(logMstar < log_Ms,1)
+    less_ms = np.multiply(logMstar > log_Ms,1)
     Mstar_Ms = logMstar - log_Ms
 
     first_term = logM_0h - gamma*np.log10(2) \

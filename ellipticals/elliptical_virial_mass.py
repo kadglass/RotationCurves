@@ -523,3 +523,27 @@ def calculate_dipole_moment(Ha_vel, Ha_vel_mask, Ha_flux, Ha_flux_ivar, flux):
     
     else:
         return 0
+    
+    
+def calculate_effective_velocity(R90, M, M_err):
+
+    '''
+    calculate effective rotational velocity at R90 as if virial mass corresponds
+    to mass within R90 for a disk galaxy
+
+
+    PARAMETERS
+    ==========
+    R90 : float
+        in units of [kpc]
+    M : float
+        mass determined using virial theorem [log(M_sun)/h]
+
+    
+
+    '''
+
+    v = np.sqrt(10**M * G / R90)
+    v_err = 0.5 * (G / (10**M * R90)) * 10**M_err 
+
+    return v, v_err

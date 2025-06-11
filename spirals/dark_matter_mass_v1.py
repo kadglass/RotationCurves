@@ -77,6 +77,61 @@ def rot_fit_BB( depro_radius, params):
 
     return v
 
+################################################################################
+################################################################################
+################################################################################
+
+def rot_fit_BB_err( r, params):
+    """
+    uncertainty on velocity from rot curve model based on param uncertainties.
+
+
+    PARAMETERS
+    ==========
+    
+    r : float or ndarray of shape (n,)
+        Deprojected radius as taken from the [PLATE]-[FIBERID] rotation curve 
+        data file (in units of kpc); the "x" data of the rotation curve equation
+
+    v_max : float
+        The maximum velocity (or in the case of fitting the negative, the
+        absolute value of the minimum velocity) parameter of the rotation curve 
+        equation (given in km/s)
+    v_max_err
+
+    r_turn : float
+        The radius at which the rotation curve trasitions from increasing to 
+        flat-body for the rotation curve equation (given in kpc)
+    r_turn_err
+
+    alpha : float
+        The exponential parameter for the rotation curve equation
+    alpha_err : float
+
+    RETURNS
+    =======
+        
+    The rotation curve equation with the given '@param' parameters and
+    'depro_radius' data
+    v, v_err
+    """
+
+    v_max, v_max_err, r_turn, r_turn_err, alpha, alpha_err = params
+    
+    v = rot_fit_BB(r, [v_max, r_turn, alpha])
+
+    v_max_term = (v_max_err/v_max)**2
+    r_turn_term = (r_turn**(alpha-1) / (r_turn**alpha \
+                                        + r **alpha))**2 \
+                                            * r_turn_err**2
+    alpha_term = ((r**alpha * np.log(r) + r_turn**alpha * np.log(r_turn) \
+                  - (r**alpha + r_turn**alpha)*np.log(r**alpha + r_turn**alpha)\
+                    /alpha) / (alpha * (r_turn** alpha + r**alpha)))**2 \
+                        * alpha_err**2  
+    
+    v_err = v * np.sqrt(v_max_term + r_turn_term + alpha_term)
+
+    return v, v_err
 
 
 ################################################################################

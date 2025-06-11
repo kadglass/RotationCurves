@@ -90,6 +90,59 @@ def exponential_sphere_disk(r, rho_c, a, Sigd, Rd):
     M = sph + disk
     return M
 
+def exponential_sphere_disk_err(r, rho_c, rho_c_err, a, a_err, Sigd, Sigd_err, 
+                                Rd, Rd_err):
+    
+    '''
+    mass distribution for exponential sphere and disk
+
+    PARAMETERS
+    ==========
+    r : float
+        radius [kpc]
+    
+    rho_c, rho_c_err : float
+        sphere central density log[M_sun/kpc^3]
+        
+    a, a_err : float
+        sphere scale radius [kpc]
+
+    Sigd, Sigd_err : float
+        disk central surface density log[M_sun/kpc^2]
+
+    Rd_err : float
+        disk scale radius [kpc]
+    
+    RETURNS
+    =======
+    M, M_err : float
+        mass within radius r [M_sun]
+    '''
+
+    rho_c = 10**rho_c
+    rho_c_err = 10**rho_c_err
+    Sigd_err = 10**Sigd_err
+    Sigd = 10**Sigd
+
+    Mb = exponential_sphere(r, rho_c, a)
+    Md = exponential_disk(r, Sigd, Rd)
+
+    Md_err = (Md * Sigd_err/Sigd)**2 + (2*Md/Rd - 2*np.pi*Sigd*np.exp(-r/Rd)\
+                                         *(r**2/Rd + r*Rd))**2 * Rd_err**2
+    
+    
+    x = r/a
+    M0 = 8 * np.pi * a**3 * rho_c
+    F = 1 - np.exp(-x) * (1+x+x**2 /2)
+    
+    Mb_err = (M0 * F * rho_c_err/ rho_c)**2 \
+                     + (3/a * Mb - M0*np.exp(-x)*x**3/(2*a) * a_err)**2
+    
+    M_err = np.sqrt(Md_err + Mb_err)
+    M = Mb + Md
+
+    return M, M_err
+
 
 def hernquist_profile(r, R_scale, Mtot):
 

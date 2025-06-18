@@ -247,9 +247,9 @@ def calc_tot_stellar_mass(params, stellar_profile):
         a = params['sphd_R_scale']
         sigd = 10**params['sphd_Sigma_d']
         rd = params['sphd_R_d']
-        rho_c_err = params['sphd_rho_c_err']
+        rho_c_err = 10**params['sphd_rho_c_err']
         a_err = params['sphd_R_scale_err']
-        sigd_err = params['sphd_Sigma_d_err']
+        sigd_err = 10**params['sphd_Sigma_d_err']
         rd_err = params['sphd_R_d_err']
 
         Mb = 8 * np.pi * a**3 * rho_c
@@ -260,8 +260,11 @@ def calc_tot_stellar_mass(params, stellar_profile):
         # M_0_err = np.sqrt(Mb**2 * (9 / a**2 * a_err**2 + rho_c_err**2 / rho_c**2) +\
         #                   Md**2 * (sigd_err**2 / sigd**2 + 4 * rd_err**2 / rd**2))
     
-        Mb_err2 = Mb**2 * (np.log(10)**2 * rho_c_err**2 + (3/a)**2 * a_err**2)
-        Md_err2 = Md**2 * (np.log(10)**2 * sigd_err**2 + (2/rd)**2 * rd_err**2)
+        # Mb_err2 = Mb**2 * (np.log(10)**2 * rho_c_err**2 + (3/a)**2 * a_err**2)
+        # Md_err2 = Md**2 * (np.log(10)**2 * sigd_err**2 + (2/rd)**2 * rd_err**2)
+
+        Mb_err2 = Mb**2 * (9*a_err**2/a**2 + rho_c_err**2/rho_c**2)
+        Md_err2 = Md**2 * (sigd_err**2/sigd**2 + 4*rd_err**2/rd**2)
 
         M_0_err = np.sqrt(Mb_err2 + Md_err2)
 

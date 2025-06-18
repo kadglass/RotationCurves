@@ -9,7 +9,7 @@ import scipy
 ################################################################################
 ################################################################################
 
-def galaxies_dict(ref_table):
+def galaxies_dict(ref_table, v=1):
     '''
     Built dictionary of (plate, IFU) tuples that refer to the galaxy's row 
     index in the ref_table.
@@ -36,12 +36,21 @@ def galaxies_dict(ref_table):
     # Initialize dictionary to store (plate, IFU) and row index
     ref_dict = {}
 
+    if v==3 or v==4 or v=='a':
 
-    for i in range(len(ref_table)):
+        for i in range(len(ref_table)):
 
-        galaxy_ID = (ref_table['MaNGA_plate'][i], ref_table['MaNGA_IFU'][i])
+            plateifu = ref_table['plateifu'][i]
+            ref_dict[plateifu] = i
 
-        ref_dict[galaxy_ID] = i
+
+    else:
+
+        for i in range(len(ref_table)):
+
+            galaxy_ID = (ref_table['MaNGA_plate'][i], ref_table['MaNGA_IFU'][i])
+
+            ref_dict[galaxy_ID] = i
 
 
     return ref_dict
@@ -531,3 +540,74 @@ def MHI_outer_disk(r, RHI):
     MHI = 2*np.exp(5)*np.pi*np.exp(-5*r/RHI)*(-0.2*r*RHI - 0.04*RHI**2)
 
     return MHI
+
+def calc_HI_uncertainty(logHI, FHI, eFHI):
+
+    '''
+    given logHI mass and flux uncertainty, calcualte uncertainty on HI mass
+    '''
+
+    return logHI + np.log10(eFHI) - np.log10(FHI)
+
+def extract_HI_mass(master_table, hi_table_fn, v=3):
+    '''
+    Extract HI masses and uncertainties from HI-MaNGA DR 3, 3.1/4, and alfalfa
+
+    PARAMETERS
+    ==========
+
+    master_table : Table
+        DRP table to be modified
+
+    RETURNS
+    =======
+
+    modified master table with HI mass and uncertainty
+
+    '''
+
+    master_dict = galaxies_dict(master_table, v=v)
+
+    hi_table = Table.read(hi_table_fn)
+
+    master_table['logHI_alfalfa'] = np.ones(len(master_table)) * -999
+    master_table['logHI_err_alfalfa'] = np.ones(len(master_table)) * -999
+
+    if v==3:
+
+        master_table['logHI_dr3'] = np.ones(len(master_table)) * -999
+        master_table['logHI_err_dr3'] = np.ones(len(master_table)) * -999
+
+    elif v==4:
+
+        master_table['logHI_dr4'] = np.ones(len(master_table)) * -999
+        master_table['logHI_err_dr4'] = np.ones(len(master_table)) * -999
+
+    for i in range(len(hi_table)):
+
+        try:
+            idx = master_dict[hi_table['PLATEIFU'][i]]
+        except:
+            print(hi_table['PLATEIFU'][i], ' not in master_table')
+            continue
+        
+        FHI = hi_table['FHI'][i]
+        EFHI = hi_table['EFHI'][i]
+        logMHI = hi_table['LOGMHI'][i]
+
+
+        if hi_table['SESSION'][i] == 'ALFALFA':
+            master_table['logHI_alfalfa'][i] = logMHI
+            master_table['logHI_err_alfalfa'][i] = logMHI + np.log10(EFHI) - np.log10(FHI)
+
+        else:
+            if v==3:
+                master_table['logHI_dr3'][i] = logMHI
+                master_table['logHI_err_dr3'][i] = logMHI + np.log10(EFHI) - np.log10(FHI)
+
+            elif v==4:
+                master_table['logHI_dr4'][i] = logMHI
+                master_table['logHI_err_dr4'][i] = logMHI + np.log10(EFHI) - np.log10(FHI)
+
+    return master_table
+

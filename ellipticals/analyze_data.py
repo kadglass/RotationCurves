@@ -487,6 +487,43 @@ def determine_masses(IDs, directory):
 
 
 
+def dist_cost_matrix(x1, y1, x2, y2, SAVE_DIR=None):
+    '''
+    Given x,y coordinates of 2 datasets, return a matrix of distances between 
+    all data points of each data set
 
+    PARAMETERS
+    ==========
+    x1 : N x 1 array
+        x-coordinates of the first data set
 
+    y1 : N x 1 array
+        y-coordinates of the first data set
+
+    x2 : M x 1 array
+        x-coordinates of the second data set
+
+    y2 : M x 1 array
+        y-coordinates of the second data set
+
+    SAVE_DIR : string
+        path to save matrix. doesn't save if path is not provided
+    
+    '''
+
+    cost_matrix = np.zeros((len(x1), len(y1)))
+                           
+    for i in range(len(x1)):
+
+        cost_matrix[i] = np.hypot(x1[i]-x2, y1[i]-y2)
+
+        while i % 1000 == 0:
+            print(i)
+
+    if SAVE_DIR is not None:
+        np.save(SAVE_DIR + 'cost_matrix.npy', cost_matrix)
+
+    else: 
+        return cost_matrix
+    
 

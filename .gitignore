@@ -9,3 +9,9 @@ astropy_tutorial_jupyter_notebooks/
 __pycache__/
 *.fits
 *.txt
+/GradientSmoothness-1.0.0/build/lib.macosx-11.0-arm64-cpython-312/GradientSmoothness
+*.o
+*.egg
+/GradientSmoothness-1.0.0/GradientSmoothness.egg-info
+*.c
+*.so

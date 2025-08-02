@@ -68,41 +68,14 @@ HI_vel_req = False
 #
 # If RUN_ALL_GALAXIES is set to True, then code will ignore what is in FILE_IDS.
 #-------------------------------------------------------------------------------
-'''
-fixed = ['11949-12702',
-        '10845-6101',
-        '11009-1902',
-        '8950-12705',
-        '11009-3703',
-        '11939-3701',
-        '8949-12703',
-        '9037-9102',
-        ]
-'''
+# FILE_IDS = ['12079-9101', '11835-12703', '11955-3703', '11982-3702'
+#               bad: '8144-3703','8335-12704',  '8977-12704', '9498-12703', '11828-12705', '11828-12705', '11865-6102', '12769-12705'
+#              '10224-9101', '10497-6103', 
+#             '11865-1902', '11865-6102', '11949-12702', '11978-12701',
+#             '12506-12701', '12512-3701', '12769-12705']
 
-'''
-
-FILE_IDS = ['10838-12705', # something isnt masked
-'11759-1902', # bad ba
-'11835-6104', # bad ba
-'11867-9101', # bad ba
-'12495-12704', # bad ba
-'12651-3701', #bad ba
-'8138-12702', # bad ba
-'8255-1901', # no map?? - FLOP
-'8565-12705', # bad ba
-'8626-12702', #bad ba
-'8719-9102', # bad ba (maybe phi)
-'8942-3704', # bad ba
-'8987-3704', # bad ba
-'9042-6102', # bad ba
-'9046-3704', # bad ba
-'9512-12701', # bad ba
-'11939-3701', # kelly's w HI
-'8949-12703', #kelly's w HI
-'11009-1902'] #kelly's w HI'''
-
-FILE_IDS = ['8997-9102']
+FILE_IDS = ['10224-9101', '10497-6103', '11865-1902', '11949-12702', '11978-12701', 
+            '12506-12701', '12512-3701']
 
 
 RUN_ALL_GALAXIES = False
@@ -133,7 +106,7 @@ if RUN_ALL_GALAXIES:
 else:
     #IMAGE_DIR = None
     #IMAGE_DIR = LOCAL_PATH + 'Images/DRP/'
-    IMAGE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/PAPER_PLOTS/'
+    IMAGE_DIR = '/Users/nityaravi/Documents/Research/DESI/PV/TF/Y1/PV_Y1_DESI_manga_rotcurves/refit/'
 
 
 # for bluehive
@@ -154,7 +127,7 @@ VEL_MAP_FOLDER = MANGA_FOLDER + 'DR17/'
 #DRP_FILENAME = MANGA_FOLDER + 'DR17/' + 'drpall-v3_1_1.fits'
 #DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/disk_masses_HIdr3_err_morph_v2.fits'
 #DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/refit.fits'
-DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/test.fits'
+DRP_FILENAME = MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_sphdisk_refitspirals_BPT_illustris_v11.fits'
 
 
 # old
@@ -239,8 +212,8 @@ for gal_ID in FILE_IDS:
 
     i_DRP = DRP_index[gal_ID]
 
-    #if DRP_table['mngtarg1'][i_DRP] > 0 or DRP_table['mngtarg3'][i_DRP] > 0:
-    if DRP_table['mngtarg1'][i_DRP] > 0:
+    if DRP_table['mngtarg1'][i_DRP] > 0 or DRP_table['mngtarg3'][i_DRP] > 0:
+    # if DRP_table['mngtarg1'][i_DRP] > 0:
 
         ########################################################################
         # Extract the necessary data from the .fits files.
@@ -554,13 +527,15 @@ for gal_ID in FILE_IDS:
 #     else:
 #         out_filename = 'DRP_starVel_map_resutls_' + vel_function + '.txt'
 
-    #DRP_table.write(DRP_FILENAME, format = 'fits', overwrite=True)
-    #DRP_table.write(out_filename,
-    #                format='ascii.commented_header',
-    #                overwrite=True)
+#     DRP_table.write(DRP_FILENAME, format = 'fits', overwrite=True)
+#     DRP_table.write(out_filename,
+#                    format='ascii.commented_header',
+#                    overwrite=True)
 ################################################################################'''
 
 
+DRP_table.write(MANGA_FOLDER + '/output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_sphdisk_refitspirals_BPT_illustris_v11.fits',
+                format='fits', overwrite=True)
 
 ################################################################################
 # Print number of galaxies that were completely masked

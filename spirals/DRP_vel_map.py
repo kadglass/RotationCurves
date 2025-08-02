@@ -27,7 +27,7 @@ from astropy.io import fits
 from astropy.table import Table, Column
 
 #from dark_matter_mass_v1 import rot_fit_BB, rot_fit_tanh, rot_fit_tail
-from dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
+from dark_matter_mass.dark_matter_mass_v1_cython import rot_fit_BB, rot_fit_tail
 
 from DRP_vel_map_functions import find_vel_map, \
                                   mass_newton, \
@@ -321,7 +321,10 @@ def fit_vel_map(vel,
     #---------------------------------------------------------------------------
     sys_vel_guess = mvel[center_guess]
 
-    if (sys_vel_guess is ma.masked) or (gal_ID == '8940-12701'):
+    if (sys_vel_guess is ma.masked) or gal_ID in ['8940-12701', '8144-3703', '8335-12704',
+                                                  '8977-12704', '10244-9101', '10497-6103', 
+                                                  '11865-1902', '11949-12702', '11978-12701', '12506-12701', '12512-3701']:
+        
         sys_vel_guess = 0.
 
 
@@ -349,7 +352,7 @@ def fit_vel_map(vel,
     # Adjust the domain of the rotation angle (phi) from 0-pi to 0-2pi, where it
     # always points through the positive velocity semi-major axis.-
     #---------------------------------------------------------------------------
-    phi_guess = find_phi(center_guess, phi_EofN_deg, mvel)
+    phi_guess = find_phi(center_guess, phi_EofN_deg, sys_vel_guess, mvel)
 
 
     if gal_ID in ['8134-6102','10218-12703']:
@@ -691,7 +694,8 @@ def estimate_total_mass(params, r, z, fit_function, gal_ID):
     # Calculate velocity at given radius
     #---------------------------------------------------------------------------
     # hess = np.load('DRP_map_Hessians/' + gal_ID + '_Hessian.npy')
-    hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    # hess = np.load('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy')
+    hess = np.load('/Users/nityaravi/Documents/Research/DESI/PV/TF/Y1/PV_Y1_DESI_manga_rotcurves/refit/Hessians/' + gal_ID + '_Hessian.npy')
     #hess = np.load(gal_ID + '_Hessian.npy')
 
     N_samples = 10000

@@ -262,7 +262,7 @@ def find_vel_bounds(mHa_vel, gal_ID):
 
     bin_width = 10 # Bin the velocity in bins of 10 km/s
 
-    if gal_ID in ['8150-12703', '8980-1902', '8261-6104','11958-3701']:
+    if gal_ID in ['8150-12703', '8980-1902', '8261-6104','11958-3701', '8144-3703', '8335-12704']:
         bin_width = 5
 
     vel_extreme = ma.max(ma.abs(mHa_vel)) # Maximum velocity in the map
@@ -323,7 +323,7 @@ def find_vel_bounds(mHa_vel, gal_ID):
 ################################################################################
 ################################################################################
 ################################################################################
-def find_phi(center_coords, phi_angle, vel_map):
+def find_phi(center_coords, phi_angle, sys_vel_guess, vel_map):
     '''
     Find a point along the semi-major axis that has data to determine if phi
     needs to be adjusted.  (This is necessary because the positive y-axis is
@@ -356,7 +356,8 @@ def find_phi(center_coords, phi_angle, vel_map):
     phi = phi_angle*np.pi/180.
 
     # Extract "systemic" velocity (velocity at center spaxel)
-    v_sys = vel_map[center_coords]
+    # v_sys = vel_map[center_coords]
+    v_sys = sys_vel_guess
 
     f = 0.4
 
@@ -1213,6 +1214,10 @@ def find_vel_map(gal_ID,
         v_max_guess = np.abs(mHa_vel[v_max_index]/np.sin(inclination_angle_guess))
 
 
+    if gal_ID == '8144-3703':
+        v_max_guess = 25
+
+
     #print("v_max_guess:", v_max_guess)
     ############################################################################
 
@@ -1720,7 +1725,10 @@ def find_vel_map(gal_ID,
             # Save Hessian matrix (for uncertainty calculations)
             #np.save('DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
             #np.save('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DRP_map_Hessians/' + gal_ID + '_Hessian.npy', hess)
-            np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
+            # np.save('/scratch/nravi3/Hessians/' + gal_ID + '_Hessian.npy', hess)
+            np.save('/Users/nityaravi/Documents/Research/DESI/PV/TF/Y1/PV_Y1_DESI_manga_rotcurves/refit/Hessians/' + gal_ID + '_Hessian.npy',
+                    hess)
+
             #np.save(gal_ID + '_Hessian.npy', hess)
 
             #print('Hessian:', hess)

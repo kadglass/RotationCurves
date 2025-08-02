@@ -151,12 +151,12 @@ def plot_vel(vel,
     minimum = ma.min(vel)
     maximum = ma.max(vel)
 
-    if minimum > 0:
-        vmax_bound = maximum
-        vmin_bound = 0
-    else:
-        vmax_bound = np.max( [np.abs(minimum), np.abs(maximum)])
-        vmin_bound = -vmax_bound
+    # if minimum > 0:
+    #     vmax_bound = maximum
+    #     vmin_bound = 0
+    # else:
+    vmax_bound = np.max( [np.abs(minimum), np.abs(maximum)])
+    vmin_bound = -vmax_bound
 
     cbar_ticks = np.linspace( vmin_bound, vmax_bound, 11, dtype='int')
     ############################################################################

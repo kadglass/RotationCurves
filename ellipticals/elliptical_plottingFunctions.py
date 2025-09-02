@@ -760,7 +760,7 @@ def gaussian(x, A, x0, sigma):
 
     return A * np.exp(-(x-x0)**2/(2*sigma**2))
 
-def fit_to_gaussian(binned_data, plot_dir='', plot_name='', xlab='', 
+def fit_to_gaussian(binned_data, plot_dir='', plot_name='', bin_lab='' , bin_order='norm',plot_bins=[], xlab='', 
                     use_custom_bins=False, custom_bins=[]):
     '''
     fit gaussian dist to data and plot data, fit. bins must have at least 10
@@ -776,6 +776,12 @@ def fit_to_gaussian(binned_data, plot_dir='', plot_name='', xlab='',
 
     plot_name : string
         plot titles
+
+    bin_lab : string
+        what each plot is a bin of, label for title
+    
+    plot_bins : list
+        bins that separate each plot, used for plot titles
 
     xlab : string
         x-axis label for plots
@@ -819,13 +825,26 @@ def fit_to_gaussian(binned_data, plot_dir='', plot_name='', xlab='',
             avgs[i] = popt[1]
             sigmas[i] = popt[2]/np.sqrt(len(data))
     
-            plt.scatter(bin_ctrs, counts)
-            xs = np.linspace(bins[0], bins[:-1], 100)
+            
+
+            xs = np.linspace(bins[0], bins[-1], 100)
             plt.plot(xs, gaussian(xs, popt[0], popt[1], popt[2]), color='r', label=fr'$\mu$ = {popt[1]:.2}, $\sigma$ = {popt[2]:.2}')
-            plt.xlabel(xlab)
+            plt.xlabel(xlab, fontsize=14)
+            plt.scatter(bin_ctrs, counts, marker='.', color='k')
     
-            plt.title(plot_name + f'_bin_{i}')
-            plt.savefig(plot_dir + plot_name + f'_bin_{i}' + '.png')
+            # plt.title(plot_name + f'_bin_{i}')
+
+            if bin_order=='flip':
+                plt.title(f'{plot_bins[i]:.2f} > {bin_lab} > {plot_bins[i+1]:.2f}', fontsize=14, y=1)
+
+            else:
+
+                plt.title(f'{plot_bins[i]:.2f} < {bin_lab} <  {plot_bins[i+1]:.2f}', fontsize=14, y=1)
+
+            plt.tick_params( axis='both', direction='in', labelsize=12)
+
+            plt.tight_layout()
+            plt.savefig(plot_dir + plot_name + f'_bin_{i}' + '.png', bbox_inches='tight')
             plt.close()
 
     return avgs, sigmas

@@ -775,16 +775,25 @@ def fit_to_gaussian(binned_data, plot_dir='', plot_name='', bin_lab='' , bin_ord
         file path for plots
 
     plot_name : string
-        plot titles
+        name to save plots
 
     bin_lab : string
         what each plot is a bin of, label for title
+
+    bin_order : string
+        'norm' or 'flip', default is 'norm', order of bins for plot titles (e.g. use flip for magnitudes)
     
     plot_bins : list
-        bins that separate each plot, used for plot titles
+        bin edges that define each plot/gaussian dist
 
     xlab : string
         x-axis label for plots
+    
+    use_custom_bins : boolean
+        default is False, True to manually define bins for each distribution
+
+    custom_bins : list of arrays
+        each array is the bins used to histogram the binned data
 
     RETURNS
     =======

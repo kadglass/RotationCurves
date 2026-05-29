@@ -16,7 +16,7 @@ CACHE_DIR = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/legac
 drp_table = Table.read('/Users/nityaravi/Documents/Research/RotationCurves/data/manga/DR17/drpall-v3_1_1.fits', format='fits', hdu=1)
 nsa = Table.read('/Users/nityaravi/Documents/Research/RotationCurves/data/nsa_v1_0_1.fits', format='fits')
 
-drp_table = drp_table[1283:]
+drp_table = drp_table[8120:]
 RUN_ALL_GALAXIES = True
 
 FILE_IDS = []

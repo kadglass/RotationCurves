@@ -466,6 +466,9 @@ def deproject_spaxel(coords, center, phi, i_angle):
     r : float
         De-projected radius from the center of the galaxy for the given spaxel 
         coordinates.
+
+    theta : float
+        Angle east-of-north of the current position
     '''
 
 

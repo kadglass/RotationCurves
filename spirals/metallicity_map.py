@@ -732,6 +732,17 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
 
     nan_mask = np.isnan(metallicity_map)
 
+    ################################################################################
+    # check if too much of map is masked for fit
+    ################################################################################
+
+    if len(nan_mask[nan_mask]) / metallicity_map.size > 0.95:
+        
+        print('Too much of map is masked!')
+        return None
+
+
+
     print('r_kpc', r_kpc)
 
     r_flat = ma.array(r_kpc, mask=nan_mask).compressed()

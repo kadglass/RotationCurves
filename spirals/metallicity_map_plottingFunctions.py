@@ -21,7 +21,9 @@ def plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_I
     plt.xlabel('spaxel')
     plt.ylabel('spaxel')
     plt.colorbar(label='12+log(O/H) (dex)')
-    plt.savefig(IMAGE_DIR + 'metallicity/' + gal_ID + '_metallicity.eps')
+    plt.savefig(IMAGE_DIR + 'metallicity/' + gal_ID + '_metallicity.png')
+    # plt.savefig(IMAGE_DIR  + gal_ID + '_metallicity.png')
+
     plt.close()
 
     plt.imshow(np.sqrt(1/metallicity_map_ivar), vmin=0,vmax=9)
@@ -30,7 +32,9 @@ def plot_metallicity_map(IMAGE_DIR, metallicity_map, metallicity_map_ivar, gal_I
     plt.xlabel('spaxel')
     plt.ylabel('spaxel')
     plt.colorbar(label='$\sigma$ (dex)')
-    plt.savefig(IMAGE_DIR + 'metallicity_sigma/' + gal_ID + '_metallicity_sigma.eps')
+    plt.savefig(IMAGE_DIR + 'metallicity_sigma/' + gal_ID + '_metallicity_sigma.png')
+    # plt.savefig(IMAGE_DIR  + gal_ID + '_metallicity_sigma.png')
+
     plt.close()
 
 ################################################################################
@@ -52,6 +56,8 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
     plt.xlabel('r [kpc]')
     plt.ylabel('12 + log(O/H) (dex)')
     plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.png')
+    # plt.savefig(IMAGE_DIR  + gal_ID + '_metallicity_gradient.png')
+
     plt.close()
 
 
@@ -97,7 +103,7 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
     plt.ylabel('12 + log(O/H) (dex)')
     plt.axvline(0.4*3.35, color='r', label='$0.4\ R_{25}$')
     plt.legend()
-    plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.eps')
+    plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.png')
     plt.close()
     '''
 
@@ -110,7 +116,7 @@ def plot_broadband_image(IMAGE_DIR, gal_ID, im_map, band):
     plt.xlabel('spaxel')
     plt.ylabel('spaxel')
     plt.title(gal_ID)
-    plt.savefig(IMAGE_DIR + band + '_band/' + gal_ID + '_' + band + '_band.eps')
+    plt.savefig(IMAGE_DIR + band + '_band/' + gal_ID + '_' + band + '_band.png')
     plt.close()
 
 
@@ -149,5 +155,5 @@ def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_v
     plt.xlabel('radius [kpc]')
     plt.ylabel('$log\Sigma_L\ (L\odot/pc^2)$')
     plt.title(gal_ID)
-    plt.savefig(IMAGE_DIR + 'surface_brightness/' + gal_ID + '_surface_brightness.eps')
+    plt.savefig(IMAGE_DIR + 'surface_brightness/' + gal_ID + '_surface_brightness.png')
     plt.close()

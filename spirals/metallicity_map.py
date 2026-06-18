@@ -13,7 +13,7 @@ from numpy import log10, pi
 
 import matplotlib.pyplot as plt
 
-import numdifftools as ndt
+# import numdifftools as ndt
 
 
 from astropy.io import fits
@@ -94,7 +94,7 @@ def extract_metallicity_data(DRP_FOLDER, gal_ID):
 
     if not os.path.isfile(file_name):
         print(gal_ID, 'data file does not exist.')
-        return None
+        return None, None
 
     cube = fits.open(file_name)
 
@@ -473,6 +473,9 @@ def get_metallicity_map(DRP_FOLDER, IMAGE_DIR, corr_law, gal_ID):
     # extract metallicity maps
     maps, wavelengths = extract_metallicity_data(DRP_FOLDER, gal_ID)
 
+    if maps is None:
+        return None, None, None
+
     # apply default mask + dust correction
     dmaps = dust_correction(maps, wavelengths, corr_law)
 
@@ -709,6 +712,11 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
                                                                 gal_ID)
 
 
+
+    
+    if metallicity_map is None:
+        return None, None, None, None, None
+    
     ################################################################################
     # deproject metallicity maps, flatten and remove nans
     ################################################################################
@@ -716,9 +724,9 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     cosi2 = (ba**2 - q0**2)/(1 - q0**2)
     i_angle = np.arccos(np.sqrt(cosi2))
 
-    print('cosi2', cosi2)
-    print('i', i_angle)
-    print('center', center_coord)
+    # print('cosi2', cosi2)
+    # print('i', i_angle)
+    # print('center', center_coord)
     print()
 
     r_kpc = np.zeros((len(metallicity_map), len(metallicity_map[0])))
@@ -729,8 +737,9 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
             r_spax, _ = deproject_spaxel((i,j), center_coord, phi, i_angle)
             r_kpc[i][j] = r_spax*pix_scale_factor
 
+    
 
-    nan_mask = np.isnan(metallicity_map)
+    nan_mask = np.logical_or(np.isnan(metallicity_map),np.isnan(metallicity_map_ivar))
 
     ################################################################################
     # check if too much of map is masked for fit
@@ -739,16 +748,21 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     if len(nan_mask[nan_mask]) / metallicity_map.size > 0.95:
         
         print('Too much of map is masked!')
-        return None
+        return None, None, None, None, None
 
 
 
-    print('r_kpc', r_kpc)
+    # print('r_kpc', r_kpc)
 
     r_flat = ma.array(r_kpc, mask=nan_mask).compressed()
     m = ma.array(metallicity_map, mask=nan_mask).compressed()
     m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
 
+    
+
+    # np.save(gal_ID + '_metmap.npy',m)
+    # np.save( gal_ID + '_metmap_ivar.npy', m_sigma)
+    # np.save(gal_ID + '_r.npy', r_flat)
    
     '''
     ################################################################################
@@ -792,15 +806,21 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     # fit metallicity map to linear metallicity gradient
     ################################################################################
     
-    print('r_flat', r_flat)
-    print('m', m)
-    print('m_sigma', m_sigma)
+    # print('r_flat', r_flat)
+    # print('m', m)
+    # print('m_sigma', m_sigma)
     #median
-    popt, pcov = curve_fit(linear_metallicity_gradient, 
+
+    try:
+        popt, pcov = curve_fit(linear_metallicity_gradient, 
                                     r_flat, 
                                     m,
                                     sigma=m_sigma
                                     )
+
+    except:
+        print('fit failed')
+        return None, None, None, None, None
     
     
 
@@ -809,7 +829,11 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     ################################################################################
 
 
-    cov_dir = MANGA_FOLDER + 'metallicity_cov/'
+    # cov_dir = MANGA_FOLDER + 'metallicity_cov/'
+
+    cov_dir = '/pscratch/sd/n/nravi/metallicity_maps/cov/'
+
+    
     np.save(cov_dir + 'metallicity_' + gal_ID + '_cov.npy', pcov) 
 
     perr = np.sqrt(np.diag(pcov))
@@ -820,7 +844,7 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
                         '12logOH_0': popt[1], 
                         '12logOH_0_err': perr[1]}
     
-    print(best_fit_values)
+    # print(best_fit_values)
                         
     
 

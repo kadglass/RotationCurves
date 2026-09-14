@@ -48,7 +48,8 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
 
     r_depro = np.linspace(0, np.max(r), 1000)
 
-    plt.scatter(r, m, zorder=0, color='k', alpha=0.2)
+    # plt.scatter(r, m, zorder=0, color='k', alpha=0.2)
+    plt.errorbar(r, m, yerr=m_sigma, linestyle='none', color='k', marker='o')
     #plt.scatter(bin_centers, m_median, color='b', zorder=1)
     plt.plot(r_depro, grad * r_depro + met_0, zorder=2, color='r')
     plt.ylim(np.min(m) - 0.05,np.max(m) + 0.05)
@@ -56,6 +57,26 @@ def plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
     plt.xlabel('r [kpc]')
     plt.ylabel('12 + log(O/H) (dex)')
     plt.savefig(IMAGE_DIR + 'metallicity_gradient/' + gal_ID + '_metallicity_gradient.png')
+    # plt.savefig(IMAGE_DIR  + gal_ID + '_metallicity_gradient.png')
+
+    plt.close()
+
+def plot_stellar_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r, m, m_sigma, popt):
+
+    
+    grad, met_0 = popt
+
+    r_depro = np.linspace(0, np.max(r), 1000)
+
+    # plt.scatter(r, m, zorder=0, color='k', alpha=0.2)
+    plt.errorbar(r, m, yerr=m_sigma, linestyle='none', color='k', marker='o')
+    #plt.scatter(bin_centers, m_median, color='b', zorder=1)
+    plt.plot(r_depro, grad * r_depro + met_0, zorder=2, color='r')
+    plt.ylim(np.min(m) - 0.05,np.max(m) + 0.05)
+    plt.title(gal_ID)
+    plt.xlabel('r [kpc]')
+    plt.ylabel('stellar metallicity')
+    plt.savefig(IMAGE_DIR + 'stellar_metallicity_gradient/' + gal_ID + '_stellar_metallicity_gradient.png')
     # plt.savefig(IMAGE_DIR  + gal_ID + '_metallicity_gradient.png')
 
     plt.close()
@@ -114,3 +135,18 @@ def plot_surface_brightness(IMAGE_DIR, gal_ID, sb_mean, r_bins, r_pc, best_fit_v
     plt.title(gal_ID)
     plt.savefig(IMAGE_DIR + 'surface_brightness/' + gal_ID + '_surface_brightness.png')
     plt.close()
+
+
+def plot_stellar_metallicity_map(IMAGE_DIR, gal_ID, stellar_z):
+
+    plt.imshow(stellar_z)
+    plt.gca().invert_yaxis()
+    plt.title(gal_ID)
+    plt.xlabel('spaxel')
+    plt.ylabel('spaxel')
+    plt.colorbar(label='stellar metallicity')
+    plt.savefig(IMAGE_DIR + 'stellar_metallicity/' + gal_ID + '_stellar_metallicity.png')
+
+    plt.close()
+
+       

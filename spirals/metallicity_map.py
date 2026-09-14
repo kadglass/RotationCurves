@@ -13,7 +13,12 @@ from numpy import log10, pi
 
 import matplotlib.pyplot as plt
 
-# import numdifftools as ndt
+q0 = 0.2 #nominal disk thickness
+ln10 = ma.log(10)
+H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458 # Speed of light in units of km/s
+MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
+fHep = 0.2485 # primordial Helium fraction# import numdifftools as ndt
 
 
 from astropy.io import fits
@@ -26,9 +31,10 @@ import os
 
 from scipy.optimize import curve_fit, minimize
 
-from DRP_vel_map_functions import deproject_spaxel
-from metallicity_map_plottingFunctions import plot_metallicity_map, plot_metallicity_gradient
+from deproject_functions import deproject_spaxel
+from metallicity_map_plottingFunctions import plot_metallicity_map, plot_metallicity_gradient, plot_stellar_metallicity_gradient, plot_stellar_metallicity_map
 from metallicity_map_functions import linear_metallicity_gradient
+# from DRP_rotation_curve import extract_data
 
 
 
@@ -38,12 +44,7 @@ from metallicity_map_functions import linear_metallicity_gradient
 
 
 
-q0 = 0.2 #nominal disk thickness
-ln10 = ma.log(10)
-H_0 = 100      # Hubble's Constant in units of h km/s/Mpc
-c = 299792.458 # Speed of light in units of km/s
-MANGA_SPAXEL_SIZE = 0.5*(1/60)*(1/60)*(np.pi/180)  # spaxel size (0.5") in radians
-fHep = 0.2485 # primordial Helium fraction
+
 grad_Hep_z = 1.41 
 
 
@@ -694,7 +695,7 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     # calculate scales for deprojection
     ################################################################################
 
-
+    plate, ifu = gal_ID.split('-')
 
     dist_to_galaxy_Mpc = c*z/H_0
     dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
@@ -724,11 +725,20 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     cosi2 = (ba**2 - q0**2)/(1 - q0**2)
     i_angle = np.arccos(np.sqrt(cosi2))
 
-    # print('cosi2', cosi2)
-    # print('i', i_angle)
-    # print('center', center_coord)
-    print()
+    if center_coord[0] == None:
+        # extract flux map and use brightest spaxel
 
+        file_name = DRP_FOLDER + '/' + plate + '/' + ifu + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+        cube = fits.open(file_name)
+
+        maps = {}
+        maps['flux'] = cube['SPX_MFLUX'].data # this is actually g-band lol
+        maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[23]
+
+        # apply mask to flux map
+        mflux = ma.array(maps['flux'], mask = maps['Ha_vel_mask'])
+        center_coord = np.unravel_index(ma.argmax(mflux, axis=None), mflux.shape)        
+            
     r_kpc = np.zeros((len(metallicity_map), len(metallicity_map[0])))
 
     for i in range(len(metallicity_map)):
@@ -768,6 +778,7 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     ################################################################################
     # bin metallicity by radius, use median uncertainty (kenney and keeping 1962)
     ################################################################################
+    '''
 
     bin_edges = np.linspace(0, np.max(r_flat), 15)
     step_size = (bin_edges[0] + bin_edges[1]) / 2
@@ -797,10 +808,12 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
         if N == 1:
             m_sigma_med[i] = sigmas[0]
 
+        # m_sigma_med = stddev
+
 
     print('m_med', m_median)
     print('m_sigma_med', m_sigma_med)
-    '''
+    
 
     ################################################################################
     # fit metallicity map to linear metallicity gradient
@@ -812,10 +825,16 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     #median
 
     try:
+        # popt, pcov = curve_fit(linear_metallicity_gradient, 
+        #                             r_flat, 
+        #                             m,
+        #                             sigma=m_sigma
+        #                             )
+
         popt, pcov = curve_fit(linear_metallicity_gradient, 
-                                    r_flat, 
-                                    m,
-                                    sigma=m_sigma
+                                    bin_centers, 
+                                    m_median,
+                                    sigma=m_sigma_med
                                     )
 
     except:
@@ -829,9 +848,9 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     ################################################################################
 
 
-    # cov_dir = MANGA_FOLDER + 'metallicity_cov/'
+    # cov_dir = MANGA_FOLDER + 'metallicity_cov/median/'
 
-    cov_dir = '/pscratch/sd/n/nravi/metallicity_maps/cov/'
+    cov_dir = '/scratch/nravi3/metallicity_gradient_median/cov/'
 
     
     np.save(cov_dir + 'metallicity_' + gal_ID + '_cov.npy', pcov) 
@@ -849,7 +868,7 @@ def fit_metallicity_gradient(   MANGA_FOLDER,
     
 
 
-    plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, r_flat, m, m_sigma, popt)
+    plot_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, bin_centers, m_median, m_sigma_med, popt)
     
 
 
@@ -992,3 +1011,140 @@ def calculate_global_metallicity(fluxes, corr_law='CCM89'):
 
 
     return Z, Z_err
+
+
+def fit_stellar_metallicity_map_gradient(P3D_FOLDER, DRP_FOLDER, IMAGE_DIR, gal_ID,
+                                         ba, z, center, phi ):
+
+
+    # extract Pipe3D data
+
+    plate, ifu = gal_ID.split('-')
+
+    file_name = P3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.SSP.fits.gz'
+
+    cube = fits.open(file_name)
+
+    stellar_z = cube[0].data[8]
+    stellar_z_err = cube[0].data[10]
+
+    # extract vel map data
+
+    file_name = DRP_FOLDER + '/' + plate + '/' + ifu + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    if not os.path.isfile(file_name):
+            print(gal_ID, 'data file does not exist.')
+            return None
+
+    cube = fits.open(file_name)
+
+    vel_maps = {}
+    vel_maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[23]
+
+    if center[0] == None:
+            # extract flux map and use brightest spaxel
+    
+            file_name = DRP_FOLDER + '/' + plate + '/' + ifu + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+            cube = fits.open(file_name)
+    
+            vel_maps['flux'] = cube['SPX_MFLUX'].data # this is actually g-band lol
+    
+            # apply mask to flux map
+            mflux = ma.array(vel_maps['flux'], mask = vel_maps['Ha_vel_mask'])
+            center = np.unravel_index(ma.argmax(mflux, axis=None), mflux.shape) 
+
+
+    # plot stellar metallicity map with vel map mask
+
+    mStel_z = ma.array(stellar_z, mask=vel_maps['Ha_vel_mask'])
+    plot_stellar_metallicity_map(IMAGE_DIR, gal_ID, mStel_z)
+
+    # calculate position and dist params
+
+    cosi2 = (ba**2 - q0**2)/(1 - q0**2)
+    i_angle = np.arccos(np.sqrt(cosi2))
+
+    dist_to_galaxy_Mpc = c*z/H_0
+    dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+    pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
+
+    # get deprojected radius
+
+    r_kpc = np.zeros((len(stellar_z), len(stellar_z[0])))
+
+
+    for i in range(len(stellar_z)):
+        for j in range(len(stellar_z[0])):
+
+            r_spax, _ = deproject_spaxel((i,j), center, phi, i_angle)
+            r_kpc[i][j] = r_spax*pix_scale_factor
+
+
+    # flatten arrays and get median data pts
+
+    r_flat = ma.array(r_kpc, mask=vel_maps['Ha_vel_mask']).compressed()
+    m = mStel_z.compressed()
+    m_sigma = ma.array(stellar_z_err, mask=vel_maps['Ha_vel_mask']).compressed()
+
+    bin_edges = np.linspace(0, np.max(r_flat), 15)
+    step_size = (bin_edges[0] + bin_edges[1]) / 2
+    bin_centers = bin_edges[:-1] + step_size 
+
+    m_median = np.zeros(len(bin_centers))
+    m_sigma_med = np.zeros(len(bin_centers))
+
+    for i in range(0, len(bin_centers)):
+
+        if i == 0:
+            vals = m[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])]
+            sigmas = m_sigma[np.logical_and(r_flat >= bin_edges[i], r_flat <= bin_edges[i+1])]
+        
+        else:
+            vals = m[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])]
+            sigmas = m_sigma[np.logical_and(r_flat > bin_edges[i], r_flat <= bin_edges[i+1])]
+
+
+        m_median[i] = ma.median(vals)
+        stddev = ma.std(vals)
+        N = len(vals)
+
+        if N != 1:
+            m_sigma_med[i] = stddev*ma.sqrt(2*np.pi*N/(N-1))
+
+        if N == 1:
+            m_sigma_med[i] = sigmas[0]
+
+        # m_sigma_med = stddev
+
+
+    try:
+        popt, pcov = curve_fit(linear_metallicity_gradient, 
+                                    bin_centers, 
+                                    m_median,
+                                    sigma=m_sigma_med
+                                    )
+
+    except:
+        print('fit failed')
+        return None
+
+    cov_dir = IMAGE_DIR + '/cov/'
+        
+        
+    np.save(cov_dir + 'stellar_metallicity_' + gal_ID + '_cov.npy', pcov) 
+    
+    perr = np.sqrt(np.diag(pcov))
+    
+    plot_stellar_metallicity_gradient(cov_dir, IMAGE_DIR, gal_ID, bin_centers, m_median, m_sigma_med, popt)
+        
+
+    best_fit_values = {'grad': popt[0], 
+                            'grad_err': perr[0], 
+                            'Z0': popt[1], 
+                            'Z0_err': perr[1]}
+
+
+    return best_fit_values
+    
+
+
+    

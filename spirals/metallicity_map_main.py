@@ -6,19 +6,24 @@ from astropy.table import Table
 import os
 from astropy.io import fits
 from metallicity_map import *
+import numpy.ma as ma
 # from metallicity_map_broadband import *
 
 
 # MANGA_FOLDER = '/Users/nityaravi/Documents/Research/RotationCurves/data/manga/'
-MANGA_FOLDER = '/global/cfs/cdirs/sdss/data/sdss/dr17/manga/'
+# MANGA_FOLDER = '/global/cfs/cdirs/sdss/data/sdss/dr17/manga/'
 
 
-DRP_FOLDER = MANGA_FOLDER + 'spectro/analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
+# DRP_FOLDER = MANGA_FOLDER + 'DR17/'
+
+DRP_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
+
+# IMAGE_DIR = MANGA_FOLDER + 'metallicity_gradient_median/'
+IMAGE_DIR = '/scratch/nravi3/metallicity_gradient_median/'
 
 
-IMAGE_DIR = '/pscratch/sd/n/nravi/metallicity_maps/'
-
-DRP_TABLE_FN = '/pscratch/sd/n/nravi/BTFR/' + 'Elliptical_sphdisk_refitspirals_BPT_illustris_v11_gradZ'
+# DRP_TABLE_FN = MANGA_FOLDER + 'output_files/DR17/CURRENT_MASTER_TABLE/Elliptical_sphdisk_refitspirals_BPT_illustris_v11'
+DRP_TABLE_FN = '/scratch/nravi3/Elliptical_sphdisk_refitspirals_BPT_illustris_v11'
 
 corr_law = 'CCM89'
 
@@ -27,6 +32,7 @@ method = 'map'
 
 
 FILE_IDS = []
+
 RUN_ALL_GALAXIES = True
 
 DRP_table = Table.read(DRP_TABLE_FN + '.fits', format='fits')
@@ -45,14 +51,14 @@ if RUN_ALL_GALAXIES:
 
 if method == 'map':
 
-    # add columns to table]
-    # DRP_table['grad_Z'] = np.ones(len(DRP_table))*np.nan
-    # DRP_table['grad_Z_err'] = np.ones(len(DRP_table))*np.nan
-    # DRP_table['Z_0'] = np.ones(len(DRP_table))*np.nan
-    # DRP_table['Z_0_err'] = np.ones(len(DRP_table))*np.nan
+    # add columns to table
+    DRP_table['grad_Z'] = np.ones(len(DRP_table))*np.nan
+    DRP_table['grad_Z_err'] = np.ones(len(DRP_table))*np.nan
+    DRP_table['Z_0'] = np.ones(len(DRP_table))*np.nan
+    DRP_table['Z_0_err'] = np.ones(len(DRP_table))*np.nan
 
 
-    for i_DRP in range(1989,len(FILE_IDS)):
+    for i_DRP in range(len(FILE_IDS)):
     # for i_DRP in range(0, 20):
 
         gal_ID = FILE_IDS[i_DRP]
@@ -62,18 +68,25 @@ if method == 'map':
         if DRP_table['mngtarg1'][i_DRP] > 0:
 
 
-            i_DRP = np.where(DRP_table['plateifu'] == gal_ID)[0][0]
 
             
             center_coord = (DRP_table['x0'][i_DRP], DRP_table['y0'][i_DRP])
 
-            phi = DRP_table['phi'][i_DRP]
-            ba = DRP_table['ba'][i_DRP]
+            if ma.is_masked(center_coord[0]):
+
+                center_coord = (None, None)
+                phi = DRP_table['nsa_elpetro_phi'][i_DRP]
+                ba = DRP_table['nsa_elpetro_ba'][i_DRP]
+
+            else:
+                phi = DRP_table['phi'][i_DRP]
+                ba = DRP_table['ba'][i_DRP]
+
             z = DRP_table['nsa_z'][i_DRP]
 
 
 
-            metallicity_param_outputs, r_kpc, scale, d_kpc, metallicity_mask = fit_metallicity_gradient(MANGA_FOLDER,
+            metallicity_param_outputs, r_kpc, scale, d_kpc, metallicity_mask = fit_metallicity_gradient(DRP_FOLDER,
                                                                 DRP_FOLDER, 
                                                                 IMAGE_DIR, 
                                                                 corr_law, 
@@ -102,7 +115,7 @@ if method == 'map':
             
 
 
-    DRP_table.write(DRP_TABLE_FN + '.fits', format='fits', overwrite=True)
+        DRP_table.write(DRP_TABLE_FN + '_gradZ.fits', format='fits', overwrite=True)
 
 # elif method == 'global':
 
@@ -179,7 +192,7 @@ else:
     print('Invalid metallicity method')
 
 
-DRP_table.write(DRP_TABLE_FN + '.fits', format='fits', overwrite=True)
+DRP_table.write(DRP_TABLE_FN + '_gradZ.fits', format='fits', overwrite=True)
 
                                                                     
         

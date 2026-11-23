@@ -1147,4 +1147,165 @@ def fit_stellar_metallicity_map_gradient(P3D_FOLDER, DRP_FOLDER, IMAGE_DIR, gal_
     
 
 
+def mean_central_metallicity(P3D_FOLDER, DRP_FOLDER, IMAGE_DIR, gal_ID,
+                                ba, z, center, phi, type='gas', dist=[0.5,1],
+                                corr_law ='CCM89'):
+
+
+
+    plate, ifu = gal_ID.split('-')
+
+    # calculate position and dist params
+            
+    cosi2 = (ba**2 - q0**2)/(1 - q0**2)
+    i_angle = np.arccos(np.sqrt(cosi2))
+
+    dist_to_galaxy_Mpc = c*z/H_0
+    dist_to_galaxy_kpc = dist_to_galaxy_Mpc*1000
+    pix_scale_factor = dist_to_galaxy_kpc*np.tan(MANGA_SPAXEL_SIZE)
+
     
+    if type=='stellar':
+
+        # extract Pipe3D data
+        
+            
+        
+            file_name = P3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.SSP.fits.gz'
+        
+            cube = fits.open(file_name)
+        
+            stellar_z = cube[0].data[8]
+            stellar_z_err = cube[0].data[10]
+        
+            # extract vel map data
+        
+            file_name = DRP_FOLDER + '/' + plate + '/' + ifu + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+            if not os.path.isfile(file_name):
+                    print(gal_ID, 'data file does not exist.')
+                    return None
+        
+            cube = fits.open(file_name)
+        
+            vel_maps = {}
+            vel_maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[23]
+        
+            if center[0] == None:
+                    # extract flux map and use brightest spaxel
+            
+                    file_name = DRP_FOLDER + '/' + plate + '/' + ifu + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+                    cube = fits.open(file_name)
+            
+                    vel_maps['flux'] = cube['SPX_MFLUX'].data # this is actually g-band lol
+            
+                    # apply mask to flux map
+                    mflux = ma.array(vel_maps['flux'], mask = vel_maps['Ha_vel_mask'])
+                    center = np.unravel_index(ma.argmax(mflux, axis=None), mflux.shape) 
+        
+        
+            # plot stellar metallicity map with vel map mask
+        
+            mStel_z = ma.array(stellar_z, mask=vel_maps['Ha_vel_mask'])
+            plot_stellar_metallicity_map(IMAGE_DIR, gal_ID, mStel_z)
+        
+           
+        
+            # get deprojected radius
+        
+            r_kpc = np.zeros((len(stellar_z), len(stellar_z[0])))
+        
+        
+            for i in range(len(stellar_z)):
+                for j in range(len(stellar_z[0])):
+        
+                    r_spax, _ = deproject_spaxel((i,j), center, phi, i_angle)
+                    r_kpc[i][j] = r_spax*pix_scale_factor
+        
+            # flatten arrays and get means
+            
+            r_flat = ma.array(r_kpc, mask=vel_maps['Ha_vel_mask']).compressed()
+            m = mStel_z.compressed()
+            m_sigma = ma.array(stellar_z_err, mask=vel_maps['Ha_vel_mask']).compressed()
+
+            
+
+    if type == 'gas':
+
+        ################################################################################
+        # get metallicity map and uncertainties
+        ################################################################################
+    
+    
+        metallicity_map, metallicity_map_ivar, super_mask = get_metallicity_map(DRP_FOLDER, 
+                                                                    IMAGE_DIR, 
+                                                                    corr_law,
+                                                                    gal_ID)
+    
+    
+    
+        
+        if metallicity_map is None:
+            return None
+        
+        ################################################################################
+        # deproject metallicity maps, flatten and remove nans
+        ################################################################################
+    
+        
+    
+        if center_coord[0] == None:
+            # extract flux map and use brightest spaxel
+    
+            file_name = DRP_FOLDER + '/' + plate + '/' + ifu + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+            cube = fits.open(file_name)
+    
+            maps = {}
+            maps['flux'] = cube['SPX_MFLUX'].data # this is actually g-band lol
+            maps['Ha_vel_mask'] = cube['EMLINE_GVEL_MASK'].data[23]
+    
+            # apply mask to flux map
+            mflux = ma.array(maps['flux'], mask = maps['Ha_vel_mask'])
+            center_coord = np.unravel_index(ma.argmax(mflux, axis=None), mflux.shape)        
+                
+        r_kpc = np.zeros((len(metallicity_map), len(metallicity_map[0])))
+    
+        for i in range(len(metallicity_map)):
+            for j in range(len(metallicity_map[0])):
+    
+                r_spax, _ = deproject_spaxel((i,j), center_coord, phi, i_angle)
+                r_kpc[i][j] = r_spax*pix_scale_factor
+    
+        
+    
+        nan_mask = np.logical_or(np.isnan(metallicity_map),np.isnan(metallicity_map_ivar))
+    
+        ################################################################################
+        # check if too much of map is masked for fit
+        ################################################################################
+    
+        if len(nan_mask[nan_mask]) / metallicity_map.size > 0.95:
+            
+            print('Too much of map is masked!')
+            return None
+    
+    
+    
+        # print('r_kpc', r_kpc)
+    
+        r_flat = ma.array(r_kpc, mask=nan_mask).compressed()
+        m = ma.array(metallicity_map, mask=nan_mask).compressed()
+        m_sigma = ma.array(1/ma.sqrt(metallicity_map_ivar), mask=nan_mask).compressed()
+
+    vals = []
+    
+    for i in range(len(dist)):
+
+        radius = dist[i]
+
+        mean = np.nanmean(m[r_flat <= radius])
+        err = np.sqrt(np.sum(m_sigma[r_flat <= radius]**2)) / len(m_sigma[r_flat <= radius])
+
+        vals.append(mean)
+        vals.append(err)
+
+    return vals

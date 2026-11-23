@@ -809,6 +809,7 @@ def fit_to_gaussian(binned_data, plot_dir='', plot_name='', bin_lab='' , bin_ord
     for i in range(len(binned_data)):
 
         data = binned_data[i]
+        print(i)
         
         if use_custom_bins:
             counts, bins = np.histogram(data, bins=custom_bins[i], density=True)
@@ -816,7 +817,7 @@ def fit_to_gaussian(binned_data, plot_dir='', plot_name='', bin_lab='' , bin_ord
             counts, bins = np.histogram(data, bins=int(np.sqrt(len(data))+1), density=True)
         bin_ctrs = (bins[1:] + bins[:-1])/2
 
-        p0 = [ np.median(data), np.std(data)]
+        p0 = [ np.nanmedian(data), np.nanstd(data)]
         if median_guess:
             p0 = [np.median(data), stats.median_abs_deviation(data)]
 

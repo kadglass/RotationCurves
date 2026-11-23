@@ -16,3 +16,4 @@ __pycache__/
 *.c
 *.so
 
+ellipticals/.DS_Store
